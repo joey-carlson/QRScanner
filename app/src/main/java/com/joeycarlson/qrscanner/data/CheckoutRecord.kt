@@ -10,8 +10,6 @@ data class CheckoutRecord(
     val userId: String,
     @SerializedName("kit")
     val kitId: String,
-    @SerializedName("date")
-    val date: String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
     @SerializedName("timestamp")
     val timestamp: String = Instant.now().toString()
 )

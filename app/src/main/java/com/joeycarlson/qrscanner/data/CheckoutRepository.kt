@@ -13,11 +13,18 @@ import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.io.IOException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class CheckoutRepository(private val context: Context) {
     
     private val gson = Gson()
-    private val fileName = "qr_checkouts.json"
+    
+    private fun getTodaysFileName(): String {
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("MM-dd-yy")
+        return "qr_checkouts_${today.format(formatter)}.json"
+    }
     
     private fun getDataFile(): File {
         // Save to Downloads folder - always accessible via Files app
@@ -25,7 +32,7 @@ class CheckoutRepository(private val context: Context) {
         if (!downloadsDir.exists()) {
             downloadsDir.mkdirs()
         }
-        return File(downloadsDir, fileName)
+        return File(downloadsDir, getTodaysFileName())
     }
     
     suspend fun saveCheckout(userId: String, kitId: String): Boolean = withContext(Dispatchers.IO) {
@@ -60,7 +67,7 @@ class CheckoutRepository(private val context: Context) {
             // First, try to find existing file
             val projection = arrayOf(MediaStore.MediaColumns._ID)
             val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
-            val selectionArgs = arrayOf(fileName)
+            val selectionArgs = arrayOf(getTodaysFileName())
             
             var existingUri: android.net.Uri? = null
             resolver.query(
@@ -81,7 +88,7 @@ class CheckoutRepository(private val context: Context) {
             val uri = existingUri ?: run {
                 // Create new file if doesn't exist
                 val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, getTodaysFileName())
                     put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
@@ -133,7 +140,7 @@ class CheckoutRepository(private val context: Context) {
             )
             
             val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
-            val selectionArgs = arrayOf(fileName)
+            val selectionArgs = arrayOf(getTodaysFileName())
             
             val resolver = context.contentResolver
             resolver.query(

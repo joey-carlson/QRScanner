@@ -141,14 +141,15 @@ class MainActivity : AppCompatActivity() {
         binding.flashOverlay.visibility = View.VISIBLE
         binding.flashOverlay.alpha = 0f
         
-        val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 1f, 0f)
-        flashAnimator.duration = 300 // 300ms flash
+        // Longer, more noticeable flash: 600ms with stronger visibility
+        val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
+        flashAnimator.duration = 600 // 600ms flash (doubled duration)
         flashAnimator.start()
         
         // Hide the overlay after animation
         binding.flashOverlay.postDelayed({
             binding.flashOverlay.visibility = View.GONE
-        }, 300)
+        }, 600)
     }
     
     private fun setupClickListeners() {
