@@ -3,6 +3,7 @@ package com.joeycarlson.qrscanner
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -37,7 +38,13 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            requestStoragePermission()
+            // Only request storage permission for Android 9 and below
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ uses MediaStore API, no storage permission needed
+                startCamera()
+            } else {
+                requestStoragePermission()
+            }
         } else {
             Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_LONG).show()
             finish()
@@ -161,8 +168,20 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
     
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    private fun allPermissionsGranted(): Boolean {
+        val cameraGranted = ContextCompat.checkSelfPermission(
+            baseContext, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+ only needs camera permission
+            cameraGranted
+        } else {
+            // Android 9 and below needs both camera and storage permissions
+            cameraGranted && ContextCompat.checkSelfPermission(
+                baseContext, Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
     }
     
     private inner class QRCodeAnalyzer : ImageAnalysis.Analyzer {
@@ -201,9 +220,5 @@ class MainActivity : AppCompatActivity() {
     
     companion object {
         private const val TAG = "QRScanner"
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
     }
 }
