@@ -9,6 +9,8 @@ data class CheckoutRecord(
     val userId: String,
     @SerializedName("kit")
     val kitId: String,
+    @SerializedName("date")
+    val date: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()),
     @SerializedName("timestamp")
     val timestamp: String = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")

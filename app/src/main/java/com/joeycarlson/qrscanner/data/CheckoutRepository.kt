@@ -1,6 +1,7 @@
 package com.joeycarlson.qrscanner.data
 
 import android.content.Context
+import android.os.Environment
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -13,10 +14,14 @@ import java.io.IOException
 class CheckoutRepository(private val context: Context) {
     
     private val gson = Gson()
-    private val fileName = "checkouts.json"
+    private val fileName = "qr_checkouts.json"
     
     private fun getDataFile(): File {
-        return File(context.filesDir, fileName)
+        val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        if (!documentsDir.exists()) {
+            documentsDir.mkdirs()
+        }
+        return File(documentsDir, fileName)
     }
     
     suspend fun saveCheckout(userId: String, kitId: String): Boolean = withContext(Dispatchers.IO) {
