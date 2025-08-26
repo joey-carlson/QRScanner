@@ -44,47 +44,72 @@ class ScanViewModel(
             return
         }
         
+        val barcodeType = getBarcodeType(trimmedData)
+        
         when (_scanState.value) {
             ScanState.IDLE -> {
-                // First scan - determine if it's user or kit based on content
-                if (isUserBarcode(trimmedData)) {
-                    pendingUserId = trimmedData
-                    _scanState.value = ScanState.USER_SCANNED
-                    _statusMessage.value = "User scanned: $trimmedData\nScan kit barcode"
-                    _scanSuccess.value = true
-                } else {
-                    pendingKitId = trimmedData
-                    _scanState.value = ScanState.KIT_SCANNED
-                    _statusMessage.value = "Kit scanned: $trimmedData\nScan user barcode"
-                    _scanSuccess.value = true
+                when (barcodeType) {
+                    "USER" -> {
+                        pendingUserId = trimmedData
+                        _scanState.value = ScanState.USER_SCANNED
+                        _statusMessage.value = "User scanned: $trimmedData\nScan kit barcode"
+                        _scanSuccess.value = true
+                    }
+                    "KIT" -> {
+                        pendingKitId = trimmedData
+                        _scanState.value = ScanState.KIT_SCANNED
+                        _statusMessage.value = "Kit scanned: $trimmedData\nScan user barcode"
+                        _scanSuccess.value = true
+                    }
+                    "OTHER" -> {
+                        // Save OTHER type immediately
+                        saveOtherEntry(trimmedData)
+                        _scanSuccess.value = true
+                    }
                 }
             }
             
             ScanState.USER_SCANNED -> {
-                if (isUserBarcode(trimmedData)) {
-                    // Another user barcode - replace the pending one
-                    pendingUserId = trimmedData
-                    _statusMessage.value = "User updated: $trimmedData\nScan kit barcode"
-                    _scanSuccess.value = true
-                } else {
-                    // Kit barcode - complete the checkout
-                    pendingKitId = trimmedData
-                    _scanSuccess.value = true
-                    completeCheckout()
+                when (barcodeType) {
+                    "USER" -> {
+                        // Another user barcode - replace the pending one
+                        pendingUserId = trimmedData
+                        _statusMessage.value = "User updated: $trimmedData\nScan kit barcode"
+                        _scanSuccess.value = true
+                    }
+                    "KIT" -> {
+                        // Kit barcode - complete the checkout
+                        pendingKitId = trimmedData
+                        _scanSuccess.value = true
+                        completeCheckout()
+                    }
+                    "OTHER" -> {
+                        // Save OTHER type immediately
+                        saveOtherEntry(trimmedData)
+                        _scanSuccess.value = true
+                    }
                 }
             }
             
             ScanState.KIT_SCANNED -> {
-                if (isUserBarcode(trimmedData)) {
-                    // User barcode - complete the checkout
-                    pendingUserId = trimmedData
-                    _scanSuccess.value = true
-                    completeCheckout()
-                } else {
-                    // Another kit barcode - replace the pending one
-                    pendingKitId = trimmedData
-                    _statusMessage.value = "Kit updated: $trimmedData\nScan user barcode"
-                    _scanSuccess.value = true
+                when (barcodeType) {
+                    "USER" -> {
+                        // User barcode - complete the checkout
+                        pendingUserId = trimmedData
+                        _scanSuccess.value = true
+                        completeCheckout()
+                    }
+                    "KIT" -> {
+                        // Another kit barcode - replace the pending one
+                        pendingKitId = trimmedData
+                        _statusMessage.value = "Kit updated: $trimmedData\nScan user barcode"
+                        _scanSuccess.value = true
+                    }
+                    "OTHER" -> {
+                        // Save OTHER type immediately
+                        saveOtherEntry(trimmedData)
+                        _scanSuccess.value = true
+                    }
                 }
             }
             
@@ -131,10 +156,35 @@ class ScanViewModel(
         return data.isNotEmpty() && data.matches(Regex("^[A-Za-z0-9._-]+$"))
     }
     
+    private fun getBarcodeType(data: String): String {
+        val upperData = data.uppercase()
+        return when {
+            upperData.startsWith("U") || upperData.startsWith("USER") -> "USER"
+            upperData.startsWith("K") || upperData.startsWith("KIT") -> "KIT"
+            else -> "OTHER"
+        }
+    }
+    
     private fun isUserBarcode(data: String): Boolean {
-        // Simple heuristic: assume user codes start with 'U' or 'USER'
-        // This can be customized based on actual barcode format
-        return data.uppercase().startsWith("U") || data.uppercase().startsWith("USER")
+        return getBarcodeType(data) == "USER"
+    }
+    
+    private fun saveOtherEntry(value: String) {
+        _isScanning.value = false
+        _statusMessage.value = "Processing other entry..."
+        
+        viewModelScope.launch {
+            val success = repository.saveOtherEntry(value)
+            if (success) {
+                _statusMessage.value = "✓ Other entry saved: $value"
+            } else {
+                _statusMessage.value = "✗ Failed to save other entry"
+            }
+            
+            // Reset state after brief delay
+            kotlinx.coroutines.delay(1000)
+            resetScanState()
+        }
     }
     
     fun clearState() {

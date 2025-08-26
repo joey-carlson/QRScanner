@@ -7,9 +7,13 @@ import java.time.format.DateTimeFormatter
 
 data class CheckoutRecord(
     @SerializedName("user")
-    val userId: String,
+    val userId: String?,
     @SerializedName("kit")
-    val kitId: String,
+    val kitId: String?,
+    @SerializedName("type")
+    val type: String,
+    @SerializedName("value")
+    val value: String,
     @SerializedName("timestamp")
     val timestamp: String = Instant.now().toString()
 )

@@ -37,7 +37,12 @@ class CheckoutRepository(private val context: Context) {
     
     suspend fun saveCheckout(userId: String, kitId: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val record = CheckoutRecord(userId, kitId)
+            val record = CheckoutRecord(
+                userId = userId,
+                kitId = kitId,
+                type = "CHECKOUT",
+                value = "User $userId checked out Kit $kitId"
+            )
             val existingRecords = loadExistingRecords()
             existingRecords.add(record)
             
@@ -168,6 +173,36 @@ class CheckoutRepository(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
             mutableListOf()
+        }
+    }
+    
+    suspend fun saveOtherEntry(value: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val record = CheckoutRecord(
+                userId = null,
+                kitId = null,
+                type = "OTHER",
+                value = value
+            )
+            val existingRecords = loadExistingRecords()
+            existingRecords.add(record)
+            
+            val jsonContent = gson.toJson(existingRecords)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Use MediaStore for Android 10+ (API 29+)
+                saveToMediaStore(jsonContent)
+            } else {
+                // Use direct file access for older Android versions
+                val dataFile = getDataFile()
+                FileWriter(dataFile).use { writer ->
+                    writer.write(jsonContent)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
     
