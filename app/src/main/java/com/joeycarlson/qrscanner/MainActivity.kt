@@ -132,12 +132,9 @@ class MainActivity : AppCompatActivity() {
                 
                 barcodeScanner.process(image)
                     .addOnSuccessListener { barcodes ->
-                        for (barcode in barcodes) {
-                            barcode.rawValue?.let { qrData ->
-                                runOnUiThread {
-                                    viewModel.processQRCode(qrData)
-                                }
-                                break // Process only the first QR code found
+                        barcodes.firstOrNull()?.rawValue?.let { qrData ->
+                            runOnUiThread {
+                                viewModel.processQRCode(qrData)
                             }
                         }
                     }
