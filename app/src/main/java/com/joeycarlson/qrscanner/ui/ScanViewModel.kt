@@ -27,6 +27,9 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
     private val _isScanning = MutableLiveData<Boolean>(true)
     val isScanning: LiveData<Boolean> = _isScanning
     
+    private val _scanSuccess = MutableLiveData<Boolean>()
+    val scanSuccess: LiveData<Boolean> = _scanSuccess
+    
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
     
@@ -46,10 +49,12 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                     pendingUserId = trimmedData
                     _scanState.value = ScanState.USER_SCANNED
                     _statusMessage.value = "User scanned: $trimmedData\nScan kit QR code"
+                    _scanSuccess.value = true
                 } else {
                     pendingKitId = trimmedData
                     _scanState.value = ScanState.KIT_SCANNED
                     _statusMessage.value = "Kit scanned: $trimmedData\nScan user QR code"
+                    _scanSuccess.value = true
                 }
             }
             
@@ -58,9 +63,11 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                     // Another user QR - replace the pending one
                     pendingUserId = trimmedData
                     _statusMessage.value = "User updated: $trimmedData\nScan kit QR code"
+                    _scanSuccess.value = true
                 } else {
                     // Kit QR - complete the checkout
                     pendingKitId = trimmedData
+                    _scanSuccess.value = true
                     completeCheckout()
                 }
             }
@@ -69,11 +76,13 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
                 if (isUserQR(trimmedData)) {
                     // User QR - complete the checkout
                     pendingUserId = trimmedData
+                    _scanSuccess.value = true
                     completeCheckout()
                 } else {
                     // Another kit QR - replace the pending one
                     pendingKitId = trimmedData
                     _statusMessage.value = "Kit updated: $trimmedData\nScan user QR code"
+                    _scanSuccess.value = true
                 }
             }
             

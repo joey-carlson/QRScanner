@@ -1,9 +1,11 @@
 package com.joeycarlson.qrscanner
 
 import android.Manifest
+import android.animation.ObjectAnimator
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -99,6 +101,26 @@ class MainActivity : AppCompatActivity() {
                 android.view.View.INVISIBLE
             }
         }
+        
+        viewModel.scanSuccess.observe(this) { success ->
+            if (success) {
+                triggerFlashAnimation()
+            }
+        }
+    }
+    
+    private fun triggerFlashAnimation() {
+        binding.flashOverlay.visibility = View.VISIBLE
+        binding.flashOverlay.alpha = 0f
+        
+        val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 1f, 0f)
+        flashAnimator.duration = 300 // 300ms flash
+        flashAnimator.start()
+        
+        // Hide the overlay after animation
+        binding.flashOverlay.postDelayed({
+            binding.flashOverlay.visibility = View.GONE
+        }, 300)
     }
     
     private fun setupClickListeners() {
