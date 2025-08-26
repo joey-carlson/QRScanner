@@ -162,11 +162,61 @@ This document tracks future feature ideas, enhancements, and updates for conside
 - Analytics Dashboard
 - Advanced reporting features
 
+### Future Minor Release (1.6.0)
+- S3 Bucket Integration
+- Google Drive Integration
+- Advanced retry logic
+
 ### Major Release Consideration (2.0.0)
 - Cross-Platform Development (Flutter/React Native)
 - iOS and tablet support
 - Unified codebase for phone and tablet form factors
 - Architectural overhaul for multi-platform support
+
+## ☁️ S3 Bucket Integration (Future Feature)
+
+### **Overview**
+**Type**: New Feature (Minor Version)
+**Description**: Direct upload capability to AWS S3 buckets for centralized data collection
+**Benefits**:
+- Direct cloud storage without intermediary steps
+- Automatic backup and archiving
+- Integration with existing AWS infrastructure
+- Scalable storage solution for multiple deployment locations
+
+### **Technical Implementation**
+**Authentication Options** (TBD):
+- AWS IAM roles
+- Access Key/Secret Key pairs
+- STS temporary credentials
+- AWS Cognito for mobile authentication
+
+**Upload Features**:
+- Batch upload for multiple days
+- Automatic retry with exponential backoff
+- Progress tracking and notifications
+- Compression before upload (optional)
+- Encryption in transit (HTTPS)
+
+**Configuration Requirements**:
+- S3 Bucket name
+- AWS Region
+- Folder/prefix structure
+- Authentication credentials
+- Upload preferences (compression, encryption)
+
+**File Organization**:
+- Location-based folder structure: `/[LocationID]/[Year]/[Month]/`
+- File naming: `qr_checkouts_[MM-dd-yy]_[LocationID].json`
+- Metadata tags for searchability
+- Lifecycle policies for archival
+
+**Considerations**:
+- Offline queue management
+- Credential security and storage
+- Network bandwidth optimization
+- Cost management (API calls, storage)
+- Compliance with data retention policies
 
 ## 🌐 Offline Export Strategies
 

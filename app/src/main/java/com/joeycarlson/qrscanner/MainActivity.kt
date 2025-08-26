@@ -2,6 +2,7 @@ package com.joeycarlson.qrscanner
 
 import android.Manifest
 import android.animation.ObjectAnimator
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -9,6 +10,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -16,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -164,6 +167,36 @@ class MainActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
+        }
+        
+        binding.settingsButton.setOnClickListener {
+            // Check if location ID is configured
+            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+            val locationId = prefs.getString("location_id", "")
+            
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+        
+        binding.exportButton.setOnClickListener {
+            // Check if location ID is configured
+            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+            val locationId = prefs.getString("location_id", "")
+            
+            if (locationId.isNullOrEmpty()) {
+                AlertDialog.Builder(this)
+                    .setTitle("Configuration Required")
+                    .setMessage("Please configure Location ID in Settings before exporting.")
+                    .setPositiveButton("Go to Settings") { _, _ ->
+                        val intent = Intent(this, SettingsActivity::class.java)
+                        startActivity(intent)
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            } else {
+                // TODO: Open export options
+                Toast.makeText(this, "Export functionality coming soon", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     

@@ -19,11 +19,19 @@ import java.time.format.DateTimeFormatter
 class CheckoutRepository(private val context: Context) {
     
     private val gson = Gson()
+    private val prefs = context.getSharedPreferences("com.joeycarlson.qrscanner_preferences", Context.MODE_PRIVATE)
     
     private fun getTodaysFileName(): String {
         val today = LocalDate.now()
         val formatter = DateTimeFormatter.ofPattern("MM-dd-yy")
-        return "qr_checkouts_${today.format(formatter)}.json"
+        val locationId = prefs.getString("location_id", "unknown")
+        
+        // Include location ID in filename if configured
+        return if (!locationId.isNullOrEmpty() && locationId != "unknown") {
+            "qr_checkouts_${today.format(formatter)}_${locationId}.json"
+        } else {
+            "qr_checkouts_${today.format(formatter)}.json"
+        }
     }
     
     private fun getDataFile(): File {
