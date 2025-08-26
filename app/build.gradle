@@ -26,6 +26,7 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+        coreLibraryDesugaringEnabled true
     }
     kotlinOptions {
         jvmTarget = '11'
@@ -52,6 +53,9 @@ dependencies {
     
     // JSON handling
     implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Java 8+ API desugaring (for java.time APIs on older Android)
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     
     // Testing
     testImplementation 'junit:junit:4.13.2'
