@@ -17,11 +17,14 @@ class CheckoutRepository(private val context: Context) {
     private val fileName = "qr_checkouts.json"
     
     private fun getDataFile(): File {
-        val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-        if (!documentsDir.exists()) {
-            documentsDir.mkdirs()
+        // Use app's external files directory - accessible via Files app without special permissions
+        val appExternalDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            ?: context.getExternalFilesDir(null) // Fallback to root external files dir
+        
+        if (appExternalDir?.exists() != true) {
+            appExternalDir?.mkdirs()
         }
-        return File(documentsDir, fileName)
+        return File(appExternalDir, fileName)
     }
     
     suspend fun saveCheckout(userId: String, kitId: String): Boolean = withContext(Dispatchers.IO) {
