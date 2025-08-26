@@ -178,11 +178,14 @@ class CheckoutRepository(private val context: Context) {
     
     suspend fun saveOtherEntry(value: String): Boolean = withContext(Dispatchers.IO) {
         try {
+            // Additional security sanitization at repository level
+            val sanitizedValue = sanitizeInput(value)
+            
             val record = CheckoutRecord(
                 userId = null,
                 kitId = null,
                 type = "OTHER",
-                value = value
+                value = sanitizedValue
             )
             val existingRecords = loadExistingRecords()
             existingRecords.add(record)
@@ -204,6 +207,16 @@ class CheckoutRepository(private val context: Context) {
             e.printStackTrace()
             false
         }
+    }
+    
+    private fun sanitizeInput(input: String): String {
+        // Additional layer of security sanitization
+        // Remove any remaining potentially dangerous characters
+        return input
+            .replace(Regex("[\"'`\\\\<>{}\\[\\];:,]"), "") // Remove quotes, brackets, special chars
+            .replace(Regex("\\s+"), " ") // Normalize whitespace
+            .trim()
+            .take(200) // Enforce length limit
     }
     
     suspend fun getAllCheckouts(): List<CheckoutRecord> = withContext(Dispatchers.IO) {

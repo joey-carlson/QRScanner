@@ -152,8 +152,29 @@ class ScanViewModel(
     }
     
     private fun isValidBarcodeData(data: String): Boolean {
-        // Accept alphanumeric data and common barcode characters (hyphens, periods)
-        return data.isNotEmpty() && data.matches(Regex("^[A-Za-z0-9._-]+$"))
+        // Security validations to prevent injection attacks
+        if (data.isEmpty()) return false
+        
+        // Length limit to prevent buffer overflow and performance issues
+        if (data.length > 200) return false
+        
+        // Strict character whitelist - only alphanumeric and basic symbols
+        // Excludes potentially dangerous characters: quotes, brackets, semicolons, etc.
+        if (!data.matches(Regex("^[A-Za-z0-9._-]+$"))) return false
+        
+        // Prevent common injection patterns
+        val dangerousPatterns = listOf(
+            "script", "javascript", "vbscript", "onload", "onerror",
+            "alert", "eval", "document", "window", "location",
+            "<%", "%>", "<?", "?>", "{{", "}}", "${", "}",
+            "drop", "delete", "insert", "update", "select",
+            "union", "exec", "execute", "xp_", "sp_"
+        )
+        
+        val lowerData = data.lowercase()
+        if (dangerousPatterns.any { lowerData.contains(it) }) return false
+        
+        return true
     }
     
     private fun getBarcodeType(data: String): String {
