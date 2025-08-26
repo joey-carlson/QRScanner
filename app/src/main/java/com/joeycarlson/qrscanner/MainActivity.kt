@@ -86,9 +86,18 @@ class MainActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this, factory)[ScanViewModel::class.java]
         cameraExecutor = Executors.newSingleThreadExecutor()
         
-        // Initialize ML Kit barcode scanner
+        // Initialize ML Kit barcode scanner with support for QR codes and common 1D barcodes
         val options = BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .setBarcodeFormats(
+                Barcode.FORMAT_QR_CODE,
+                Barcode.FORMAT_CODE_128,
+                Barcode.FORMAT_CODE_39,
+                Barcode.FORMAT_CODE_93,
+                Barcode.FORMAT_UPC_A,
+                Barcode.FORMAT_UPC_E,
+                Barcode.FORMAT_EAN_13,
+                Barcode.FORMAT_EAN_8
+            )
             .build()
         barcodeScanner = BarcodeScanning.getClient(options)
         
@@ -172,7 +181,7 @@ class MainActivity : AppCompatActivity() {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, QRCodeAnalyzer())
+                    it.setAnalyzer(cameraExecutor, BarcodeAnalyzer())
                 }
             
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -205,7 +214,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private inner class QRCodeAnalyzer : ImageAnalysis.Analyzer {
+    private inner class BarcodeAnalyzer : ImageAnalysis.Analyzer {
         
         @androidx.camera.core.ExperimentalGetImage
         override fun analyze(imageProxy: ImageProxy) {
@@ -215,9 +224,9 @@ class MainActivity : AppCompatActivity() {
                 
                 barcodeScanner.process(image)
                     .addOnSuccessListener { barcodes ->
-                        barcodes.firstOrNull()?.rawValue?.let { qrData ->
+                        barcodes.firstOrNull()?.rawValue?.let { barcodeData ->
                             runOnUiThread {
-                                viewModel.processQRCode(qrData)
+                                viewModel.processBarcode(barcodeData)
                             }
                         }
                     }

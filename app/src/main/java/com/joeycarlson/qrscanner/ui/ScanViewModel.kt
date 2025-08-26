@@ -35,39 +35,39 @@ class ScanViewModel(
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
     
-    fun processQRCode(qrData: String) {
-        val trimmedData = qrData.trim()
+    fun processBarcode(barcodeData: String) {
+        val trimmedData = barcodeData.trim()
         
-        // Simple validation for alphanumeric strings
-        if (!isValidQRData(trimmedData)) {
-            _statusMessage.value = "Invalid QR code format"
+        // Simple validation for barcode data
+        if (!isValidBarcodeData(trimmedData)) {
+            _statusMessage.value = "Invalid barcode format"
             return
         }
         
         when (_scanState.value) {
             ScanState.IDLE -> {
                 // First scan - determine if it's user or kit based on content
-                if (isUserQR(trimmedData)) {
+                if (isUserBarcode(trimmedData)) {
                     pendingUserId = trimmedData
                     _scanState.value = ScanState.USER_SCANNED
-                    _statusMessage.value = "User scanned: $trimmedData\nScan kit QR code"
+                    _statusMessage.value = "User scanned: $trimmedData\nScan kit barcode"
                     _scanSuccess.value = true
                 } else {
                     pendingKitId = trimmedData
                     _scanState.value = ScanState.KIT_SCANNED
-                    _statusMessage.value = "Kit scanned: $trimmedData\nScan user QR code"
+                    _statusMessage.value = "Kit scanned: $trimmedData\nScan user barcode"
                     _scanSuccess.value = true
                 }
             }
             
             ScanState.USER_SCANNED -> {
-                if (isUserQR(trimmedData)) {
-                    // Another user QR - replace the pending one
+                if (isUserBarcode(trimmedData)) {
+                    // Another user barcode - replace the pending one
                     pendingUserId = trimmedData
-                    _statusMessage.value = "User updated: $trimmedData\nScan kit QR code"
+                    _statusMessage.value = "User updated: $trimmedData\nScan kit barcode"
                     _scanSuccess.value = true
                 } else {
-                    // Kit QR - complete the checkout
+                    // Kit barcode - complete the checkout
                     pendingKitId = trimmedData
                     _scanSuccess.value = true
                     completeCheckout()
@@ -75,22 +75,22 @@ class ScanViewModel(
             }
             
             ScanState.KIT_SCANNED -> {
-                if (isUserQR(trimmedData)) {
-                    // User QR - complete the checkout
+                if (isUserBarcode(trimmedData)) {
+                    // User barcode - complete the checkout
                     pendingUserId = trimmedData
                     _scanSuccess.value = true
                     completeCheckout()
                 } else {
-                    // Another kit QR - replace the pending one
+                    // Another kit barcode - replace the pending one
                     pendingKitId = trimmedData
-                    _statusMessage.value = "Kit updated: $trimmedData\nScan user QR code"
+                    _statusMessage.value = "Kit updated: $trimmedData\nScan user barcode"
                     _scanSuccess.value = true
                 }
             }
             
             null -> {
                 _scanState.value = ScanState.IDLE
-                processQRCode(qrData)
+                processBarcode(barcodeData)
             }
         }
     }
@@ -126,13 +126,14 @@ class ScanViewModel(
         _isScanning.value = true
     }
     
-    private fun isValidQRData(data: String): Boolean {
-        return data.isNotEmpty() && data.matches(Regex("^[A-Za-z0-9]+$"))
+    private fun isValidBarcodeData(data: String): Boolean {
+        // Accept alphanumeric data and common barcode characters (hyphens, periods)
+        return data.isNotEmpty() && data.matches(Regex("^[A-Za-z0-9._-]+$"))
     }
     
-    private fun isUserQR(data: String): Boolean {
-        // Simple heuristic: assume user QRs start with 'U' or 'USER'
-        // This can be customized based on actual QR code format
+    private fun isUserBarcode(data: String): Boolean {
+        // Simple heuristic: assume user codes start with 'U' or 'USER'
+        // This can be customized based on actual barcode format
         return data.uppercase().startsWith("U") || data.uppercase().startsWith("USER")
     }
     
