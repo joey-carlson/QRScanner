@@ -1,8 +1,9 @@
 package com.joeycarlson.qrscanner.data
 
 import com.google.gson.annotations.SerializedName
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 data class CheckoutRecord(
     @SerializedName("user")
@@ -10,9 +11,7 @@ data class CheckoutRecord(
     @SerializedName("kit")
     val kitId: String,
     @SerializedName("date")
-    val date: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()),
+    val date: String = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
     @SerializedName("timestamp")
-    val timestamp: String = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
-    }.format(Date())
+    val timestamp: String = Instant.now().toString()
 )

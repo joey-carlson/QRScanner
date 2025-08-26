@@ -14,13 +14,18 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.joeycarlson.qrscanner.data.CheckoutRepository
 import com.joeycarlson.qrscanner.databinding.ActivityMainBinding
 import com.joeycarlson.qrscanner.ui.ScanViewModel
+import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -76,7 +81,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        viewModel = ViewModelProvider(this)[ScanViewModel::class.java]
+        val repository = CheckoutRepository(this)
+        val factory = ScanViewModelFactory(application, repository)
+        viewModel = ViewModelProvider(this, factory)[ScanViewModel::class.java]
         cameraExecutor = Executors.newSingleThreadExecutor()
         
         // Initialize ML Kit barcode scanner
@@ -98,21 +105,34 @@ class MainActivity : AppCompatActivity() {
     
     
     private fun setupObservers() {
-        viewModel.statusMessage.observe(this) { message ->
-            binding.statusText.text = message
-        }
-        
-        viewModel.isScanning.observe(this) { isScanning ->
-            binding.scanOverlay.visibility = if (isScanning) {
-                android.view.View.VISIBLE
-            } else {
-                android.view.View.INVISIBLE
-            }
-        }
-        
-        viewModel.scanSuccess.observe(this) { success ->
-            if (success) {
-                triggerFlashAnimation()
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                // Collect status message changes
+                launch {
+                    viewModel.statusMessage.collect { message ->
+                        binding.statusText.text = message
+                    }
+                }
+                
+                // Collect scanning state changes
+                launch {
+                    viewModel.isScanning.collect { isScanning ->
+                        binding.scanOverlay.visibility = if (isScanning) {
+                            android.view.View.VISIBLE
+                        } else {
+                            android.view.View.INVISIBLE
+                        }
+                    }
+                }
+                
+                // Collect scan success events
+                launch {
+                    viewModel.scanSuccess.collect { success ->
+                        if (success) {
+                            triggerFlashAnimation()
+                        }
+                    }
+                }
             }
         }
     }

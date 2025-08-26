@@ -2,10 +2,11 @@ package com.joeycarlson.qrscanner.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.joeycarlson.qrscanner.data.CheckoutRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 enum class ScanState {
@@ -14,21 +15,22 @@ enum class ScanState {
     KIT_SCANNED     // Kit scanned, waiting for user
 }
 
-class ScanViewModel(application: Application) : AndroidViewModel(application) {
+class ScanViewModel(
+    application: Application,
+    private val repository: CheckoutRepository
+) : AndroidViewModel(application) {
     
-    private val repository = CheckoutRepository(application)
+    private val _scanState = MutableStateFlow(ScanState.IDLE)
+    val scanState: StateFlow<ScanState> = _scanState.asStateFlow()
     
-    private val _scanState = MutableLiveData<ScanState>(ScanState.IDLE)
-    val scanState: LiveData<ScanState> = _scanState
+    private val _statusMessage = MutableStateFlow("Ready to scan")
+    val statusMessage: StateFlow<String> = _statusMessage.asStateFlow()
     
-    private val _statusMessage = MutableLiveData<String>()
-    val statusMessage: LiveData<String> = _statusMessage
+    private val _isScanning = MutableStateFlow(true)
+    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
     
-    private val _isScanning = MutableLiveData<Boolean>(true)
-    val isScanning: LiveData<Boolean> = _isScanning
-    
-    private val _scanSuccess = MutableLiveData<Boolean>()
-    val scanSuccess: LiveData<Boolean> = _scanSuccess
+    private val _scanSuccess = MutableStateFlow(false)
+    val scanSuccess: StateFlow<Boolean> = _scanSuccess.asStateFlow()
     
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
