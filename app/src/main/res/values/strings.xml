@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">QR Scanner</string>
+    <string name="app_name">Pilot Scanner</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
     <string name="ready_to_scan">Ready to scan</string>
     <string name="processing_checkout">Processing checkout...</string>
