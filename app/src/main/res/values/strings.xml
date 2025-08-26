@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">QR Scanner</string>
+    <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
+    <string name="ready_to_scan">Ready to scan</string>
+    <string name="processing_checkout">Processing checkout...</string>
+    <string name="checkout_success">✓ User %1$s checked out kit %2$s</string>
+    <string name="checkout_failed">✗ Failed to save checkout</string>
+    <string name="invalid_qr_format">Invalid QR code format</string>
+    <string name="user_scanned">User scanned: %1$s\nScan kit QR code</string>
+    <string name="kit_scanned">Kit scanned: %1$s\nScan user QR code</string>
+    <string name="clear">Clear</string>
+</resources>
