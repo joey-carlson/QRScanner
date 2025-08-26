@@ -37,23 +37,13 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            requestStoragePermission()
+            startCamera()
         } else {
             Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_LONG).show()
             finish()
         }
     }
     
-    private val requestStoragePermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "Storage permission is required to save checkout records", Toast.LENGTH_LONG).show()
-            finish()
-        }
-    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,14 +70,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun requestStoragePermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) 
-            == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            requestStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-    }
     
     private fun setupObservers() {
         viewModel.statusMessage.observe(this) { message ->
@@ -201,8 +183,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "QRScanner"
         private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
+            Manifest.permission.CAMERA
         )
     }
 }
