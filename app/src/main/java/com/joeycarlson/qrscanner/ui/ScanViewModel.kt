@@ -125,10 +125,6 @@ class ScanViewModel(
                 }
             }
             
-            null -> {
-                _scanState.value = ScanState.IDLE
-                processBarcode(barcodeData)
-            }
         }
     }
     
