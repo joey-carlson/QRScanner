@@ -5,6 +5,7 @@ object Constants {
     // Animation durations
     const val FLASH_ANIMATION_DURATION = 600L
     const val TEMP_FILE_CLEANUP_DELAY = 5000L
+    const val UNDO_BUTTON_TIMEOUT = 10000L
     
     // MIME types
     const val MIME_TYPE_JSON = "application/json"

@@ -304,4 +304,41 @@ class CheckoutRepository(private val context: Context) {
             emptyList()
         }
     }
+    
+    suspend fun getLastCheckout(): CheckoutRecord? = withContext(Dispatchers.IO) {
+        try {
+            val records = loadExistingRecords()
+            records.filter { it.type == "CHECKOUT" }.maxByOrNull { it.timestamp }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+    
+    suspend fun deleteLastCheckout(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val records = loadExistingRecords()
+            val lastCheckout = records.filter { it.type == "CHECKOUT" }.maxByOrNull { it.timestamp }
+            
+            if (lastCheckout != null) {
+                records.remove(lastCheckout)
+                val jsonContent = gson.toJson(records)
+                
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    saveToMediaStore(jsonContent)
+                } else {
+                    val dataFile = getDataFile()
+                    FileWriter(dataFile).use { writer ->
+                        writer.write(jsonContent)
+                    }
+                }
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
 }
