@@ -3,9 +3,12 @@ package com.joeycarlson.qrscanner.export
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.joeycarlson.qrscanner.databinding.ActivityExportMethodBinding
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class ExportMethodActivity : AppCompatActivity() {
@@ -13,6 +16,7 @@ class ExportMethodActivity : AppCompatActivity() {
     private lateinit var binding: ActivityExportMethodBinding
     private lateinit var startDate: LocalDate
     private lateinit var endDate: LocalDate
+    private lateinit var exportManager: ExportManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +26,9 @@ class ExportMethodActivity : AppCompatActivity() {
         // Get dates from intent
         startDate = LocalDate.parse(intent.getStringExtra("start_date"))
         endDate = LocalDate.parse(intent.getStringExtra("end_date"))
+        
+        // Initialize export manager
+        exportManager = ExportManager(this)
         
         // Set up toolbar
         setSupportActionBar(binding.toolbar)
@@ -33,7 +40,7 @@ class ExportMethodActivity : AppCompatActivity() {
     }
     
     override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
+        finish()
         return true
     }
     
@@ -46,22 +53,34 @@ class ExportMethodActivity : AppCompatActivity() {
                 true
             ),
             ExportMethod(
+                "Save as CSV",
+                "Save CSV files to Downloads (spreadsheet compatible)",
+                "📊",
+                true
+            ),
+            ExportMethod(
                 "Share via Android",
-                "Share files using any installed app (email, messaging, cloud)",
+                "Share JSON files using any installed app",
                 "📤",
                 true
             ),
             ExportMethod(
+                "Share CSV",
+                "Share CSV files (spreadsheet compatible)",
+                "📈",
+                true
+            ),
+            ExportMethod(
                 "Email",
-                "Send files as email attachments",
+                "Send JSON files as email attachments",
                 "📧",
-                false
+                true
             ),
             ExportMethod(
                 "SMS/Text",
-                "Send file links via text message",
+                "Send JSON file links via text message",
                 "💬",
-                false
+                true
             ),
             ExportMethod(
                 "Slack",
@@ -78,7 +97,7 @@ class ExportMethodActivity : AppCompatActivity() {
             ExportMethod(
                 "Google Drive",
                 "Save to Google Drive",
-                "📊",
+                "📄",
                 false
             ),
             ExportMethod(
@@ -100,15 +119,397 @@ class ExportMethodActivity : AppCompatActivity() {
     private fun handleExportMethodClick(method: ExportMethod) {
         when (method.name) {
             "Save to Downloads" -> {
-                // TODO: Implement local file export
-                Toast.makeText(this, "Save to Downloads - Coming soon!", Toast.LENGTH_SHORT).show()
+                exportToDownloads()
+            }
+            "Save as CSV" -> {
+                exportCsvToDownloads()
             }
             "Share via Android" -> {
-                // TODO: Implement Android share
-                Toast.makeText(this, "Share via Android - Coming soon!", Toast.LENGTH_SHORT).show()
+                shareViaAndroid()
+            }
+            "Share CSV" -> {
+                shareCsvViaAndroid()
+            }
+            "Email" -> {
+                exportViaEmail()
+            }
+            "SMS/Text" -> {
+                exportViaSMS()
             }
             else -> {
                 Toast.makeText(this, "${method.name} - Coming in future update", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun exportToDownloads() {
+        lifecycleScope.launch {
+            // Show progress dialog
+            val progressDialog = AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("Exporting")
+                .setMessage("Saving files to Downloads...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+            
+            try {
+                when (val result = exportManager.exportToDownloads(startDate, endDate)) {
+                    is ExportResult.Success -> {
+                        progressDialog.dismiss()
+                        val fileCount = result.fileUris.size
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Complete")
+                            .setMessage("Successfully exported $fileCount file(s) to Downloads folder")
+                            .setPositiveButton("OK") { _, _ ->
+                                finish()
+                            }
+                            .show()
+                    }
+                    is ExportResult.NoData -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("No Data")
+                            .setMessage("No checkout records found for the selected date range")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    is ExportResult.Error -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    else -> {
+                        progressDialog.dismiss()
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                AlertDialog.Builder(this@ExportMethodActivity)
+                    .setTitle("Export Failed")
+                    .setMessage("An unexpected error occurred: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    private fun shareViaAndroid() {
+        lifecycleScope.launch {
+            // Show progress dialog
+            val progressDialog = AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("Preparing")
+                .setMessage("Preparing files for sharing...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+            
+            try {
+                when (val result = exportManager.exportViaShare(startDate, endDate)) {
+                    is ExportResult.ShareReady -> {
+                        progressDialog.dismiss()
+                        
+                        // Create and launch share intent
+                        val shareIntent = exportManager.createShareIntent(result.fileUris)
+                        val chooser = Intent.createChooser(shareIntent, "Share QR Checkout Data")
+                        startActivity(chooser)
+                        
+                        // Clean up temp files after a delay
+                        lifecycleScope.launch {
+                            kotlinx.coroutines.delay(5000) // Wait 5 seconds
+                            exportManager.cleanupTempFiles(result.tempFiles)
+                        }
+                        
+                        finish()
+                    }
+                    is ExportResult.NoData -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("No Data")
+                            .setMessage("No checkout records found for the selected date range")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    is ExportResult.Error -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    else -> {
+                        progressDialog.dismiss()
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                AlertDialog.Builder(this@ExportMethodActivity)
+                    .setTitle("Export Failed")
+                    .setMessage("An unexpected error occurred: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    private fun exportViaEmail() {
+        lifecycleScope.launch {
+            // Show progress dialog
+            val progressDialog = AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("Preparing Email")
+                .setMessage("Preparing files for email...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+            
+            try {
+                when (val result = exportManager.exportViaEmail(startDate, endDate)) {
+                    is ExportResult.EmailReady -> {
+                        progressDialog.dismiss()
+                        
+                        // Create and launch email intent
+                        val emailIntent = exportManager.createEmailIntent(result.emailData)
+                        val chooser = Intent.createChooser(emailIntent, "Send Email")
+                        startActivity(chooser)
+                        
+                        // Clean up temp files after a delay
+                        lifecycleScope.launch {
+                            kotlinx.coroutines.delay(5000) // Wait 5 seconds
+                            exportManager.cleanupTempFiles(result.emailData.tempFiles)
+                        }
+                        
+                        finish()
+                    }
+                    is ExportResult.NoData -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("No Data")
+                            .setMessage("No checkout records found for the selected date range")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    is ExportResult.Error -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    else -> {
+                        progressDialog.dismiss()
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                AlertDialog.Builder(this@ExportMethodActivity)
+                    .setTitle("Export Failed")
+                    .setMessage("An unexpected error occurred: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    private fun exportViaSMS() {
+        lifecycleScope.launch {
+            // Show warning dialog first
+            AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("SMS Export Notice")
+                .setMessage("File attachments via SMS/MMS may not work with all carriers or messaging apps. The files will be attached, but some recipients may not receive them.\n\nContinue anyway?")
+                .setPositiveButton("Continue") { _, _ ->
+                    // Proceed with SMS export
+                    performSMSExport()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+    
+    private fun performSMSExport() {
+        lifecycleScope.launch {
+            // Show progress dialog
+            val progressDialog = AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("Preparing SMS")
+                .setMessage("Preparing files for SMS...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+            
+            try {
+                when (val result = exportManager.exportViaSMS(startDate, endDate)) {
+                    is ExportResult.SMSReady -> {
+                        progressDialog.dismiss()
+                        
+                        // Create and launch SMS intent
+                        val smsIntent = exportManager.createSMSIntent(result.smsData)
+                        val chooser = Intent.createChooser(smsIntent, "Send via SMS/MMS")
+                        startActivity(chooser)
+                        
+                        // Clean up temp files after a delay
+                        lifecycleScope.launch {
+                            kotlinx.coroutines.delay(5000) // Wait 5 seconds
+                            exportManager.cleanupTempFiles(result.smsData.tempFiles)
+                        }
+                        
+                        finish()
+                    }
+                    is ExportResult.NoData -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("No Data")
+                            .setMessage("No checkout records found for the selected date range")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    is ExportResult.Error -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    else -> {
+                        progressDialog.dismiss()
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                AlertDialog.Builder(this@ExportMethodActivity)
+                    .setTitle("Export Failed")
+                    .setMessage("An unexpected error occurred: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    private fun exportCsvToDownloads() {
+        lifecycleScope.launch {
+            // Show progress dialog
+            val progressDialog = AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("Exporting CSV")
+                .setMessage("Saving CSV files to Downloads...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+            
+            try {
+                when (val result = exportManager.exportCsvToDownloads(startDate, endDate)) {
+                    is ExportResult.Success -> {
+                        progressDialog.dismiss()
+                        val fileCount = result.fileUris.size
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Complete")
+                            .setMessage("Successfully exported $fileCount CSV file(s) to Downloads folder")
+                            .setPositiveButton("OK") { _, _ ->
+                                finish()
+                            }
+                            .show()
+                    }
+                    is ExportResult.NoData -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("No Data")
+                            .setMessage("No checkout records found for the selected date range")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    is ExportResult.Error -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    else -> {
+                        progressDialog.dismiss()
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                AlertDialog.Builder(this@ExportMethodActivity)
+                    .setTitle("Export Failed")
+                    .setMessage("An unexpected error occurred: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    private fun shareCsvViaAndroid() {
+        lifecycleScope.launch {
+            // Show progress dialog
+            val progressDialog = AlertDialog.Builder(this@ExportMethodActivity)
+                .setTitle("Preparing CSV")
+                .setMessage("Preparing CSV files for sharing...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+            
+            try {
+                when (val result = exportManager.exportCsvViaShare(startDate, endDate)) {
+                    is ExportResult.ShareReady -> {
+                        progressDialog.dismiss()
+                        
+                        // Create share intent with CSV mime type
+                        val shareIntent = if (result.fileUris.size == 1) {
+                            Intent(Intent.ACTION_SEND).apply {
+                                type = result.mimeType
+                                putExtra(Intent.EXTRA_STREAM, result.fileUris[0])
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                        } else {
+                            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                                type = result.mimeType
+                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(result.fileUris))
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                        }
+                        
+                        val chooser = Intent.createChooser(shareIntent, "Share CSV Data")
+                        startActivity(chooser)
+                        
+                        // Clean up temp files after a delay
+                        lifecycleScope.launch {
+                            kotlinx.coroutines.delay(5000) // Wait 5 seconds
+                            exportManager.cleanupTempFiles(result.tempFiles)
+                        }
+                        
+                        finish()
+                    }
+                    is ExportResult.NoData -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("No Data")
+                            .setMessage("No checkout records found for the selected date range")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    is ExportResult.Error -> {
+                        progressDialog.dismiss()
+                        AlertDialog.Builder(this@ExportMethodActivity)
+                            .setTitle("Export Failed")
+                            .setMessage(result.message)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                    else -> {
+                        progressDialog.dismiss()
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                AlertDialog.Builder(this@ExportMethodActivity)
+                    .setTitle("Export Failed")
+                    .setMessage("An unexpected error occurred: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
             }
         }
     }

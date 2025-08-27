@@ -9,4 +9,11 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+    
+    <!-- Additional colors for layouts -->
+    <color name="primary">#FF6200EE</color>
+    <color name="background">#FFFFFFFF</color>
+    
+    <!-- Scan feedback colors -->
+    <color name="scan_failure_flash">#FFFF0000</color>
 </resources>

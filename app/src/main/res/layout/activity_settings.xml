@@ -43,6 +43,9 @@
                 android:layout_marginBottom="16dp"
                 android:hint="Location ID *"
                 app:helperText="e.g., Site-A, Base-Camp-1, North-Pilot"
+                app:helperTextTextColor="?attr/colorOnSurface"
+                app:hintTextColor="?attr/colorOnSurfaceVariant"
+                app:boxStrokeColor="?attr/colorPrimary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -50,6 +53,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
+                    android:textColor="?attr/colorOnSurface"
                     android:maxLines="1" />
 
             </com.google.android.material.textfield.TextInputLayout>
@@ -62,6 +66,9 @@
                 android:layout_marginBottom="24dp"
                 android:hint="Device Name (Optional)"
                 app:helperText="For display purposes only"
+                app:helperTextTextColor="?attr/colorOnSurface"
+                app:hintTextColor="?attr/colorOnSurfaceVariant"
+                app:boxStrokeColor="?attr/colorPrimary"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -69,6 +76,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
+                    android:textColor="?attr/colorOnSurface"
                     android:maxLines="1" />
 
             </com.google.android.material.textfield.TextInputLayout>
@@ -88,7 +96,7 @@
                 android:layout_height="wrap_content"
                 android:text="Additional export options (Slack, S3, etc.) will be added here in future updates"
                 android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="24dp" />
 
         </LinearLayout>

@@ -158,11 +158,24 @@ This document tracks future feature ideas, enhancements, and updates for conside
 - Bulk Scanning Mode
 - User Authentication
 
-### Future Minor Release (1.5.0)
+### Future Minor Release (1.5.0) ✅ COMPLETED
+- File Export Options (JSON format)
+- Date range selection
+- Save to Downloads
+- Share via Android Intent
+- Location-aware file naming
+
+### Future Minor Release (1.5.1) ✅ COMPLETED
+- Email Export with professional formatting
+- SMS/MMS Export with file attachments
+- Pre-filled email subjects and body content
+- Warning dialog for SMS attachment limitations
+
+### Future Minor Release (1.6.0)
 - Analytics Dashboard
 - Advanced reporting features
 
-### Future Minor Release (1.6.0)
+### Future Minor Release (1.7.0)
 - S3 Bucket Integration
 - Google Drive Integration
 - Advanced retry logic
@@ -262,9 +275,26 @@ This document tracks future feature ideas, enhancements, and updates for conside
 - Consider pilot community input before major changes
 - **Field Testing**: Test export workflows in various connectivity scenarios
 
+## 🧹 Code Cleanup & Maintenance
+
+### Minor Issues (Next Update)
+- **Unused Variable Warning**: Fix unused `locationId` variable in MainActivity.kt:176
+  - Type: Code cleanup (no functional impact)
+  - Impact: Eliminates compiler warning
+  - Effort: Minimal
+
+### Completed Fixes
+- ✅ **Theming Issues Fixed**: 
+  - Fixed hardcoded colors in export dialog (black text invisible in dark mode)
+  - Fixed hardcoded colors in settings screen (gray text hard to read on white)
+  - Replaced with theme-aware colors (`?attr/colorOnSurface`, `?attr/colorOnSurfaceVariant`)
+
 ## 📅 Last Updated
-August 26, 2025 - Updated priorities based on user feedback:
-- Prioritized: File Export Options, Offline Mode, Barcode Support for next releases
+August 27, 2025 - Updated priorities based on user feedback:
+- ✅ COMPLETED v1.5.0: File Export Options (Phase 2) - JSON export with date range selection, save to Downloads, share via Android
+- ✅ COMPLETED v1.5.1: Email and SMS/MMS export options with proper formatting and attachments
+- ✅ Fixed theming issues for better dark mode support
+- Prioritized: Offline Mode, Barcode Support for next releases
 - Long-term: Cross-Platform Development (iOS + tablet support)
 - Restructured version planning strategy through v2.0.0
 

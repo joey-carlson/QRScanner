@@ -32,6 +32,9 @@ class ScanViewModel(
     private val _scanSuccess = MutableStateFlow(false)
     val scanSuccess: StateFlow<Boolean> = _scanSuccess.asStateFlow()
     
+    private val _scanFailure = MutableStateFlow(false)
+    val scanFailure: StateFlow<Boolean> = _scanFailure.asStateFlow()
+    
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
     
@@ -41,6 +44,7 @@ class ScanViewModel(
         // Simple validation for barcode data
         if (!isValidBarcodeData(trimmedData)) {
             _statusMessage.value = "Invalid barcode format"
+            _scanFailure.value = true
             return
         }
         

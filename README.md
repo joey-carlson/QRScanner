@@ -1,16 +1,21 @@
-# QR Scanner - Kit Checkout System
+# QR Scanner - Kit Checkout System v1.5.3
 
-An Android application for scanning QR codes to track user-kit checkouts. The app allows scanning user and kit QR codes in any order and automatically writes checkout records to a local JSON file.
+An Android application for scanning QR codes to track user-kit checkouts. The app allows scanning user and kit QR codes in any order and automatically writes checkout records to local JSON or CSV files.
 
 ## Features
 
 - **Dual QR Code Scanning**: Scan user and kit QR codes in any order
 - **Real-time Camera Preview**: Live camera feed with scan overlay
 - **Instant Checkout Processing**: Auto-commit checkouts without confirmation tap
-- **Visual Feedback**: Clear status messages and visual confirmation after each scan
+- **Enhanced Visual Feedback**: 
+  - White flash for successful scans
+  - Red flash for invalid barcode formats
+  - Clear status messages and visual confirmation
 - **Local JSON Storage**: Compact JSON format for checkout records
 - **Alphanumeric QR Support**: Handles alphanumeric user and kit identifiers
-- **1-Second Write Target**: Optimized for quick successive scans
+- **1D Barcode Support**: Code 128, Code 39, UPC, EAN formats
+- **Export System**: Export checkout data with date range selection
+- **Settings Configuration**: Location ID and device name management
 
 ## JSON Data Format
 
@@ -78,12 +83,27 @@ The app stores checkout records in `checkouts.json` with the following compact f
 
 1. **Launch the App**: Tap the QR Scanner icon
 2. **Grant Camera Permission**: Allow camera access when prompted
-3. **Scan QR Codes**: Point camera at QR codes in any order:
+3. **Configure Settings**: Set your Location ID (required for exports)
+4. **Scan QR Codes**: Point camera at QR codes in any order:
    - User QR codes (starting with "U" or "USER")
    - Kit QR codes (any other alphanumeric format)
-4. **Automatic Checkout**: App automatically saves when both codes are scanned
-5. **Visual Confirmation**: Status message shows successful checkout
-6. **Clear State**: Use "Clear" button to reset if needed
+5. **Automatic Checkout**: App automatically saves when both codes are scanned
+6. **Visual Confirmation**: Status message shows successful checkout
+7. **Clear State**: Use "Clear" button to reset if needed
+
+## Export Functionality
+
+- **Date Range Selection**: Choose start and end dates for export
+- **Export Methods Available**:
+  - Save to Downloads folder (JSON or CSV)
+  - Share via Android apps (Email, Slack, etc.)
+- **File Formats**: 
+  - **JSON**: Compact format for database import
+  - **CSV**: Spreadsheet-compatible format (User, Kit, Timestamp, Location)
+- **File Naming**: Location-aware naming convention
+  - JSON: `qr_checkouts_08-27-25_Site-A.json`
+  - CSV: `qr_checkouts_08-27-25_Site-A.csv`
+- **Multi-day Exports**: Generates separate files for each day in range
 
 ## QR Code Format
 

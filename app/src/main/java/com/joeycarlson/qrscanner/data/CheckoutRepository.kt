@@ -230,4 +230,78 @@ class CheckoutRepository(private val context: Context) {
     suspend fun getAllCheckouts(): List<CheckoutRecord> = withContext(Dispatchers.IO) {
         loadExistingRecords()
     }
+    
+    suspend fun getRecordsForDate(date: LocalDate): List<CheckoutRecord> = withContext(Dispatchers.IO) {
+        try {
+            val formatter = DateTimeFormatter.ofPattern("MM-dd-yy")
+            val locationId = prefs.getString("location_id", "unknown")
+            
+            // Build filename for the specific date
+            val fileName = if (!locationId.isNullOrEmpty() && locationId != "unknown") {
+                "qr_checkouts_${date.format(formatter)}_${locationId}.json"
+            } else {
+                "qr_checkouts_${date.format(formatter)}.json"
+            }
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Load from MediaStore for Android 10+
+                loadFromMediaStoreByFileName(fileName)
+            } else {
+                // Load from direct file access for older Android
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val dataFile = File(downloadsDir, fileName)
+                
+                if (!dataFile.exists()) {
+                    return@withContext emptyList()
+                }
+                
+                FileReader(dataFile).use { reader ->
+                    val type = object : TypeToken<List<CheckoutRecord>>() {}.type
+                    gson.fromJson(reader, type) ?: emptyList()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+    
+    private fun loadFromMediaStoreByFileName(fileName: String): List<CheckoutRecord> {
+        return try {
+            val projection = arrayOf(
+                MediaStore.MediaColumns._ID,
+                MediaStore.MediaColumns.DISPLAY_NAME
+            )
+            
+            val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+            val selectionArgs = arrayOf(fileName)
+            
+            val resolver = context.contentResolver
+            resolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                projection,
+                selection,
+                selectionArgs,
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                    val id = cursor.getLong(idColumn)
+                    val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI.buildUpon()
+                        .appendPath(id.toString()).build()
+                    
+                    resolver.openInputStream(uri)?.use { inputStream ->
+                        val jsonContent = inputStream.bufferedReader().use { it.readText() }
+                        val type = object : TypeToken<List<CheckoutRecord>>() {}.type
+                        gson.fromJson(jsonContent, type) ?: emptyList()
+                    } ?: emptyList()
+                } else {
+                    emptyList()
+                }
+            } ?: emptyList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
 }

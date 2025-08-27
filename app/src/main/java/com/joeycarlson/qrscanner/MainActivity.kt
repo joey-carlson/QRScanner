@@ -27,8 +27,12 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.joeycarlson.qrscanner.data.CheckoutRepository
 import com.joeycarlson.qrscanner.databinding.ActivityMainBinding
+import com.joeycarlson.qrscanner.export.ExportActivity
+import com.joeycarlson.qrscanner.ui.DialogUtils
+import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.ui.ScanViewModel
 import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
+import com.joeycarlson.qrscanner.util.Constants
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -38,8 +42,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: ScanViewModel
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var barcodeScanner: BarcodeScanner
+    private lateinit var hapticManager: HapticManager
     
-    private var imageCapture: ImageCapture? = null
     private var imageAnalyzer: ImageAnalysis? = null
     
     private val requestCameraPermissionLauncher = registerForActivityResult(
@@ -88,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         val factory = ScanViewModelFactory(application, repository)
         viewModel = ViewModelProvider(this, factory)[ScanViewModel::class.java]
         cameraExecutor = Executors.newSingleThreadExecutor()
+        hapticManager = HapticManager(this)
         
         // Initialize ML Kit barcode scanner with support for QR codes and common 1D barcodes
         val options = BarcodeScannerOptions.Builder()
@@ -145,6 +150,15 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Collect scan failure events
+                launch {
+                    viewModel.scanFailure.collect { failure ->
+                        if (failure) {
+                            triggerFailureFlash()
+                        }
+                    }
+                }
             }
         }
     }
@@ -152,16 +166,39 @@ class MainActivity : AppCompatActivity() {
     private fun triggerFlashAnimation() {
         binding.flashOverlay.visibility = View.VISIBLE
         binding.flashOverlay.alpha = 0f
+        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, R.color.white))
         
-        // Longer, more noticeable flash: 600ms with stronger visibility
+        // Trigger success haptic feedback - single light tap
+        hapticManager.performSuccessHaptic()
+        
+        // Longer, more noticeable flash with stronger visibility
         val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
-        flashAnimator.duration = 600 // 600ms flash (doubled duration)
+        flashAnimator.duration = Constants.FLASH_ANIMATION_DURATION
         flashAnimator.start()
         
         // Hide the overlay after animation
         binding.flashOverlay.postDelayed({
             binding.flashOverlay.visibility = View.GONE
-        }, 600)
+        }, Constants.FLASH_ANIMATION_DURATION)
+    }
+    
+    private fun triggerFailureFlash() {
+        binding.flashOverlay.visibility = View.VISIBLE
+        binding.flashOverlay.alpha = 0f
+        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, R.color.scan_failure_flash))
+        
+        // Trigger failure haptic feedback - double buzz pattern
+        hapticManager.performFailureHaptic()
+        
+        // Red flash for failure with strong visibility
+        val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
+        flashAnimator.duration = Constants.FLASH_ANIMATION_DURATION
+        flashAnimator.start()
+        
+        // Hide the overlay after animation
+        binding.flashOverlay.postDelayed({
+            binding.flashOverlay.visibility = View.GONE
+        }, Constants.FLASH_ANIMATION_DURATION)
     }
     
     private fun setupClickListeners() {
@@ -170,10 +207,6 @@ class MainActivity : AppCompatActivity() {
         }
         
         binding.settingsButton.setOnClickListener {
-            // Check if location ID is configured
-            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            val locationId = prefs.getString("location_id", "")
-            
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
@@ -194,8 +227,8 @@ class MainActivity : AppCompatActivity() {
                     .setNegativeButton("Cancel", null)
                     .show()
             } else {
-                // TODO: Open export options
-                Toast.makeText(this, "Export functionality coming soon", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, ExportActivity::class.java)
+                startActivity(intent)
             }
         }
     }
