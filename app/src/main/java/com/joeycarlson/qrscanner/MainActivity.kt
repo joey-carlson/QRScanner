@@ -159,6 +159,17 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Collect undo button visibility
+                launch {
+                    viewModel.showUndoButton.collect { showUndo ->
+                        binding.undoButton.visibility = if (showUndo) {
+                            View.VISIBLE
+                        } else {
+                            View.GONE
+                        }
+                    }
+                }
             }
         }
     }
@@ -204,6 +215,16 @@ class MainActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
+        }
+        
+        binding.undoButton.setOnClickListener {
+            DialogUtils.showWarningDialog(
+                this,
+                "Confirm Undo",
+                "Are you sure you want to undo the last checkout?"
+            ) {
+                viewModel.undoLastCheckout()
+            }
         }
         
         binding.settingsButton.setOnClickListener {

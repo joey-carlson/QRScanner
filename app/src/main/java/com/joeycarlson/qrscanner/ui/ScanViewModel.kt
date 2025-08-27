@@ -4,10 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.joeycarlson.qrscanner.data.CheckoutRepository
+import com.joeycarlson.qrscanner.util.Constants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 enum class ScanState {
     IDLE,           // Ready to scan either user or kit
@@ -35,8 +37,14 @@ class ScanViewModel(
     private val _scanFailure = MutableStateFlow(false)
     val scanFailure: StateFlow<Boolean> = _scanFailure.asStateFlow()
     
+    private val _showUndoButton = MutableStateFlow(false)
+    val showUndoButton: StateFlow<Boolean> = _showUndoButton.asStateFlow()
+    
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
+    private var lastCheckoutUserId: String? = null
+    private var lastCheckoutKitId: String? = null
+    private var undoTimerJob: Job? = null
     
     fun processBarcode(barcodeData: String) {
         val trimmedData = barcodeData.trim()
@@ -136,6 +144,11 @@ class ScanViewModel(
                 val success = repository.saveCheckout(userId, kitId)
                 if (success) {
                     _statusMessage.value = "✓ User $userId checked out kit $kitId"
+                    
+                    // Store checkout info for undo and show undo button
+                    lastCheckoutUserId = userId
+                    lastCheckoutKitId = kitId
+                    showUndoButtonWithTimer()
                 } else {
                     _statusMessage.value = "✗ Failed to save checkout"
                 }
@@ -212,7 +225,54 @@ class ScanViewModel(
         }
     }
     
+    private fun showUndoButtonWithTimer() {
+        // Cancel any existing timer
+        undoTimerJob?.cancel()
+        
+        // Show undo button
+        _showUndoButton.value = true
+        
+        // Start timer to hide button after timeout
+        undoTimerJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(Constants.UNDO_BUTTON_TIMEOUT)
+            hideUndoButton()
+        }
+    }
+    
+    private fun hideUndoButton() {
+        _showUndoButton.value = false
+        lastCheckoutUserId = null
+        lastCheckoutKitId = null
+        undoTimerJob?.cancel()
+        undoTimerJob = null
+    }
+    
+    fun undoLastCheckout() {
+        val userId = lastCheckoutUserId
+        val kitId = lastCheckoutKitId
+        
+        if (userId != null && kitId != null) {
+            viewModelScope.launch {
+                val success = repository.deleteLastCheckout()
+                if (success) {
+                    _statusMessage.value = "✓ Undid checkout: User $userId / Kit $kitId"
+                    hideUndoButton()
+                    
+                    // Reset state after brief delay
+                    kotlinx.coroutines.delay(2000)
+                    resetScanState()
+                } else {
+                    _statusMessage.value = "✗ Failed to undo checkout"
+                    hideUndoButton()
+                }
+            }
+        } else {
+            hideUndoButton()
+        }
+    }
+    
     fun clearState() {
+        hideUndoButton()
         resetScanState()
     }
 }
