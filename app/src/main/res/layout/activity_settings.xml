@@ -103,6 +103,18 @@
 
     </ScrollView>
 
+    <!-- Version Info -->
+    <TextView
+        android:id="@+id/versionText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Version loading..."
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp" />
+
     <!-- Save Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/saveButton"

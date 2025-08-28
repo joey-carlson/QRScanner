@@ -1,5 +1,6 @@
 package com.joeycarlson.qrscanner
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +26,9 @@ class SettingsActivity : AppCompatActivity() {
         
         // Load saved settings
         loadSettings()
+        
+        // Display version information
+        displayVersionInfo()
         
         // Set up save button
         binding.saveButton.setOnClickListener {
@@ -77,5 +81,22 @@ class SettingsActivity : AppCompatActivity() {
         
         Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
         finish()
+    }
+    
+    private fun displayVersionInfo() {
+        try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            val versionName = packageInfo.versionName
+            val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+            
+            binding.versionText.text = "Version $versionName (Build $versionCode)"
+        } catch (e: PackageManager.NameNotFoundException) {
+            binding.versionText.text = "Version information unavailable"
+        }
     }
 }
