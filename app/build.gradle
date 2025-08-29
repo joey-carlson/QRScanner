@@ -45,7 +45,7 @@ android {
     }
 }
 
-// Task to copy APK folders to WorkDocs shared location
+// Task to copy APK folders and documentation to WorkDocs shared location
 task copyApksToSharedLocation(type: Copy) {
     // Capture values during configuration time
     def versionName = android.defaultConfig.versionName
@@ -62,11 +62,66 @@ task copyApksToSharedLocation(type: Copy) {
     doFirst {
         println "Creating version directory: ${destinationDir.absolutePath}"
         destinationDir.mkdirs()
-        println "Copying APKs to: ${destinationDir.absolutePath}"
+        println "Copying APKs and documentation to: ${destinationDir.absolutePath}"
     }
     
     doLast {
         println "APK copy completed to: ${destinationDir.absolutePath}"
+        
+        // Copy documentation files to the version directory
+        def readmeSource = new File("${project.rootDir}/README.md")
+        def changelogSource = new File("${project.rootDir}/CHANGELOG.md")
+        
+        if (readmeSource.exists()) {
+            def readmeDestination = new File(destinationDir, "README.md")
+            readmeDestination.text = readmeSource.text
+            println "Copied README.md to: ${readmeDestination.absolutePath}"
+        } else {
+            println "Warning: README.md not found at ${readmeSource.absolutePath}"
+        }
+        
+        if (changelogSource.exists()) {
+            def changelogDestination = new File(destinationDir, "CHANGELOG.md")
+            changelogDestination.text = changelogSource.text
+            println "Copied CHANGELOG.md to: ${changelogDestination.absolutePath}"
+        } else {
+            println "Warning: CHANGELOG.md not found at ${changelogSource.absolutePath}"
+        }
+        
+        // Create a build info file with metadata
+        def buildInfoFile = new File(destinationDir, "BUILD_INFO.txt")
+        buildInfoFile.text = """PilotScanner Build Information
+
+Version: ${versionName}
+Build: ${versionCode}
+Build Date: ${new Date().format('yyyy-MM-dd HH:mm:ss')}
+Build Type: ${project.android.defaultConfig.buildType ?: 'debug'}
+Git Commit: ${getGitCommitHash()}
+
+Files in this directory:
+- APK files (debug and/or release builds)
+- README.md (project documentation)
+- CHANGELOG.md (version history)
+- BUILD_INFO.txt (this file)
+
+For the latest version, visit:
+https://github.com/joey-carlson/QRScanner
+"""
+        println "Created BUILD_INFO.txt with build metadata"
+    }
+}
+
+// Helper function to get current Git commit hash
+def getGitCommitHash() {
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-parse', '--short', 'HEAD'
+            standardOutput = stdout
+        }
+        return stdout.toString().trim()
+    } catch (Exception e) {
+        return "unknown"
     }
 }
 

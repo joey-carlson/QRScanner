@@ -1,7 +1,5 @@
 package com.joeycarlson.qrscanner.config
 
-import com.joeycarlson.qrscanner.BuildConfig
-
 /**
  * Centralized application configuration object.
  * Contains all app-wide constants, settings, and build-specific configurations.
@@ -10,13 +8,33 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    val VERSION_NAME: String = BuildConfig.VERSION_NAME
-    val VERSION_CODE: Int = BuildConfig.VERSION_CODE
-    val BUILD_TYPE: String = BuildConfig.BUILD_TYPE
-    val DEBUG: Boolean = BuildConfig.DEBUG
+    const val VERSION_NAME = "1.7.0"
+    const val VERSION_CODE = 16
+    const val APPLICATION_ID = "com.joeycarlson.qrscanner"
+    
+    // Build configuration - will be set dynamically when BuildConfig is available
+    val DEBUG: Boolean by lazy {
+        try {
+            Class.forName("com.joeycarlson.qrscanner.BuildConfig")
+                .getDeclaredField("DEBUG")
+                .getBoolean(null)
+        } catch (e: Exception) {
+            false // Default to release mode if BuildConfig not available
+        }
+    }
+    
+    val BUILD_TYPE: String by lazy {
+        try {
+            Class.forName("com.joeycarlson.qrscanner.BuildConfig")
+                .getDeclaredField("BUILD_TYPE")
+                .get(null) as String
+        } catch (e: Exception) {
+            "release" // Default to release
+        }
+    }
     
     // File Provider
-    val FILE_PROVIDER_AUTHORITY: String = "${BuildConfig.APPLICATION_ID}.fileprovider"
+    const val FILE_PROVIDER_AUTHORITY = "com.joeycarlson.qrscanner.fileprovider"
     
     // Animation Durations (milliseconds)
     const val FLASH_ANIMATION_DURATION = 600L
