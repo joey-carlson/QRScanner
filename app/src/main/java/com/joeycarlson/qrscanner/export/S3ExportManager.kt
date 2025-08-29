@@ -150,8 +150,10 @@ class S3ExportManager(private val context: Context) {
     
     /**
      * Create S3 client with configured credentials
-     * Using ClientConfiguration to avoid deprecated constructor
+     * Note: All AmazonS3Client constructors are deprecated in AWS Android SDK
+     * but there's no alternative for Android SDK v2.x
      */
+    @Suppress("DEPRECATION")
     private fun createS3Client(): AmazonS3? {
         return try {
             val credentials = s3Configuration.getCredentials() ?: return null
