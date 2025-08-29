@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2025-08-29
+### Added
+- **Centralized File Operations Manager**
+  - New `FileManager` class for all file operations across the app
+  - Android version compatibility handling (MediaStore vs direct file access)
+  - Consistent error handling with `FileResult<T>` wrapper
+  - Batch file operations for multiple files
+  - File validation and sanitization utilities
+  - Unique filename generation to prevent conflicts
+  - Storage space checking and external storage validation
+  - Comprehensive file cleanup and management utilities
+
+### Technical
+- Version bumped to 1.7.1 (Build 17) for FileManager implementation
+- Foundation for refactoring ExportManager and CheckoutRepository
+- Enhanced file security with validation and sanitization
+- Improved error handling and debugging capabilities
+- Preparation for export strategy pattern implementation
+
 ## [1.7.0] - 2025-08-29
 ### Added
 - **Centralized Configuration Management System**

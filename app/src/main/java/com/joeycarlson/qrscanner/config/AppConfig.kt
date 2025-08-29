@@ -8,8 +8,8 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    const val VERSION_NAME = "1.7.0"
-    const val VERSION_CODE = 16
+    const val VERSION_NAME = "1.7.1"
+    const val VERSION_CODE = 17
     const val APPLICATION_ID = "com.joeycarlson.qrscanner"
     
     // Build configuration - will be set dynamically when BuildConfig is available
@@ -66,6 +66,11 @@ object AppConfig {
     
     // Cache Directory Names
     const val EXPORTS_CACHE_DIR = "exports"
+    const val TEMP_EXPORT_DIR = "exports"
+    
+    // File Management
+    const val MAX_FILENAME_LENGTH = 255
+    const val MAX_FILE_VARIANTS = 100
     
     // Haptic Feedback Parameters
     const val HAPTIC_SUCCESS_DURATION = 50L
