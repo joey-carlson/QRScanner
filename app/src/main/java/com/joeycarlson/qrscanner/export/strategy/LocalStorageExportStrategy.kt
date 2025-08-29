@@ -39,7 +39,11 @@ class LocalStorageExportStrategy(
                 if (dateRecords.isNotEmpty()) {
                     // Validate file size for this date
                     validateFileSize(dateRecords, format)?.let { error ->
-                        errors.add("$date: ${error.message}")
+                        val errorMessage = when (error) {
+                            is ExportResult.Error -> error.message
+                            else -> "File size validation failed"
+                        }
+                        errors.add("$date: $errorMessage")
                         return@forEach
                     }
                     
@@ -116,10 +120,10 @@ class LocalStorageExportStrategy(
     
     override fun getIconResId(): Int {
         return when (format) {
-            ExportFormat.JSON -> R.drawable.ic_download // You'll need to add these icons
-            ExportFormat.CSV -> R.drawable.ic_table
-            ExportFormat.XML -> R.drawable.ic_code
-            ExportFormat.TXT -> R.drawable.ic_text_file
+            ExportFormat.JSON -> android.R.drawable.stat_sys_download
+            ExportFormat.CSV -> android.R.drawable.ic_menu_save
+            ExportFormat.XML -> android.R.drawable.ic_menu_save
+            ExportFormat.TXT -> android.R.drawable.ic_menu_save
         }
     }
     

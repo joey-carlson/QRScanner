@@ -39,7 +39,11 @@ class ShareExportStrategy(
                 if (dateRecords.isNotEmpty()) {
                     // Validate file size for this date
                     validateFileSize(dateRecords, format)?.let { error ->
-                        errors.add("$date: ${error.message}")
+                        val errorMessage = when (error) {
+                            is ExportResult.Error -> error.message
+                            else -> "File size validation failed"
+                        }
+                        errors.add("$date: $errorMessage")
                         return@forEach
                     }
                     
@@ -128,12 +132,7 @@ class ShareExportStrategy(
     }
     
     override fun getIconResId(): Int {
-        return when (format) {
-            ExportFormat.JSON -> R.drawable.ic_share
-            ExportFormat.CSV -> R.drawable.ic_share
-            ExportFormat.XML -> R.drawable.ic_share
-            ExportFormat.TXT -> R.drawable.ic_share
-        }
+        return android.R.drawable.ic_menu_share
     }
     
     override fun requiresNetwork(): Boolean = false // Network requirement depends on chosen sharing app

@@ -8,8 +8,8 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    const val VERSION_NAME = "1.7.2"
-    const val VERSION_CODE = 18
+    const val VERSION_NAME = "1.7.3"
+    const val VERSION_CODE = 19
     const val APPLICATION_ID = "com.joeycarlson.qrscanner"
     
     // Build configuration - will be set dynamically when BuildConfig is available
@@ -111,5 +111,29 @@ object AppConfig {
         const val SCAN_OVERLAY_ALPHA = 0.8f
         const val FLASH_OVERLAY_ALPHA = 0.8f
         const val CONFIRMATION_OVERLAY_ALPHA = 1.0f
+    }
+    
+    // Dialog Titles
+    object DialogTitles {
+        const val EXPORT_COMPLETE = "Export Complete"
+        const val EXPORT_FAILED = "Export Failed"
+        const val SMS_EXPORT_NOTICE = "SMS Export Notice"
+    }
+    
+    // Messages
+    object Messages {
+        const val UNEXPECTED_ERROR = "An unexpected error occurred"
+        const val SMS_WARNING = "SMS messages have size limits. Large files may not send properly."
+    }
+    
+    // Progress Messages
+    object ProgressMessages {
+        const val EXPORTING = "Exporting..."
+        const val SAVING_TO_DOWNLOADS = "Saving files to Downloads folder..."
+        const val PREPARING_FOR_SHARING = "Preparing files for sharing..."
+        const val PREPARING_EMAIL = "Preparing email with attachments..."
+        const val PREPARING_SMS = "Preparing files for SMS..."
+        const val SAVING_CSV_TO_DOWNLOADS = "Saving CSV files to Downloads folder..."
+        const val PREPARING_CSV_FOR_SHARING = "Preparing CSV files for sharing..."
     }
 }

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2025-08-29
+
+### Changed
+- **Major Refactoring**: Refactored ExportManager (500+ lines) into focused, single-responsibility classes:
+  - `ExportCoordinator`: Main orchestration logic for exports
+  - `ContentGenerator`: Handles generation of JSON, CSV, XML, and TXT formats
+  - `FileNamingService`: Centralized filename generation and S3 key management
+  - `TempFileManager`: Manages temporary file operations and cleanup
+  - `IntentFactory`: Creates properly configured intents for sharing/email/SMS
+  - `ExportDataClasses`: Contains all data classes and sealed result types
+- Updated ExportMethodActivity to use new refactored classes
+- Fixed nullable type handling for CheckoutRecord fields (userId, kitId)
+- Added missing Constants references to AppConfig for dialog titles, messages, and progress messages
+
+### Fixed
+- Resolved compilation errors from duplicate data class declarations
+- Fixed exhaustive when expression by handling all ExportResult branches
+- Corrected nullable type mismatches in ContentGenerator
+
 ## [1.7.2] - 2025-08-29
 ### Added
 - **Export Strategy Pattern Implementation**

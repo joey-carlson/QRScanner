@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.joeycarlson.qrscanner.databinding.ActivityExportMethodBinding
 import com.joeycarlson.qrscanner.ui.DialogUtils
-import com.joeycarlson.qrscanner.util.Constants
+import com.joeycarlson.qrscanner.config.AppConfig
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -18,7 +18,9 @@ class ExportMethodActivity : AppCompatActivity() {
     private lateinit var binding: ActivityExportMethodBinding
     private lateinit var startDate: LocalDate
     private lateinit var endDate: LocalDate
-    private lateinit var exportManager: ExportManager
+    private lateinit var exportCoordinator: ExportCoordinator
+    private lateinit var intentFactory: IntentFactory
+    private lateinit var tempFileManager: TempFileManager
     private lateinit var s3ExportManager: S3ExportManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,8 +32,10 @@ class ExportMethodActivity : AppCompatActivity() {
         startDate = LocalDate.parse(intent.getStringExtra("start_date"))
         endDate = LocalDate.parse(intent.getStringExtra("end_date"))
         
-        // Initialize export managers
-        exportManager = ExportManager(this)
+        // Initialize export components
+        exportCoordinator = ExportCoordinator(this)
+        intentFactory = IntentFactory()
+        tempFileManager = TempFileManager(this)
         s3ExportManager = S3ExportManager(this)
         
         // Set up toolbar
@@ -171,7 +175,7 @@ class ExportMethodActivity : AppCompatActivity() {
                     val fileCount = result.fileUris.size
                     DialogUtils.showSuccessDialog(
                         this@ExportMethodActivity,
-                        Constants.DialogTitles.EXPORT_COMPLETE,
+                        AppConfig.DialogTitles.EXPORT_COMPLETE,
                         "Successfully exported $fileCount file(s)"
                     ) { finish() }
                 }
@@ -204,21 +208,29 @@ class ExportMethodActivity : AppCompatActivity() {
                     progressDialog.dismiss()
                     onSuccess(result)
                 }
+                is ExportResult.SlackSuccess -> {
+                    progressDialog.dismiss()
+                    onSuccess(result)
+                }
                 is ExportResult.NoData -> {
                     progressDialog.dismiss()
                     DialogUtils.showNoDataDialog(this)
                 }
                 is ExportResult.Error -> {
                     progressDialog.dismiss()
-                    DialogUtils.showErrorDialog(this, Constants.DialogTitles.EXPORT_FAILED, result.message)
+                    DialogUtils.showErrorDialog(this, AppConfig.DialogTitles.EXPORT_FAILED, result.message)
+                }
+                is ExportResult.Cancelled -> {
+                    progressDialog.dismiss()
+                    finish()
                 }
             }
         } catch (e: Exception) {
             progressDialog.dismiss()
             DialogUtils.showErrorDialog(
                 this,
-                Constants.DialogTitles.EXPORT_FAILED,
-                "${Constants.Messages.UNEXPECTED_ERROR}: ${e.message}"
+                AppConfig.DialogTitles.EXPORT_FAILED,
+                "${AppConfig.Messages.UNEXPECTED_ERROR}: ${e.message}"
             )
         }
     }
@@ -226,15 +238,15 @@ class ExportMethodActivity : AppCompatActivity() {
     private fun exportToDownloads() {
         lifecycleScope.launch {
             executeExportOperation(
-                Constants.ProgressMessages.EXPORTING,
-                Constants.ProgressMessages.SAVING_TO_DOWNLOADS,
-                { exportManager.exportToDownloads(startDate, endDate) }
+                AppConfig.ProgressMessages.EXPORTING,
+                AppConfig.ProgressMessages.SAVING_TO_DOWNLOADS,
+                { exportCoordinator.exportToDownloads(startDate, endDate, ExportFormat.JSON) }
             ) { result ->
                 if (result is ExportResult.Success) {
                     val fileCount = result.fileUris.size
                     DialogUtils.showSuccessDialog(
                         this@ExportMethodActivity,
-                        Constants.DialogTitles.EXPORT_COMPLETE,
+                        AppConfig.DialogTitles.EXPORT_COMPLETE,
                         "Successfully exported $fileCount file(s) to Downloads folder"
                     ) { finish() }
                 }
@@ -246,19 +258,19 @@ class ExportMethodActivity : AppCompatActivity() {
         lifecycleScope.launch {
             executeExportOperation(
                 "Preparing",
-                Constants.ProgressMessages.PREPARING_FOR_SHARING,
-                { exportManager.exportViaShare(startDate, endDate) }
+                AppConfig.ProgressMessages.PREPARING_FOR_SHARING,
+                { exportCoordinator.exportViaShare(startDate, endDate, ExportFormat.JSON) }
             ) { result ->
                 if (result is ExportResult.ShareReady) {
                     // Create and launch share intent
-                    val shareIntent = exportManager.createShareIntent(result.fileUris)
+                    val shareIntent = intentFactory.createShareIntent(result.fileUris, result.mimeType)
                     val chooser = Intent.createChooser(shareIntent, "Share QR Checkout Data")
                     startActivity(chooser)
                     
                     // Clean up temp files after a delay
                     lifecycleScope.launch {
-                        kotlinx.coroutines.delay(Constants.TEMP_FILE_CLEANUP_DELAY)
-                        exportManager.cleanupTempFiles(result.tempFiles)
+                        kotlinx.coroutines.delay(AppConfig.TEMP_FILE_CLEANUP_DELAY)
+                        tempFileManager.cleanupFiles(result.tempFiles)
                     }
                     
                     finish()
@@ -271,19 +283,19 @@ class ExportMethodActivity : AppCompatActivity() {
         lifecycleScope.launch {
             executeExportOperation(
                 "Preparing Email",
-                Constants.ProgressMessages.PREPARING_EMAIL,
-                { exportManager.exportViaEmail(startDate, endDate) }
+                AppConfig.ProgressMessages.PREPARING_EMAIL,
+                { exportCoordinator.exportViaEmail(startDate, endDate, ExportFormat.JSON) }
             ) { result ->
                 if (result is ExportResult.EmailReady) {
                     // Create and launch email intent
-                    val emailIntent = exportManager.createEmailIntent(result.emailData)
+                    val emailIntent = intentFactory.createEmailIntent(result.emailData)
                     val chooser = Intent.createChooser(emailIntent, "Send Email")
                     startActivity(chooser)
                     
                     // Clean up temp files after a delay
                     lifecycleScope.launch {
-                        kotlinx.coroutines.delay(Constants.TEMP_FILE_CLEANUP_DELAY)
-                        exportManager.cleanupTempFiles(result.emailData.tempFiles)
+                        kotlinx.coroutines.delay(AppConfig.TEMP_FILE_CLEANUP_DELAY)
+                        tempFileManager.cleanupFiles(result.emailData.tempFiles)
                     }
                     
                     finish()
@@ -296,8 +308,8 @@ class ExportMethodActivity : AppCompatActivity() {
         lifecycleScope.launch {
             DialogUtils.showWarningDialog(
                 this@ExportMethodActivity,
-                Constants.DialogTitles.SMS_EXPORT_NOTICE,
-                Constants.Messages.SMS_WARNING
+                AppConfig.DialogTitles.SMS_EXPORT_NOTICE,
+                AppConfig.Messages.SMS_WARNING
             ) {
                 performSMSExport()
             }
@@ -308,19 +320,19 @@ class ExportMethodActivity : AppCompatActivity() {
         lifecycleScope.launch {
             executeExportOperation(
                 "Preparing SMS",
-                Constants.ProgressMessages.PREPARING_SMS,
-                { exportManager.exportViaSMS(startDate, endDate) }
+                AppConfig.ProgressMessages.PREPARING_SMS,
+                { exportCoordinator.exportViaSMS(startDate, endDate, ExportFormat.JSON) }
             ) { result ->
                 if (result is ExportResult.SMSReady) {
                     // Create and launch SMS intent
-                    val smsIntent = exportManager.createSMSIntent(result.smsData)
+                    val smsIntent = intentFactory.createSMSIntent(result.smsData)
                     val chooser = Intent.createChooser(smsIntent, "Send via SMS/MMS")
                     startActivity(chooser)
                     
                     // Clean up temp files after a delay
                     lifecycleScope.launch {
-                        kotlinx.coroutines.delay(Constants.TEMP_FILE_CLEANUP_DELAY)
-                        exportManager.cleanupTempFiles(result.smsData.tempFiles)
+                        kotlinx.coroutines.delay(AppConfig.TEMP_FILE_CLEANUP_DELAY)
+                        tempFileManager.cleanupFiles(result.smsData.tempFiles)
                     }
                     
                     finish()
@@ -332,15 +344,15 @@ class ExportMethodActivity : AppCompatActivity() {
     private fun exportCsvToDownloads() {
         lifecycleScope.launch {
             executeExportOperation(
-                Constants.ProgressMessages.EXPORTING,
-                Constants.ProgressMessages.SAVING_CSV_TO_DOWNLOADS,
-                { exportManager.exportCsvToDownloads(startDate, endDate) }
+                AppConfig.ProgressMessages.EXPORTING,
+                AppConfig.ProgressMessages.SAVING_CSV_TO_DOWNLOADS,
+                { exportCoordinator.exportToDownloads(startDate, endDate, ExportFormat.CSV) }
             ) { result ->
                 if (result is ExportResult.Success) {
                     val fileCount = result.fileUris.size
                     DialogUtils.showSuccessDialog(
                         this@ExportMethodActivity,
-                        Constants.DialogTitles.EXPORT_COMPLETE,
+                        AppConfig.DialogTitles.EXPORT_COMPLETE,
                         "Successfully exported $fileCount CSV file(s) to Downloads folder"
                     ) { finish() }
                 }
@@ -352,32 +364,19 @@ class ExportMethodActivity : AppCompatActivity() {
         lifecycleScope.launch {
             executeExportOperation(
                 "Preparing CSV",
-                Constants.ProgressMessages.PREPARING_CSV_FOR_SHARING,
-                { exportManager.exportCsvViaShare(startDate, endDate) }
+                AppConfig.ProgressMessages.PREPARING_CSV_FOR_SHARING,
+                { exportCoordinator.exportViaShare(startDate, endDate, ExportFormat.CSV) }
             ) { result ->
                 if (result is ExportResult.ShareReady) {
-                    // Create share intent with CSV mime type
-                    val shareIntent = if (result.fileUris.size == 1) {
-                        Intent(Intent.ACTION_SEND).apply {
-                            type = result.mimeType
-                            putExtra(Intent.EXTRA_STREAM, result.fileUris[0])
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                    } else {
-                        Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                            type = result.mimeType
-                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(result.fileUris))
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                    }
-                    
+                    // Create and launch share intent
+                    val shareIntent = intentFactory.createShareIntent(result.fileUris, result.mimeType)
                     val chooser = Intent.createChooser(shareIntent, "Share CSV Data")
                     startActivity(chooser)
                     
                     // Clean up temp files after a delay
                     lifecycleScope.launch {
-                        kotlinx.coroutines.delay(Constants.TEMP_FILE_CLEANUP_DELAY)
-                        exportManager.cleanupTempFiles(result.tempFiles)
+                        kotlinx.coroutines.delay(AppConfig.TEMP_FILE_CLEANUP_DELAY)
+                        tempFileManager.cleanupFiles(result.tempFiles)
                     }
                     
                     finish()
