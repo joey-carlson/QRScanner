@@ -46,43 +46,26 @@ android {
 }
 
 // Task to copy APK folders to WorkDocs shared location
-task copyApksToSharedLocation {
-    doLast {
-        def versionName = android.defaultConfig.versionName
-        def versionCode = android.defaultConfig.versionCode
-        def timestamp = new Date().format('yyyy-MM-dd_HH-mm')
-        def versionFolder = "v${versionName}-${versionCode}_${timestamp}"
-        
-        def sharedPath = "/Users/joecrls/Library/CloudStorage/WorkDocsDrive-Documents/Joey's Scripts/PilotScanner"
-        def destinationDir = new File("${sharedPath}/${versionFolder}")
-        
+task copyApksToSharedLocation(type: Copy) {
+    // Capture values during configuration time
+    def versionName = android.defaultConfig.versionName
+    def versionCode = android.defaultConfig.versionCode
+    def timestamp = new Date().format('yyyy-MM-dd_HH-mm')
+    def versionFolder = "v${versionName}-${versionCode}_${timestamp}"
+    
+    def sharedPath = "/Users/joecrls/Library/CloudStorage/WorkDocsDrive-Documents/Joey's Scripts/PilotScanner"
+    def destinationDir = new File("${sharedPath}/${versionFolder}")
+    
+    from "${project.buildDir}/outputs/apk"
+    into destinationDir
+    
+    doFirst {
         println "Creating version directory: ${destinationDir.absolutePath}"
         destinationDir.mkdirs()
-        
-        def apkOutputDir = new File("${project.buildDir}/outputs/apk")
-        
-        // Copy debug folder if it exists
-        def debugDir = new File(apkOutputDir, "debug")
-        if (debugDir.exists() && debugDir.isDirectory()) {
-            def debugDestination = new File(destinationDir, "debug")
-            println "Copying debug APKs to: ${debugDestination.absolutePath}"
-            copy {
-                from debugDir
-                into debugDestination
-            }
-        }
-        
-        // Copy release folder if it exists
-        def releaseDir = new File(apkOutputDir, "release")
-        if (releaseDir.exists() && releaseDir.isDirectory()) {
-            def releaseDestination = new File(destinationDir, "release")
-            println "Copying release APKs to: ${releaseDestination.absolutePath}"
-            copy {
-                from releaseDir
-                into releaseDestination
-            }
-        }
-        
+        println "Copying APKs to: ${destinationDir.absolutePath}"
+    }
+    
+    doLast {
         println "APK copy completed to: ${destinationDir.absolutePath}"
     }
 }
