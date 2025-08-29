@@ -95,7 +95,7 @@ task copyApksToSharedLocation(type: Copy) {
 Version: ${versionName}
 Build: ${versionCode}
 Build Date: ${new Date().format('yyyy-MM-dd HH:mm:ss')}
-Build Type: ${project.android.defaultConfig.buildType ?: 'debug'}
+Build Types Available: debug, release
 Git Commit: ${getGitCommitHash()}
 
 Files in this directory:
