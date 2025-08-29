@@ -45,6 +45,58 @@ android {
     }
 }
 
+// Task to copy APK folders to WorkDocs shared location
+task copyApksToSharedLocation {
+    doLast {
+        def versionName = android.defaultConfig.versionName
+        def versionCode = android.defaultConfig.versionCode
+        def timestamp = new Date().format('yyyy-MM-dd_HH-mm')
+        def versionFolder = "v${versionName}-${versionCode}_${timestamp}"
+        
+        def sharedPath = "/Users/joecrls/Library/CloudStorage/WorkDocsDrive-Documents/Joey's Scripts/PilotScanner"
+        def destinationDir = new File("${sharedPath}/${versionFolder}")
+        
+        println "Creating version directory: ${destinationDir.absolutePath}"
+        destinationDir.mkdirs()
+        
+        def apkOutputDir = new File("${project.buildDir}/outputs/apk")
+        
+        // Copy debug folder if it exists
+        def debugDir = new File(apkOutputDir, "debug")
+        if (debugDir.exists() && debugDir.isDirectory()) {
+            def debugDestination = new File(destinationDir, "debug")
+            println "Copying debug APKs to: ${debugDestination.absolutePath}"
+            copy {
+                from debugDir
+                into debugDestination
+            }
+        }
+        
+        // Copy release folder if it exists
+        def releaseDir = new File(apkOutputDir, "release")
+        if (releaseDir.exists() && releaseDir.isDirectory()) {
+            def releaseDestination = new File(destinationDir, "release")
+            println "Copying release APKs to: ${releaseDestination.absolutePath}"
+            copy {
+                from releaseDir
+                into releaseDestination
+            }
+        }
+        
+        println "APK copy completed to: ${destinationDir.absolutePath}"
+    }
+}
+
+// Automatically run copy task after successful builds
+afterEvaluate {
+    tasks.matching { it.name == 'assembleDebug' }.all { task ->
+        task.finalizedBy copyApksToSharedLocation
+    }
+    tasks.matching { it.name == 'assembleRelease' }.all { task ->
+        task.finalizedBy copyApksToSharedLocation
+    }
+}
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
