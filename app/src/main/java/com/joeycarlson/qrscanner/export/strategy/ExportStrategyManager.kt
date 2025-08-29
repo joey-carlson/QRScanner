@@ -140,7 +140,9 @@ class ExportStrategyManager(private val context: Context) {
     
     /**
      * Check if network is available
+     * Uses NetworkCapabilities for API 23+ and deprecated NetworkInfo for older versions
      */
+    @Suppress("DEPRECATION")
     private fun isNetworkAvailable(): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         
@@ -149,7 +151,6 @@ class ExportStrategyManager(private val context: Context) {
             val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         } else {
-            @Suppress("DEPRECATION")
             val networkInfo = connectivityManager.activeNetworkInfo
             networkInfo?.isConnected == true
         }
