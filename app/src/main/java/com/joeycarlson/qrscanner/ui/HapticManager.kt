@@ -6,7 +6,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.annotation.RequiresApi
-import com.joeycarlson.qrscanner.util.Constants
+import com.joeycarlson.qrscanner.config.AppConfig
 
 class HapticManager(private val context: Context) {
     
@@ -28,12 +28,12 @@ class HapticManager(private val context: Context) {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Modern approach with VibrationEffect
-            val effect = VibrationEffect.createOneShot(Constants.HAPTIC_SUCCESS_DURATION, Constants.HAPTIC_SUCCESS_AMPLITUDE)
+            val effect = VibrationEffect.createOneShot(AppConfig.HAPTIC_SUCCESS_DURATION, AppConfig.HAPTIC_SUCCESS_AMPLITUDE)
             vibrator.vibrate(effect)
         } else {
             // Legacy approach for older devices
             @Suppress("DEPRECATION")
-            vibrator.vibrate(Constants.HAPTIC_SUCCESS_DURATION)
+            vibrator.vibrate(AppConfig.HAPTIC_SUCCESS_DURATION)
         }
     }
     
@@ -45,12 +45,12 @@ class HapticManager(private val context: Context) {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Modern approach with pattern: buzz-pause-buzz
-            val effect = VibrationEffect.createWaveform(Constants.HAPTIC_FAILURE_PATTERN, Constants.HAPTIC_FAILURE_AMPLITUDES, -1)
+            val effect = VibrationEffect.createWaveform(AppConfig.HAPTIC_FAILURE_PATTERN, AppConfig.HAPTIC_FAILURE_AMPLITUDES, -1)
             vibrator.vibrate(effect)
         } else {
             // Legacy approach with pattern
             @Suppress("DEPRECATION")
-            vibrator.vibrate(Constants.HAPTIC_FAILURE_PATTERN, -1)
+            vibrator.vibrate(AppConfig.HAPTIC_FAILURE_PATTERN, -1)
         }
     }
     

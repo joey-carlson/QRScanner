@@ -32,7 +32,7 @@ import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.ui.ScanViewModel
 import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
-import com.joeycarlson.qrscanner.util.Constants
+import com.joeycarlson.qrscanner.config.AppConfig
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -209,13 +209,13 @@ class MainActivity : AppCompatActivity() {
         
         // Longer, more noticeable flash with stronger visibility
         val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
-        flashAnimator.duration = Constants.FLASH_ANIMATION_DURATION
+        flashAnimator.duration = AppConfig.FLASH_ANIMATION_DURATION
         flashAnimator.start()
         
         // Hide the overlay after animation
         binding.flashOverlay.postDelayed({
             binding.flashOverlay.visibility = View.GONE
-        }, Constants.FLASH_ANIMATION_DURATION)
+        }, AppConfig.FLASH_ANIMATION_DURATION)
     }
     
     private fun triggerFailureFlash() {
@@ -228,13 +228,13 @@ class MainActivity : AppCompatActivity() {
         
         // Red flash for failure with strong visibility
         val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
-        flashAnimator.duration = Constants.FLASH_ANIMATION_DURATION
+        flashAnimator.duration = AppConfig.FLASH_ANIMATION_DURATION
         flashAnimator.start()
         
         // Hide the overlay after animation
         binding.flashOverlay.postDelayed({
             binding.flashOverlay.visibility = View.GONE
-        }, Constants.FLASH_ANIMATION_DURATION)
+        }, AppConfig.FLASH_ANIMATION_DURATION)
     }
     
     private fun showCheckoutConfirmation() {

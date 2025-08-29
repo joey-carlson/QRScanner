@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.joeycarlson.qrscanner.data.CheckoutRepository
 import com.joeycarlson.qrscanner.util.BarcodeValidator
-import com.joeycarlson.qrscanner.util.Constants
+import com.joeycarlson.qrscanner.config.AppConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -236,7 +236,7 @@ class ScanViewModel(
         
         // Start timer to hide button after timeout
         undoTimerJob = viewModelScope.launch {
-            kotlinx.coroutines.delay(Constants.UNDO_BUTTON_TIMEOUT)
+            kotlinx.coroutines.delay(AppConfig.UNDO_BUTTON_TIMEOUT)
             hideUndoButton()
         }
     }
