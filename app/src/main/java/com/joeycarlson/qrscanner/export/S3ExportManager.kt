@@ -3,8 +3,7 @@ package com.joeycarlson.qrscanner.export
 import android.content.Context
 import androidx.preference.PreferenceManager
 import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.model.PutObjectRequest
 import com.google.gson.Gson
@@ -154,11 +153,8 @@ class S3ExportManager(private val context: Context) {
     private fun createS3Client(): AmazonS3? {
         return try {
             val credentials = s3Configuration.getCredentials() ?: return null
-            val s3Client = AmazonS3ClientBuilder
-                .standard()
-                .withCredentials(AWSStaticCredentialsProvider(credentials))
-                .withRegion(s3Configuration.getRegion())
-                .build()
+            val s3Client = AmazonS3Client(credentials)
+            s3Client.setRegion(s3Configuration.getRegion())
             s3Client
         } catch (e: Exception) {
             null
