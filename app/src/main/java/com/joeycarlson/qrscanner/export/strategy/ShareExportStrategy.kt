@@ -15,7 +15,7 @@ import java.time.LocalDate
  * Creates temporary files and provides them via FileProvider for sharing.
  */
 class ShareExportStrategy(
-    private val format: ExportFormat = ExportFormat.JSON
+    val format: ExportFormat = ExportFormat.JSON
 ) : BaseExportStrategy() {
     
     override suspend fun export(

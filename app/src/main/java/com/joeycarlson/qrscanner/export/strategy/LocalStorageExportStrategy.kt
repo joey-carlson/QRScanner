@@ -15,7 +15,7 @@ import java.time.LocalDate
  * Supports both JSON and CSV formats.
  */
 class LocalStorageExportStrategy(
-    private val format: ExportFormat = ExportFormat.JSON
+    val format: ExportFormat = ExportFormat.JSON
 ) : BaseExportStrategy() {
     
     override suspend fun export(
