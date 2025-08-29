@@ -522,6 +522,7 @@ sealed class ExportResult {
     data class ShareReady(val fileUris: List<Uri>, val tempFiles: List<File>, val mimeType: String = "application/json") : ExportResult()
     data class EmailReady(val emailData: EmailExportData) : ExportResult()
     data class SMSReady(val smsData: SMSExportData) : ExportResult()
+    data class S3Success(val uploadedFiles: List<String>, val bucketName: String, val region: String) : ExportResult()
     object NoData : ExportResult()
     data class Error(val message: String) : ExportResult()
 }

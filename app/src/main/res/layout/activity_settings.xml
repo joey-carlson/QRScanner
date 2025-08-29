@@ -81,23 +81,152 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Export Integrations Section (Future) -->
+            <!-- S3 Export Configuration Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Export Integrations"
+                android:text="AWS S3 Export Configuration"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="16dp" />
 
-            <TextView
+            <!-- S3 Enable Switch -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/s3EnabledSwitch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Additional export options (Slack, S3, etc.) will be added here in future updates"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="24dp" />
+                android:text="Enable S3 Export"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- S3 Access Key -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/s3AccessKeyLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="AWS Access Key ID"
+                app:helperText="AWS IAM user access key with S3 permissions"
+                app:helperTextTextColor="@color/text_secondary"
+                app:hintTextColor="@color/text_hint"
+                app:boxStrokeColor="@color/primary"
+                app:endIconMode="password_toggle"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/s3AccessKeyInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- S3 Secret Key -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/s3SecretKeyLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="AWS Secret Access Key"
+                app:helperText="AWS IAM user secret access key"
+                app:helperTextTextColor="@color/text_secondary"
+                app:hintTextColor="@color/text_hint"
+                app:boxStrokeColor="@color/primary"
+                app:endIconMode="password_toggle"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/s3SecretKeyInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- S3 Bucket Name -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/s3BucketLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="S3 Bucket Name"
+                app:helperText="Target S3 bucket for file uploads"
+                app:helperTextTextColor="@color/text_secondary"
+                app:hintTextColor="@color/text_hint"
+                app:boxStrokeColor="@color/primary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/s3BucketInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- S3 Region Spinner -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/s3RegionLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="AWS Region"
+                app:helperText="Select the AWS region for your S3 bucket"
+                app:helperTextTextColor="@color/text_secondary"
+                app:hintTextColor="@color/text_hint"
+                app:boxStrokeColor="@color/primary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                <AutoCompleteTextView
+                    android:id="@+id/s3RegionSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:textColor="@color/text_primary" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- S3 Folder Prefix -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/s3FolderLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Folder Prefix (Optional)"
+                app:helperText="Organize files in folders (default: qr-checkouts)"
+                app:helperTextTextColor="@color/text_secondary"
+                app:hintTextColor="@color/text_hint"
+                app:boxStrokeColor="@color/primary"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/s3FolderInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Test S3 Connection Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/testS3Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:text="Test S3 Connection"
+                android:textAllCaps="false"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="@color/primary"
+                android:textColor="@color/primary" />
 
         </LinearLayout>
 

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.joeycarlson.qrscanner.data.CheckoutRepository
+import com.joeycarlson.qrscanner.util.BarcodeValidator
 import com.joeycarlson.qrscanner.util.Constants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,35 +48,37 @@ class ScanViewModel(
     private var undoTimerJob: Job? = null
     
     fun processBarcode(barcodeData: String) {
-        val trimmedData = barcodeData.trim()
+        // Enhanced validation with format detection
+        val validationResult = BarcodeValidator.validateBarcodeData(barcodeData)
         
-        // Simple validation for barcode data
-        if (!isValidBarcodeData(trimmedData)) {
-            _statusMessage.value = "Invalid barcode format"
+        if (!validationResult.isValid) {
+            _statusMessage.value = validationResult.errorMessage ?: "Invalid barcode format"
             _scanFailure.value = true
             return
         }
         
-        val barcodeType = getBarcodeType(trimmedData)
+        val sanitizedData = validationResult.sanitizedData
+        val formatName = getFormatDisplayName(validationResult.format)
+        val barcodeType = getBarcodeType(sanitizedData)
         
         when (_scanState.value) {
             ScanState.IDLE -> {
                 when (barcodeType) {
                     "USER" -> {
-                        pendingUserId = trimmedData
+                        pendingUserId = sanitizedData
                         _scanState.value = ScanState.USER_SCANNED
-                        _statusMessage.value = "User scanned: $trimmedData\nScan kit barcode"
+                        _statusMessage.value = "User scanned ($formatName): $sanitizedData\nScan kit barcode"
                         _scanSuccess.value = true
                     }
                     "KIT" -> {
-                        pendingKitId = trimmedData
+                        pendingKitId = sanitizedData
                         _scanState.value = ScanState.KIT_SCANNED
-                        _statusMessage.value = "Kit scanned: $trimmedData\nScan user barcode"
+                        _statusMessage.value = "Kit scanned ($formatName): $sanitizedData\nScan user barcode"
                         _scanSuccess.value = true
                     }
                     "OTHER" -> {
                         // Save OTHER type immediately
-                        saveOtherEntry(trimmedData)
+                        saveOtherEntry(sanitizedData, formatName)
                         _scanSuccess.value = true
                     }
                 }
@@ -85,19 +88,19 @@ class ScanViewModel(
                 when (barcodeType) {
                     "USER" -> {
                         // Another user barcode - replace the pending one
-                        pendingUserId = trimmedData
-                        _statusMessage.value = "User updated: $trimmedData\nScan kit barcode"
+                        pendingUserId = sanitizedData
+                        _statusMessage.value = "User updated ($formatName): $sanitizedData\nScan kit barcode"
                         _scanSuccess.value = true
                     }
                     "KIT" -> {
                         // Kit barcode - complete the checkout
-                        pendingKitId = trimmedData
+                        pendingKitId = sanitizedData
                         _scanSuccess.value = true
                         completeCheckout()
                     }
                     "OTHER" -> {
                         // Save OTHER type immediately
-                        saveOtherEntry(trimmedData)
+                        saveOtherEntry(sanitizedData, formatName)
                         _scanSuccess.value = true
                     }
                 }
@@ -107,19 +110,19 @@ class ScanViewModel(
                 when (barcodeType) {
                     "USER" -> {
                         // User barcode - complete the checkout
-                        pendingUserId = trimmedData
+                        pendingUserId = sanitizedData
                         _scanSuccess.value = true
                         completeCheckout()
                     }
                     "KIT" -> {
                         // Another kit barcode - replace the pending one
-                        pendingKitId = trimmedData
-                        _statusMessage.value = "Kit updated: $trimmedData\nScan user barcode"
+                        pendingKitId = sanitizedData
+                        _statusMessage.value = "Kit updated ($formatName): $sanitizedData\nScan user barcode"
                         _scanSuccess.value = true
                     }
                     "OTHER" -> {
                         // Save OTHER type immediately
-                        saveOtherEntry(trimmedData)
+                        saveOtherEntry(sanitizedData, formatName)
                         _scanSuccess.value = true
                     }
                 }
@@ -164,31 +167,6 @@ class ScanViewModel(
         _isScanning.value = true
     }
     
-    private fun isValidBarcodeData(data: String): Boolean {
-        // Security validations to prevent injection attacks
-        if (data.isEmpty()) return false
-        
-        // Length limit to prevent buffer overflow and performance issues
-        if (data.length > 200) return false
-        
-        // Strict character whitelist - only alphanumeric and basic symbols
-        // Excludes potentially dangerous characters: quotes, brackets, semicolons, etc.
-        if (!data.matches(Regex("^[A-Za-z0-9._-]+$"))) return false
-        
-        // Prevent common injection patterns
-        val dangerousPatterns = listOf(
-            "script", "javascript", "vbscript", "onload", "onerror",
-            "alert", "eval", "document", "window", "location",
-            "<%", "%>", "<?", "?>", "{{", "}}", "${", "}",
-            "drop", "delete", "insert", "update", "select",
-            "union", "exec", "execute", "xp_", "sp_"
-        )
-        
-        val lowerData = data.lowercase()
-        if (dangerousPatterns.any { lowerData.contains(it) }) return false
-        
-        return true
-    }
     
     private fun getBarcodeType(data: String): String {
         val upperData = data.uppercase()
@@ -199,18 +177,32 @@ class ScanViewModel(
         }
     }
     
+    private fun getFormatDisplayName(format: BarcodeValidator.BarcodeFormat): String {
+        return when (format) {
+            BarcodeValidator.BarcodeFormat.QR_CODE -> "QR"
+            BarcodeValidator.BarcodeFormat.CODE_128 -> "Code 128"
+            BarcodeValidator.BarcodeFormat.CODE_39 -> "Code 39"
+            BarcodeValidator.BarcodeFormat.CODE_93 -> "Code 93"
+            BarcodeValidator.BarcodeFormat.UPC_A -> "UPC-A"
+            BarcodeValidator.BarcodeFormat.UPC_E -> "UPC-E"
+            BarcodeValidator.BarcodeFormat.EAN_13 -> "EAN-13"
+            BarcodeValidator.BarcodeFormat.EAN_8 -> "EAN-8"
+            BarcodeValidator.BarcodeFormat.UNKNOWN -> "Unknown"
+        }
+    }
+    
     private fun isUserBarcode(data: String): Boolean {
         return getBarcodeType(data) == "USER"
     }
     
-    private fun saveOtherEntry(value: String) {
+    private fun saveOtherEntry(value: String, formatName: String) {
         _isScanning.value = false
         _statusMessage.value = "Processing other entry..."
         
         viewModelScope.launch {
             val success = repository.saveOtherEntry(value)
             if (success) {
-                _statusMessage.value = "✓ Other entry saved: $value"
+                _statusMessage.value = "✓ Other entry saved ($formatName): $value"
             } else {
                 _statusMessage.value = "✗ Failed to save other entry"
             }

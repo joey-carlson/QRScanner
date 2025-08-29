@@ -19,6 +19,7 @@ class ExportMethodActivity : AppCompatActivity() {
     private lateinit var startDate: LocalDate
     private lateinit var endDate: LocalDate
     private lateinit var exportManager: ExportManager
+    private lateinit var s3ExportManager: S3ExportManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,8 +30,9 @@ class ExportMethodActivity : AppCompatActivity() {
         startDate = LocalDate.parse(intent.getStringExtra("start_date"))
         endDate = LocalDate.parse(intent.getStringExtra("end_date"))
         
-        // Initialize export manager
+        // Initialize export managers
         exportManager = ExportManager(this)
+        s3ExportManager = S3ExportManager(this)
         
         // Set up toolbar
         setSupportActionBar(binding.toolbar)
@@ -92,9 +94,15 @@ class ExportMethodActivity : AppCompatActivity() {
             ),
             ExportMethod(
                 "S3 Bucket",
-                "Upload directly to AWS S3",
+                "Upload JSON files directly to AWS S3",
                 "☁️",
-                false
+                true
+            ),
+            ExportMethod(
+                "S3 CSV",
+                "Upload CSV files directly to AWS S3",
+                "☁️",
+                true
             ),
             ExportMethod(
                 "Google Drive",
@@ -137,6 +145,12 @@ class ExportMethodActivity : AppCompatActivity() {
             }
             "SMS/Text" -> {
                 exportViaSMS()
+            }
+            "S3 Bucket" -> {
+                exportToS3()
+            }
+            "S3 CSV" -> {
+                exportCsvToS3()
             }
             else -> {
                 Toast.makeText(this, "${method.name} - Coming in future update", Toast.LENGTH_SHORT).show()
@@ -183,6 +197,10 @@ class ExportMethodActivity : AppCompatActivity() {
                     onSuccess(result)
                 }
                 is ExportResult.SMSReady -> {
+                    progressDialog.dismiss()
+                    onSuccess(result)
+                }
+                is ExportResult.S3Success -> {
                     progressDialog.dismiss()
                     onSuccess(result)
                 }
@@ -363,6 +381,62 @@ class ExportMethodActivity : AppCompatActivity() {
                     }
                     
                     finish()
+                }
+            }
+        }
+    }
+    
+    private fun exportToS3() {
+        lifecycleScope.launch {
+            executeExportOperation(
+                "Uploading to S3",
+                "Uploading JSON files to AWS S3...",
+                { s3ExportManager.exportToS3(startDate, endDate) }
+            ) { result ->
+                if (result is ExportResult.S3Success) {
+                    val fileCount = result.uploadedFiles.size
+                    val message = buildString {
+                        appendLine("Successfully uploaded $fileCount file(s) to S3:")
+                        appendLine("Bucket: ${result.bucketName}")
+                        appendLine("Region: ${result.region}")
+                        appendLine()
+                        result.uploadedFiles.forEach { file ->
+                            appendLine("• $file")
+                        }
+                    }
+                    DialogUtils.showSuccessDialog(
+                        this@ExportMethodActivity,
+                        "S3 Upload Complete",
+                        message
+                    ) { finish() }
+                }
+            }
+        }
+    }
+    
+    private fun exportCsvToS3() {
+        lifecycleScope.launch {
+            executeExportOperation(
+                "Uploading CSV to S3",
+                "Uploading CSV files to AWS S3...",
+                { s3ExportManager.exportCsvToS3(startDate, endDate) }
+            ) { result ->
+                if (result is ExportResult.S3Success) {
+                    val fileCount = result.uploadedFiles.size
+                    val message = buildString {
+                        appendLine("Successfully uploaded $fileCount CSV file(s) to S3:")
+                        appendLine("Bucket: ${result.bucketName}")
+                        appendLine("Region: ${result.region}")
+                        appendLine()
+                        result.uploadedFiles.forEach { file ->
+                            appendLine("• $file")
+                        }
+                    }
+                    DialogUtils.showSuccessDialog(
+                        this@ExportMethodActivity,
+                        "S3 CSV Upload Complete",
+                        message
+                    ) { finish() }
                 }
             }
         }

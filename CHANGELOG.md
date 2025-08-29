@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2025-08-28
+### Enhanced
+- **Enhanced Barcode Security & Validation**
+  - Comprehensive format-specific validation for all supported barcode types
+  - Enhanced security protections against code injection and malicious content
+  - Real-time barcode format detection and display (QR, Code 128, UPC-A, etc.)
+  - Improved status messages showing detected barcode format
+  - Stricter validation rules for each barcode format (length, character sets, patterns)
+
+### Technical
+- New BarcodeValidator utility class with format detection and security validation
+- Format-specific validation for UPC-A/E, EAN-13/8, Code 39/93/128, QR codes
+- Enhanced injection attack prevention with expanded pattern detection
+- Sanitized data handling throughout the scanning pipeline
+- Removed legacy validation code in favor of centralized validation system
+
+## [1.6.0] - 2025-08-28
+### Added
+- AWS S3 Export Integration (Export System Phase 3)
+  - "S3 Bucket" export method for JSON files
+  - "S3 CSV" export method for spreadsheet files
+  - Complete S3 configuration UI in settings screen
+  - AWS region selection with user-friendly dropdown
+  - S3 credentials management (Access Key ID & Secret Key)
+  - Bucket name configuration with validation
+  - Custom folder prefix support (default: qr-checkouts)
+  - S3 connection testing functionality
+  - File upload with metadata (location ID, date, record count)
+  - Error handling for network issues and authentication failures
+  - Progress dialogs for upload operations
+  - Detailed upload success messages with file paths
+
+### Technical
+- AWS SDK integration (Core, S3, Cognito Identity Provider)
+- S3Configuration class for credentials and settings management
+- S3ExportManager with upload and validation logic
+- S3TestResult for connection testing
+- Internet and network state permissions for cloud operations
+- Enhanced ExportResult with S3Success type
+- Location-aware S3 key generation for conflict prevention
+
 ## [1.5.4] - 2025-08-28
 ### Added
 - Version information display in settings screen
