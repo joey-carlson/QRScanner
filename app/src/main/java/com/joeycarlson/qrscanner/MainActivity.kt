@@ -170,6 +170,31 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Collect checkout confirmation display
+                launch {
+                    viewModel.showCheckoutConfirmation.collect { showConfirmation ->
+                        if (showConfirmation) {
+                            showCheckoutConfirmation()
+                        } else {
+                            hideCheckoutConfirmation()
+                        }
+                    }
+                }
+                
+                // Collect checkout confirmation message
+                launch {
+                    viewModel.checkoutConfirmationMessage.collect { message ->
+                        val lines = message.split("\n")
+                        if (lines.size >= 3) {
+                            binding.confirmationText.text = lines[0] // "CHECKOUT COMPLETE"
+                            binding.confirmationDetails.text = "${lines[1]}\n${lines[2]}" // User and Kit info
+                        } else {
+                            binding.confirmationText.text = message
+                            binding.confirmationDetails.text = ""
+                        }
+                    }
+                }
             }
         }
     }
@@ -210,6 +235,30 @@ class MainActivity : AppCompatActivity() {
         binding.flashOverlay.postDelayed({
             binding.flashOverlay.visibility = View.GONE
         }, Constants.FLASH_ANIMATION_DURATION)
+    }
+    
+    private fun showCheckoutConfirmation() {
+        binding.confirmationOverlay.visibility = View.VISIBLE
+        
+        // Animate fade in
+        val fadeInAnimator = ObjectAnimator.ofFloat(binding.confirmationOverlay, "alpha", 0f, 1f)
+        fadeInAnimator.duration = 300
+        fadeInAnimator.start()
+        
+        // Trigger success haptic feedback for checkout completion
+        hapticManager.performSuccessHaptic()
+    }
+    
+    private fun hideCheckoutConfirmation() {
+        // Animate fade out
+        val fadeOutAnimator = ObjectAnimator.ofFloat(binding.confirmationOverlay, "alpha", 1f, 0f)
+        fadeOutAnimator.duration = 300
+        fadeOutAnimator.start()
+        
+        // Hide the overlay after animation
+        binding.confirmationOverlay.postDelayed({
+            binding.confirmationOverlay.visibility = View.GONE
+        }, 300)
     }
     
     private fun setupClickListeners() {

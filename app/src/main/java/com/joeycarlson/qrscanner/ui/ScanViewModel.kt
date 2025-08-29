@@ -41,6 +41,12 @@ class ScanViewModel(
     private val _showUndoButton = MutableStateFlow(false)
     val showUndoButton: StateFlow<Boolean> = _showUndoButton.asStateFlow()
     
+    private val _showCheckoutConfirmation = MutableStateFlow(false)
+    val showCheckoutConfirmation: StateFlow<Boolean> = _showCheckoutConfirmation.asStateFlow()
+    
+    private val _checkoutConfirmationMessage = MutableStateFlow("")
+    val checkoutConfirmationMessage: StateFlow<String> = _checkoutConfirmationMessage.asStateFlow()
+    
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
     private var lastCheckoutUserId: String? = null
@@ -143,6 +149,14 @@ class ScanViewModel(
                 val success = repository.saveCheckout(userId, kitId)
                 if (success) {
                     _statusMessage.value = "✓ User $userId checked out kit $kitId"
+                    
+                    // Show visual confirmation overlay
+                    _checkoutConfirmationMessage.value = "CHECKOUT COMPLETE\nUser: $userId\nKit: $kitId"
+                    _showCheckoutConfirmation.value = true
+                    
+                    // Hide confirmation after 2 seconds
+                    kotlinx.coroutines.delay(2000)
+                    _showCheckoutConfirmation.value = false
                     
                     // Store checkout info for undo and show undo button
                     lastCheckoutUserId = userId

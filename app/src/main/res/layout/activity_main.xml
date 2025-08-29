@@ -38,6 +38,46 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Checkout Confirmation Overlay -->
+    <LinearLayout
+        android:id="@+id/confirmationOverlay"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#CC4CAF50"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:layout_margin="32dp"
+        android:alpha="0"
+        android:visibility="gone"
+        android:elevation="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/previewView"
+        app:layout_constraintEnd_toEndOf="@+id/previewView"
+        app:layout_constraintStart_toStartOf="@+id/previewView"
+        app:layout_constraintTop_toTopOf="@+id/previewView">
+
+        <TextView
+            android:id="@+id/confirmationText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="✓ Checkout Complete"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:drawablePadding="8dp" />
+
+        <TextView
+            android:id="@+id/confirmationDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="User X checked out Kit Y"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/statusContainer"
         android:layout_width="0dp"

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2025-08-29
+### Added
+- **Visual Checkout Confirmation Overlay**
+  - Prominent green overlay displays after successful checkout completion
+  - Shows "CHECKOUT COMPLETE" message with user and kit details
+  - 2-second display duration for clear visual confirmation
+  - Positioned over camera preview for maximum visibility
+  - Smooth fade-in/fade-out animations (300ms duration)
+  - Haptic feedback accompanies visual confirmation
+  - Complements existing status text messages for enhanced user experience
+
+### Technical
+- New StateFlow properties in ScanViewModel for confirmation state management
+- Confirmation overlay UI components in activity_main.xml
+- Observer pattern implementation in MainActivity for real-time updates
+- ObjectAnimator-based fade animations for professional visual transitions
+
 ## [1.6.1] - 2025-08-28
 ### Enhanced
 - **Enhanced Barcode Security & Validation**
