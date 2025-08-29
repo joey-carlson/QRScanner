@@ -53,6 +53,19 @@ task copyApksToSharedLocation {
     def buildDirPath = project.buildDir.absolutePath
     def rootDirPath = project.rootDir.absolutePath
     
+    // Capture git commit hash at configuration time
+    def gitCommitHash = "unknown"
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-parse', '--short', 'HEAD'
+            standardOutput = stdout
+        }
+        gitCommitHash = stdout.toString().trim()
+    } catch (Exception e) {
+        // Keep default value of "unknown"
+    }
+    
     doLast {
         // Use captured values during execution
         def timestamp = new Date().format('yyyy-MM-dd_HH-mm')
@@ -114,7 +127,7 @@ Version: ${versionName}
 Build: ${versionCode}
 Build Date: ${new Date().format('yyyy-MM-dd HH:mm:ss')}
 Build Types Available: debug, release
-Git Commit: ${getGitCommitHash()}
+Git Commit: ${gitCommitHash}
 
 Files in this directory:
 - APK files (debug and/or release builds)
@@ -126,20 +139,6 @@ For the latest version, visit:
 https://github.com/joey-carlson/QRScanner
 """
         println "Created BUILD_INFO.txt with build metadata"
-    }
-}
-
-// Helper function to get current Git commit hash
-def getGitCommitHash() {
-    try {
-        def stdout = new ByteArrayOutputStream()
-        exec {
-            commandLine 'git', 'rev-parse', '--short', 'HEAD'
-            standardOutput = stdout
-        }
-        return stdout.toString().trim()
-    } catch (Exception e) {
-        return "unknown"
     }
 }
 
