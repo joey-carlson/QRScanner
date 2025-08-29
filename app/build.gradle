@@ -47,10 +47,12 @@ android {
 
 // Task to copy APK folders and documentation to WorkDocs shared location
 task copyApksToSharedLocation {
+    // Capture values at configuration time
+    def versionName = android.defaultConfig.versionName
+    def versionCode = android.defaultConfig.versionCode
+    
     doLast {
-        // Capture values during execution time using project reference
-        def versionName = project.android.defaultConfig.versionName
-        def versionCode = project.android.defaultConfig.versionCode
+        // Use captured values during execution
         def timestamp = new Date().format('yyyy-MM-dd_HH-mm')
         def versionFolder = "v${versionName}-${versionCode}_${timestamp}"
         
