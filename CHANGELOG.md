@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-08-29
+### Added
+- **Centralized Configuration Management System**
+  - New `AppConfig` object for all application-wide constants and settings
+  - New `PreferenceKeys` object for centralized SharedPreferences key management
+  - Build-specific configurations with debug/release variants
+  - Parameterized file provider authority using BuildConfig
+  - Centralized animation durations, MIME types, and UI constants
+  - Export-specific configurations with limits and validation
+  - Barcode type definitions and validation prefixes
+
+### Changed
+- **Legacy Constants Migration**
+  - Migrated all constants from `Constants.kt` to `AppConfig` and `PreferenceKeys`
+  - Added deprecation warnings with replacement suggestions
+  - Maintained backward compatibility during transition period
+  - Enhanced code organization with logical grouping of related constants
+
+### Technical
+- Version bumped to 1.7.0 (Build 16) for major refactoring milestone
+- Foundation established for dependency injection and modular architecture
+- Improved maintainability with centralized configuration management
+- Enhanced parameterization for better reusability across build variants
+
 ## [1.6.2] - 2025-08-29
 ### Added
 - **Visual Checkout Confirmation Overlay**
