@@ -53,18 +53,8 @@ task copyApksToSharedLocation {
     def buildDirPath = project.buildDir.absolutePath
     def rootDirPath = project.rootDir.absolutePath
     
-    // Capture git commit hash at configuration time
-    def gitCommitHash = "unknown"
-    try {
-        def stdout = new ByteArrayOutputStream()
-        exec {
-            commandLine 'git', 'rev-parse', '--short', 'HEAD'
-            standardOutput = stdout
-        }
-        gitCommitHash = stdout.toString().trim()
-    } catch (Exception e) {
-        // Keep default value of "unknown"
-    }
+    // Git commit hash - removed external process call for configuration cache compatibility
+    def gitCommitHash = "see git history"
     
     doLast {
         // Use captured values during execution
