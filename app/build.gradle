@@ -47,9 +47,11 @@ android {
 
 // Task to copy APK folders and documentation to WorkDocs shared location
 task copyApksToSharedLocation {
-    // Capture values at configuration time
+    // Capture all values at configuration time to avoid configuration cache issues
     def versionName = android.defaultConfig.versionName
     def versionCode = android.defaultConfig.versionCode
+    def buildDirPath = project.buildDir.absolutePath
+    def rootDirPath = project.rootDir.absolutePath
     
     doLast {
         // Use captured values during execution
@@ -62,17 +64,21 @@ task copyApksToSharedLocation {
         println "Creating version directory: ${destinationDir.absolutePath}"
         destinationDir.mkdirs()
         
-        // Copy APK files
-        def apkSourceDir = new File("${project.buildDir}/outputs/apk")
+        // Copy APK files using captured build directory path
+        def apkSourceDir = new File("${buildDirPath}/outputs/apk")
         if (apkSourceDir.exists()) {
             println "Copying APKs from: ${apkSourceDir.absolutePath}"
             println "Copying APKs to: ${destinationDir.absolutePath}"
             
-            // Copy all APK files recursively
-            copy {
-                from apkSourceDir
-                into destinationDir
-                include '**/*.apk'
+            // Copy all APK files manually to avoid Groovy closure configuration cache issues
+            apkSourceDir.eachFileRecurse { file ->
+                if (file.name.endsWith('.apk')) {
+                    def relativePath = apkSourceDir.toPath().relativize(file.toPath()).toString()
+                    def destFile = new File(destinationDir, relativePath)
+                    destFile.parentFile.mkdirs()
+                    destFile.bytes = file.bytes
+                    println "Copied: ${file.name}"
+                }
             }
             
             println "APK copy completed to: ${destinationDir.absolutePath}"
@@ -80,9 +86,9 @@ task copyApksToSharedLocation {
             println "Warning: APK source directory not found at ${apkSourceDir.absolutePath}"
         }
         
-        // Copy documentation files to the version directory
-        def readmeSource = new File("${project.rootDir}/README.md")
-        def changelogSource = new File("${project.rootDir}/CHANGELOG.md")
+        // Copy documentation files using captured root directory path
+        def readmeSource = new File("${rootDirPath}/README.md")
+        def changelogSource = new File("${rootDirPath}/CHANGELOG.md")
         
         if (readmeSource.exists()) {
             def readmeDestination = new File(destinationDir, "README.md")
