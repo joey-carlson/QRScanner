@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-08-30
+
+### Added
+- **OCR (Optical Character Recognition) Capabilities**
+  - ML Kit Text Recognition integration for scanning printed serial numbers
+  - Three scanning modes: Barcode Only (default), OCR Only, and Hybrid
+  - Device Serial Number (DSN) pattern recognition and validation
+  - Manual verification dialog for low-confidence OCR results
+  - Confidence indicators with color-coded progress bars
+  - Component type inference from DSN patterns
+  - Fallback to manual text entry when scanning fails
+  - Scan mode selector UI in Kit Bundle activity
+  - Support for multiple DSN formats and patterns
+  - Real-time text preprocessing and normalization
+  - Performance-optimized scanning with frame throttling
+
+### Technical
+- New OCR package with specialized classes:
+  - `HybridScanAnalyzer`: Unified scanner supporting barcode and OCR
+  - `TextRecognitionAnalyzer`: ML Kit text recognition processor
+  - `DsnValidator`: Pattern matching and validation for serial numbers
+  - `ScanMode`: Enum for scanning mode management
+  - `OcrVerificationDialog`: Manual verification UI for OCR results
+  - `ScanModeSelector`: UI component for mode switching
+- OCR performance requirements:
+  - Processing within 3 seconds per scan attempt
+  - 80% confidence threshold for automatic acceptance
+  - Support for 8pt to 48pt font sizes
+  - Multiple text orientations (0°, 90°, 180°, 270°)
+- Version bumped to 2.1.0 (Build 21) for OCR feature
+
+## [2.0.0] - 2025-08-30
+
+### Added
+- **Kit Bundle Feature** (Major new functionality)
+  - Ability to scan and bundle individual components into kits
+  - Support for 8 component types: Glasses, Controller, Battery 01-03, Pads, Unused 01-02
+  - Unique Kit ID generation with format: `<BaseKitCode>-<MM/DD>`
+  - Separate JSON storage for kit bundles: `qr_kits_MM-dd-yy_LocationID.json`
+  - Immutable kit bundles (new bundle created for component changes)
+  - Data models: KitBundle class with validation and helper methods
+  - Repository: KitRepository for managing kit bundle storage
+- **Home Screen Navigation**
+  - New feature selection screen on app launch
+  - Choice between "Check Out" and "Kit Bundle" modes
+  - Back navigation from any feature to home
+  - Settings button on home screen
+  - Version display on home screen
+- **Requirements Documentation**
+  - Comprehensive requirements document with versioning system
+  - Automatic copy to WorkDocs during build process
+  - Living document approach for tracking project evolution
+
+### Changed
+- Major version increment to 2.0.0 due to significant new feature addition
+- App structure updated to support dual-mode functionality
+- MainActivity now displays "Check Out Mode" in action bar
+- HomeActivity set as the launcher activity
+- Updated string resources for new UI elements
+
+### Technical
+- Version bumped to 2.0.0 (Build 20) for Kit Bundle feature
+- Foundation for multi-feature architecture
+- Phase 1 (Data Layer) completed: KitBundle and KitRepository classes
+- Phase 2 (UI Foundation) completed: HomeActivity with navigation
+- Preparation for Phase 3 (Kit Bundle Activity) implementation
+
 ## [1.7.3] - 2025-08-29
 
 ### Changed

@@ -1,9 +1,10 @@
-# QR Scanner - Kit Checkout System v1.5.3
+# QR Scanner - Kit Checkout & Bundle System v2.0.0
 
-An Android application for scanning QR codes to track user-kit checkouts. The app allows scanning user and kit QR codes in any order and automatically writes checkout records to local JSON or CSV files.
+An Android application for scanning QR codes to track user-kit checkouts and manage kit component bundles. The app supports two primary modes: Check Out (tracking user-kit transactions) and Kit Bundle (grouping components into kits).
 
 ## Features
 
+### Check Out Mode
 - **Dual QR Code Scanning**: Scan user and kit QR codes in any order
 - **Real-time Camera Preview**: Live camera feed with scan overlay
 - **Instant Checkout Processing**: Auto-commit checkouts without confirmation tap
@@ -16,6 +17,17 @@ An Android application for scanning QR codes to track user-kit checkouts. The ap
 - **1D Barcode Support**: Code 128, Code 39, UPC, EAN formats
 - **Export System**: Export checkout data with date range selection
 - **Settings Configuration**: Location ID and device name management
+
+### Kit Bundle Mode (NEW in v2.0)
+- **Component Scanning**: Scan up to 8 components per kit bundle
+- **Supported Components**: Glasses, Controller, Battery 01-03, Pads, Unused 01-02
+- **Unique Kit ID Generation**: Format `<BaseKitCode>-<MM/DD>` for tracking
+- **Immutable Bundles**: Component changes create new bundles with updated dates
+- **Separate JSON Storage**: Kit bundles stored in dedicated files
+
+### Navigation
+- **Home Screen**: Feature selection between Check Out and Kit Bundle modes
+- **Back Navigation**: Return to home from any feature
 
 ## JSON Data Format
 

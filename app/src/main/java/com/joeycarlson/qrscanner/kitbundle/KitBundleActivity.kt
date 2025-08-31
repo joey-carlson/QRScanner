@@ -1,8 +1,7 @@
-package com.joeycarlson.qrscanner
+package com.joeycarlson.qrscanner.kitbundle
 
 import android.Manifest
 import android.animation.ObjectAnimator
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -25,26 +24,25 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.joeycarlson.qrscanner.data.CheckoutRepository
-import com.joeycarlson.qrscanner.databinding.ActivityMainBinding
-import com.joeycarlson.qrscanner.export.ExportActivity
+import com.joeycarlson.qrscanner.data.KitRepository
+import com.joeycarlson.qrscanner.databinding.ActivityKitBundleBinding
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
-import com.joeycarlson.qrscanner.ui.ScanViewModel
-import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
+import com.joeycarlson.qrscanner.ocr.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity() {
+class KitBundleActivity : AppCompatActivity() {
     
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: ScanViewModel
+    private lateinit var binding: ActivityKitBundleBinding
+    private lateinit var viewModel: KitBundleViewModel
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var hapticManager: HapticManager
+    private lateinit var hybridAnalyzer: HybridScanAnalyzer
     
     private var imageAnalyzer: ImageAnalysis? = null
+    private var currentScanMode = ScanMode.BARCODE_ONLY
     
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -58,7 +56,7 @@ class MainActivity : AppCompatActivity() {
                 requestStoragePermission()
             }
         } else {
-            Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(com.joeycarlson.qrscanner.R.string.camera_permission_required), Toast.LENGTH_LONG).show()
             finish()
         }
     }
@@ -85,38 +83,35 @@ class MainActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityKitBundleBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
         // Set up action bar with back navigation
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
-            title = getString(R.string.check_out_mode_title)
+            title = getString(com.joeycarlson.qrscanner.R.string.kit_bundle_mode_title)
         }
         
-        val repository = CheckoutRepository(this)
-        val factory = ScanViewModelFactory(application, repository)
-        viewModel = ViewModelProvider(this, factory)[ScanViewModel::class.java]
+        val repository = KitRepository(this)
+        val factory = KitBundleViewModelFactory(application, repository)
+        viewModel = ViewModelProvider(this, factory)[KitBundleViewModel::class.java]
         cameraExecutor = Executors.newSingleThreadExecutor()
         hapticManager = HapticManager(this)
         
-        // Initialize ML Kit barcode scanner with support for QR codes and common 1D barcodes
-        val options = BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(
-                Barcode.FORMAT_QR_CODE,
-                Barcode.FORMAT_CODE_128,
-                Barcode.FORMAT_CODE_39,
-                Barcode.FORMAT_CODE_93,
-                Barcode.FORMAT_UPC_A,
-                Barcode.FORMAT_UPC_E,
-                Barcode.FORMAT_EAN_13,
-                Barcode.FORMAT_EAN_8
-            )
-            .build()
-        barcodeScanner = BarcodeScanning.getClient(options)
+        // Initialize hybrid analyzer for barcode and OCR scanning
+        hybridAnalyzer = HybridScanAnalyzer(
+            scanMode = currentScanMode,
+            onScanResult = { result ->
+                handleScanResult(result)
+            },
+            onError = { exception ->
+                Log.e(TAG, "Scanning error", exception)
+            }
+        )
         
         setupObservers()
         setupClickListeners()
+        setupScanModeSelector()
         
         // Request permissions
         if (allPermissionsGranted()) {
@@ -125,7 +120,6 @@ class MainActivity : AppCompatActivity() {
             requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
-    
     
     private fun setupObservers() {
         lifecycleScope.launch {
@@ -137,13 +131,20 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 
+                // Collect instruction text changes
+                launch {
+                    viewModel.instructionText.collect { instruction ->
+                        binding.instructionText.text = instruction
+                    }
+                }
+                
                 // Collect scanning state changes
                 launch {
                     viewModel.isScanning.collect { isScanning ->
                         binding.scanOverlay.visibility = if (isScanning) {
-                            android.view.View.VISIBLE
+                            View.VISIBLE
                         } else {
-                            android.view.View.INVISIBLE
+                            View.INVISIBLE
                         }
                     }
                 }
@@ -166,38 +167,46 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 
-                // Collect undo button visibility
+                // Collect save button visibility
                 launch {
-                    viewModel.showUndoButton.collect { showUndo ->
-                        binding.undoButton.visibility = if (showUndo) {
+                    viewModel.showSaveButton.collect { show ->
+                        binding.saveButton.visibility = if (show) View.VISIBLE else View.GONE
+                    }
+                }
+                
+                // Collect skip button visibility
+                launch {
+                    viewModel.showSkipButton.collect { show ->
+                        binding.skipButton.visibility = if (show) View.VISIBLE else View.GONE
+                    }
+                }
+                
+                // Collect bundle confirmation display
+                launch {
+                    viewModel.showBundleConfirmation.collect { showConfirmation ->
+                        if (showConfirmation) {
+                            showBundleConfirmation()
+                        } else {
+                            hideBundleConfirmation()
+                        }
+                    }
+                }
+                
+                // Collect bundle confirmation message
+                launch {
+                    viewModel.bundleConfirmationMessage.collect { message ->
+                        binding.confirmationText.text = message
+                    }
+                }
+                
+                // Collect component summary
+                launch {
+                    viewModel.componentSummary.collect { summary ->
+                        binding.componentSummaryText.text = summary
+                        binding.componentSummaryCard.visibility = if (summary.isNotEmpty()) {
                             View.VISIBLE
                         } else {
                             View.GONE
-                        }
-                    }
-                }
-                
-                // Collect checkout confirmation display
-                launch {
-                    viewModel.showCheckoutConfirmation.collect { showConfirmation ->
-                        if (showConfirmation) {
-                            showCheckoutConfirmation()
-                        } else {
-                            hideCheckoutConfirmation()
-                        }
-                    }
-                }
-                
-                // Collect checkout confirmation message
-                launch {
-                    viewModel.checkoutConfirmationMessage.collect { message ->
-                        val lines = message.split("\n")
-                        if (lines.size >= 3) {
-                            binding.confirmationText.text = lines[0] // "CHECKOUT COMPLETE"
-                            binding.confirmationDetails.text = "${lines[1]}\n${lines[2]}" // User and Kit info
-                        } else {
-                            binding.confirmationText.text = message
-                            binding.confirmationDetails.text = ""
                         }
                     }
                 }
@@ -208,7 +217,7 @@ class MainActivity : AppCompatActivity() {
     private fun triggerFlashAnimation() {
         binding.flashOverlay.visibility = View.VISIBLE
         binding.flashOverlay.alpha = 0f
-        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, R.color.white))
+        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, com.joeycarlson.qrscanner.R.color.white))
         
         // Trigger success haptic feedback - single light tap
         hapticManager.performSuccessHaptic()
@@ -227,7 +236,7 @@ class MainActivity : AppCompatActivity() {
     private fun triggerFailureFlash() {
         binding.flashOverlay.visibility = View.VISIBLE
         binding.flashOverlay.alpha = 0f
-        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, R.color.scan_failure_flash))
+        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, com.joeycarlson.qrscanner.R.color.scan_failure_flash))
         
         // Trigger failure haptic feedback - double buzz pattern
         hapticManager.performFailureHaptic()
@@ -243,7 +252,7 @@ class MainActivity : AppCompatActivity() {
         }, AppConfig.FLASH_ANIMATION_DURATION)
     }
     
-    private fun showCheckoutConfirmation() {
+    private fun showBundleConfirmation() {
         binding.confirmationOverlay.visibility = View.VISIBLE
         
         // Animate fade in
@@ -251,11 +260,11 @@ class MainActivity : AppCompatActivity() {
         fadeInAnimator.duration = 300
         fadeInAnimator.start()
         
-        // Trigger success haptic feedback for checkout completion
+        // Trigger success haptic feedback for bundle completion
         hapticManager.performSuccessHaptic()
     }
     
-    private fun hideCheckoutConfirmation() {
+    private fun hideBundleConfirmation() {
         // Animate fade out
         val fadeOutAnimator = ObjectAnimator.ofFloat(binding.confirmationOverlay, "alpha", 1f, 0f)
         fadeOutAnimator.duration = 300
@@ -272,40 +281,23 @@ class MainActivity : AppCompatActivity() {
             viewModel.clearState()
         }
         
-        binding.undoButton.setOnClickListener {
-            DialogUtils.showWarningDialog(
-                this,
-                "Confirm Undo",
-                "Are you sure you want to undo the last checkout?"
-            ) {
-                viewModel.undoLastCheckout()
-            }
-        }
-        
-        binding.settingsButton.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
-        
-        binding.exportButton.setOnClickListener {
-            // Check if location ID is configured
+        binding.saveButton.setOnClickListener {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             val locationId = prefs.getString("location_id", "")
             
             if (locationId.isNullOrEmpty()) {
                 AlertDialog.Builder(this)
                     .setTitle("Configuration Required")
-                    .setMessage("Please configure Location ID in Settings before exporting.")
-                    .setPositiveButton("Go to Settings") { _, _ ->
-                        val intent = Intent(this, SettingsActivity::class.java)
-                        startActivity(intent)
-                    }
-                    .setNegativeButton("Cancel", null)
+                    .setMessage("Please configure Location ID in Settings before saving bundles.")
+                    .setPositiveButton("OK", null)
                     .show()
             } else {
-                val intent = Intent(this, ExportActivity::class.java)
-                startActivity(intent)
+                viewModel.saveKitBundle()
             }
+        }
+        
+        binding.skipButton.setOnClickListener {
+            viewModel.skipCurrentComponent()
         }
     }
     
@@ -323,7 +315,7 @@ class MainActivity : AppCompatActivity() {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, BarcodeAnalyzer())
+                    it.setAnalyzer(cameraExecutor, hybridAnalyzer)
                 }
             
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -356,41 +348,108 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private inner class BarcodeAnalyzer : ImageAnalysis.Analyzer {
-        
-        @androidx.camera.core.ExperimentalGetImage
-        override fun analyze(imageProxy: ImageProxy) {
-            val mediaImage = imageProxy.image
-            if (mediaImage != null && viewModel.isScanning.value == true) {
-                val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                
-                barcodeScanner.process(image)
-                    .addOnSuccessListener { barcodes ->
-                        barcodes.firstOrNull()?.rawValue?.let { barcodeData ->
-                            runOnUiThread {
-                                viewModel.processBarcode(barcodeData)
-                            }
-                        }
-                    }
-                    .addOnFailureListener {
-                        Log.e(TAG, "Barcode scanning failed", it)
-                    }
-                    .addOnCompleteListener {
-                        imageProxy.close()
-                    }
-            } else {
-                imageProxy.close()
+    private fun setupScanModeSelector() {
+        binding.scanModeSelector.setOnModeChangeListener { mode ->
+            currentScanMode = mode
+            hybridAnalyzer.setScanMode(mode)
+            
+            // Update instruction text based on mode
+            val instruction = when (mode) {
+                ScanMode.BARCODE_ONLY -> "Position the barcode within the frame"
+                ScanMode.OCR_ONLY -> "Position the serial number text within the frame"
+                ScanMode.HYBRID -> "Position the barcode or serial number within the frame"
+            }
+            runOnUiThread {
+                binding.instructionText.text = instruction
             }
         }
+    }
+    
+    private fun handleScanResult(result: ScanResult) {
+        if (viewModel.isScanning.value != true) return
+        
+        runOnUiThread {
+            when (result) {
+                is ScanResult.BarcodeResult -> {
+                    // Direct barcode scan - process immediately
+                    viewModel.processBarcode(result.rawValue)
+                }
+                
+                is ScanResult.OcrResult -> {
+                    // OCR result - show verification dialog if needed
+                    if (result.requiresManualVerification) {
+                        showOcrVerificationDialog(result)
+                    } else {
+                        viewModel.processBarcode(result.text)
+                    }
+                }
+                
+                is ScanResult.ManualInputRequired -> {
+                    // Both scanning methods failed - show manual input dialog
+                    showManualInputDialog(result.reason)
+                }
+            }
+        }
+    }
+    
+    private fun showOcrVerificationDialog(ocrResult: ScanResult.OcrResult) {
+        val dialog = OcrVerificationDialog.newInstance(
+            ocrResult = ocrResult.text,
+            confidence = ocrResult.confidence,
+            componentType = ocrResult.inferredComponentType
+        )
+        
+        dialog.setOnConfirmListener { verifiedText ->
+            viewModel.processBarcode(verifiedText)
+        }
+        
+        dialog.setOnCancelListener {
+            // User cancelled - resume scanning
+            viewModel.resumeScanning()
+        }
+        
+        dialog.show(supportFragmentManager, "ocr_verification")
+    }
+    
+    private fun showManualInputDialog(reason: String) {
+        val editText = android.widget.EditText(this).apply {
+            hint = "Enter serial number"
+            inputType = android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        }
+        
+        AlertDialog.Builder(this)
+            .setTitle("Manual Entry Required")
+            .setMessage(reason)
+            .setView(editText)
+            .setPositiveButton("OK") { _, _ ->
+                val manualEntry = editText.text.toString().trim()
+                if (manualEntry.isNotEmpty()) {
+                    val validator = DsnValidator()
+                    val validationResult = validator.validateManualEntry(manualEntry)
+                    
+                    if (validationResult.isValid) {
+                        viewModel.processBarcode(validationResult.normalizedDsn ?: manualEntry)
+                    } else {
+                        Toast.makeText(this, validationResult.error, Toast.LENGTH_SHORT).show()
+                        viewModel.resumeScanning()
+                    }
+                } else {
+                    viewModel.resumeScanning()
+                }
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                viewModel.resumeScanning()
+            }
+            .show()
     }
     
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
-        barcodeScanner.close()
+        hybridAnalyzer.close()
     }
     
     companion object {
-        private const val TAG = "QRScanner"
+        private const val TAG = "KitBundleScanner"
     }
 }

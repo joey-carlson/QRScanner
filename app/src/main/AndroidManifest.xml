@@ -23,8 +23,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QRScanner"
         tools:targetApi="31">
+        <!-- Home Activity - Main launcher -->
         <activity
-            android:name=".MainActivity"
+            android:name=".HomeActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -33,11 +34,25 @@
             </intent-filter>
         </activity>
         
+        <!-- MainActivity - Check Out feature -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".HomeActivity" />
+        
+        <!-- KitBundleActivity - Kit Bundle feature -->
+        <activity
+            android:name=".kitbundle.KitBundleActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".HomeActivity" />
+        
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".HomeActivity" />
         
         <activity
             android:name=".export.ExportActivity"

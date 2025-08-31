@@ -8,8 +8,8 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    const val VERSION_NAME = "1.7.3"
-    const val VERSION_CODE = 19
+    const val VERSION_NAME = "2.1.0"
+    const val VERSION_CODE = 21
     const val APPLICATION_ID = "com.joeycarlson.qrscanner"
     
     // Build configuration - will be set dynamically when BuildConfig is available
@@ -56,9 +56,11 @@ object AppConfig {
     
     // File Naming
     const val EXPORT_FILE_PREFIX = "qr_checkouts"
+    const val KIT_BUNDLE_FILE_PREFIX = "qr_kits"
     const val DATE_FORMAT_FILENAME = "MM-dd-yy"
     const val DATE_FORMAT_DISPLAY = "MMM d, yyyy"
     const val DATE_FORMAT_SHORT = "MMM d"
+    const val DATE_FORMAT_KIT_ID = "MM/dd"
     const val TIMESTAMP_FORMAT = "yyyy-MM-dd_HH-mm"
     
     // CSV Format
