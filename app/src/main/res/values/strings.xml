@@ -38,7 +38,19 @@
     <!-- Missing Home Activity strings -->
     <string name="home_subtitle">Choose an option to get started</string>
     <string name="home_checkout_title">Check Out</string>
+    <string name="home_check_in_title">Check In</string>
     <string name="home_kit_bundle_title">Kit Bundle</string>
     <string name="version_placeholder">Version</string>
     <string name="version_format">Version %1$s (Build %2$d)</string>
+    
+    <!-- Check In Activity -->
+    <string name="check_in_mode">Check In</string>
+    <string name="check_in_mode_title">Check In Mode</string>
+    <string name="check_in_description">Scan kit to record check-in</string>
+    <string name="ready_to_scan_kit">Ready to scan kit</string>
+    <string name="processing_checkin">Processing check-in...</string>
+    <string name="checkin_success">✓ Kit %1$s checked in</string>
+    <string name="checkin_failed">✗ Failed to save check-in</string>
+    <string name="checkin_complete">CHECK-IN COMPLETE</string>
+    <string name="kit_checked_in">Kit %1$s\nChecked In</string>
 </resources>

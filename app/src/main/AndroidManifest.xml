@@ -41,18 +41,28 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".HomeActivity" />
         
+        <!-- CheckInActivity - Check In feature -->
+        <activity
+            android:name=".CheckInActivity"
+            android:exported="false"
+            android:label="@string/check_in_mode_title"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".HomeActivity" />
+            
         <!-- KitBundleActivity - Kit Bundle feature -->
         <activity
             android:name=".kitbundle.KitBundleActivity"
             android:exported="false"
+            android:label="@string/kit_bundle_mode_title"
             android:screenOrientation="portrait"
             android:parentActivityName=".HomeActivity" />
-        
+            
+        <!-- Settings Activity -->
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".HomeActivity" />
+            android:label="@string/settings"
+            android:screenOrientation="portrait" />
         
         <activity
             android:name=".export.ExportActivity"
