@@ -2,10 +2,13 @@ package com.joeycarlson.qrscanner.kitbundle
 
 import android.Manifest
 import android.animation.ObjectAnimator
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,14 +27,19 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.joeycarlson.qrscanner.R
 import com.joeycarlson.qrscanner.data.KitRepository
 import com.joeycarlson.qrscanner.databinding.ActivityKitBundleBinding
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.ocr.*
+import com.joeycarlson.qrscanner.SettingsActivity
+import com.joeycarlson.qrscanner.export.*
+import java.time.LocalDate
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import androidx.lifecycle.Lifecycle
 
 class KitBundleActivity : AppCompatActivity() {
     
@@ -40,9 +48,11 @@ class KitBundleActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var hapticManager: HapticManager
     private lateinit var hybridAnalyzer: HybridScanAnalyzer
+    private lateinit var repository: KitRepository
     
     private var imageAnalyzer: ImageAnalysis? = null
     private var currentScanMode = ScanMode.BARCODE_ONLY
+    private var isDialogShowing = false
     
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -92,7 +102,7 @@ class KitBundleActivity : AppCompatActivity() {
             title = getString(com.joeycarlson.qrscanner.R.string.kit_bundle_mode_title)
         }
         
-        val repository = KitRepository(this)
+        repository = KitRepository(this)
         val factory = KitBundleViewModelFactory(application, repository)
         viewModel = ViewModelProvider(this, factory)[KitBundleViewModel::class.java]
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -174,12 +184,8 @@ class KitBundleActivity : AppCompatActivity() {
                     }
                 }
                 
-                // Collect skip button visibility
-                launch {
-                    viewModel.showSkipButton.collect { show ->
-                        binding.skipButton.visibility = if (show) View.VISIBLE else View.GONE
-                    }
-                }
+                // Skip button is not used in current implementation
+                // Remove or implement skipCurrentComponent in ViewModel if needed
                 
                 // Collect bundle confirmation display
                 launch {
@@ -207,6 +213,38 @@ class KitBundleActivity : AppCompatActivity() {
                             View.VISIBLE
                         } else {
                             View.GONE
+                        }
+                    }
+                }
+                
+                // Collect requirement progress
+                launch {
+                    viewModel.requirementProgress.collect { progress ->
+                        if (progress.isNotEmpty()) {
+                            // Show progress in a dedicated text view or update existing UI
+                            binding.requirementProgressText.text = progress
+                            binding.requirementProgressCard.visibility = View.VISIBLE
+                        } else {
+                            binding.requirementProgressCard.visibility = View.GONE
+                        }
+                    }
+                }
+                
+                // Collect component detection results
+                launch {
+                    viewModel.componentDetectionResult.collect { result ->
+                        result?.let {
+                            when (it.confidenceLevel) {
+                                DsnValidator.ConfidenceLevel.MEDIUM -> {
+                                    showComponentConfirmationDialog(it)
+                                }
+                                DsnValidator.ConfidenceLevel.LOW -> {
+                                    showComponentSelectionDialog(it.dsn)
+                                }
+                                else -> {
+                                    // High confidence handled automatically
+                                }
+                            }
                         }
                     }
                 }
@@ -297,7 +335,8 @@ class KitBundleActivity : AppCompatActivity() {
         }
         
         binding.skipButton.setOnClickListener {
-            viewModel.skipCurrentComponent()
+            // Skip functionality not implemented in current version
+            // Hide button or implement in ViewModel if needed
         }
     }
     
@@ -385,8 +424,17 @@ class KitBundleActivity : AppCompatActivity() {
                 }
                 
                 is ScanResult.ManualInputRequired -> {
-                    // Both scanning methods failed - show manual input dialog
-                    showManualInputDialog(result.reason)
+                    // Manual input dialog commented out due to dialog closure issues
+                    // TODO: Implement better manual input handling in future update
+                    // showManualInputDialog(result.reason)
+                    
+                    // For now, just show a toast and resume scanning
+                    Toast.makeText(
+                        this, 
+                        "Unable to scan. Please try repositioning the barcode/text.", 
+                        Toast.LENGTH_LONG
+                    ).show()
+                    viewModel.resumeScanning()
                 }
             }
         }
@@ -412,15 +460,22 @@ class KitBundleActivity : AppCompatActivity() {
     }
     
     private fun showManualInputDialog(reason: String) {
+        // Prevent multiple dialogs
+        if (isDialogShowing) return
+        
+        isDialogShowing = true
+        viewModel.pauseScanning()
+        
         val editText = android.widget.EditText(this).apply {
             hint = "Enter serial number"
             inputType = android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
         }
         
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Manual Entry Required")
             .setMessage(reason)
             .setView(editText)
+            .setCancelable(false)
             .setPositiveButton("OK") { _, _ ->
                 val manualEntry = editText.text.toString().trim()
                 if (manualEntry.isNotEmpty()) {
@@ -440,7 +495,151 @@ class KitBundleActivity : AppCompatActivity() {
             .setNegativeButton("Cancel") { _, _ ->
                 viewModel.resumeScanning()
             }
-            .show()
+            .setOnDismissListener {
+                isDialogShowing = false
+            }
+            .create()
+        
+        dialog.show()
+    }
+    
+    private fun showComponentConfirmationDialog(detectionResult: ComponentDetectionResult) {
+        val dialog = ComponentConfirmationDialog.newInstance(
+            dsn = detectionResult.dsn,
+            componentType = detectionResult.componentType,
+            suggestedSlot = detectionResult.suggestedSlot
+        )
+        
+        dialog.setOnComponentConfirmListener(object : ComponentConfirmationDialog.OnComponentConfirmListener {
+            override fun onConfirm(dsn: String, slot: String) {
+                // User confirmed the detected component type
+                viewModel.confirmComponentAssignment(dsn, slot)
+            }
+            
+            override fun onCancel() {
+                // User rejected - show manual selection
+                showComponentSelectionDialog(detectionResult.dsn)
+            }
+        })
+        
+        dialog.show(supportFragmentManager, "component_confirmation")
+    }
+    
+    private fun showComponentSelectionDialog(dsn: String) {
+        // Get available slots from the kit bundle state
+        val availableSlots = getAvailableComponentSlots()
+        
+        val dialog = ComponentSelectionDialog.newInstance(
+            dsn = dsn,
+            availableSlots = availableSlots
+        )
+        
+        dialog.setOnComponentSelectListener(object : ComponentSelectionDialog.OnComponentSelectListener {
+            override fun onSelect(dsn: String, slot: String) {
+                // User selected a component slot
+                viewModel.confirmComponentAssignment(dsn, slot)
+            }
+            
+            override fun onCancel() {
+                // User cancelled - resume scanning
+                viewModel.resumeScanning()
+            }
+        })
+        
+        dialog.show(supportFragmentManager, "component_selection")
+    }
+    
+    private fun getAvailableComponentSlots(): List<ComponentSlot> {
+        // Create all possible component slots
+        val allSlots = listOf(
+            ComponentSlot("glasses", "Glasses", DsnValidator.ComponentType.GLASSES),
+            ComponentSlot("controller", "Controller", DsnValidator.ComponentType.CONTROLLER),
+            ComponentSlot("battery01", "Battery 01", DsnValidator.ComponentType.BATTERY_01),
+            ComponentSlot("battery02", "Battery 02", DsnValidator.ComponentType.BATTERY_02),
+            ComponentSlot("battery03", "Battery 03", DsnValidator.ComponentType.BATTERY_03),
+            ComponentSlot("pads", "Pads", DsnValidator.ComponentType.PADS),
+            ComponentSlot("unused01", "Unused 01", DsnValidator.ComponentType.UNUSED_01),
+            ComponentSlot("unused02", "Unused 02", DsnValidator.ComponentType.UNUSED_02)
+        )
+        
+        // For now, return all slots. In the future, you could filter based on what's already scanned
+        return allSlots
+    }
+    
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_kit_bundle, menu)
+        return true
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            R.id.action_export_labels -> {
+                exportKitLabels()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    private fun exportKitLabels() {
+        lifecycleScope.launch {
+            try {
+                val bundles = repository.getAllKitBundles()
+                
+                if (bundles.isEmpty()) {
+                    Toast.makeText(
+                        this@KitBundleActivity,
+                        "No kit bundles to export",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+                
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this@KitBundleActivity)
+                val deviceName = prefs.getString("device_name", null)
+                val locationId = prefs.getString("location_id", null)
+                
+                // Generate the CSV content
+                val contentGenerator = ContentGenerator()
+                val csvContent = contentGenerator.generateKitBundleContent(
+                    bundles,
+                    ExportFormat.KIT_LABELS_CSV,
+                    locationId ?: "Unknown"
+                )
+                
+                // Generate filename using FileNamingService
+                val fileNamingService = FileNamingService()
+                val filename = fileNamingService.generateKitLabelFilename(
+                    LocalDate.now(),
+                    deviceName,
+                    locationId
+                )
+                
+                // Start export method selection activity
+                val intent = Intent(this@KitBundleActivity, ExportMethodActivity::class.java).apply {
+                    putExtra("export_type", "kit_labels")
+                    putExtra("csv_content", csvContent)
+                    putExtra("filename", filename)
+                }
+                startActivity(intent)
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error exporting kit labels", e)
+                Toast.makeText(
+                    this@KitBundleActivity,
+                    "Error exporting kit labels: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
     
     override fun onDestroy() {

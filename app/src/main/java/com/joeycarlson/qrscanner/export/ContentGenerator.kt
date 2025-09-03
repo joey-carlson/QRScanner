@@ -28,6 +28,7 @@ class ContentGenerator {
             ExportFormat.CSV -> generateCsvContent(records, locationId)
             ExportFormat.XML -> generateXmlContent(records, locationId)
             ExportFormat.TXT -> generateTxtContent(records, locationId)
+            ExportFormat.KIT_LABELS_CSV -> throw IllegalArgumentException("KIT_LABELS_CSV format is only for kit bundles")
         }
     }
     
@@ -44,6 +45,7 @@ class ContentGenerator {
             ExportFormat.CSV -> generateKitBundleCsvContent(bundles, locationId)
             ExportFormat.XML -> generateKitBundleXmlContent(bundles, locationId)
             ExportFormat.TXT -> generateKitBundleTxtContent(bundles, locationId)
+            ExportFormat.KIT_LABELS_CSV -> generateKitLabelsCsvContent(bundles)
         }
     }
     
@@ -214,6 +216,54 @@ class ContentGenerator {
             stringBuilder.appendLine("  Timestamp: ${bundle.timestamp}")
             stringBuilder.appendLine("  Location: $locationId")
             stringBuilder.appendLine()
+        }
+        
+        return stringBuilder.toString()
+    }
+    
+    /**
+     * Generates label-oriented CSV content from kit bundles for printing individual component labels
+     * Each component gets its own row in the CSV for label printing
+     */
+    private fun generateKitLabelsCsvContent(bundles: List<KitBundle>): String {
+        val stringBuilder = StringBuilder()
+        
+        bundles.forEach { bundle ->
+            // Extract kit number from baseKitCode (e.g., "K123" → "123")
+            val kitNumber = bundle.baseKitCode.replace(Regex("[^0-9]"), "")
+            
+            // Add kit label
+            stringBuilder.appendLine("Kit $kitNumber")
+            
+            // Add controller label (mapped to "Puck")
+            bundle.controller?.let {
+                stringBuilder.appendLine("Puck $kitNumber")
+            }
+            
+            // Add glasses label (mapped to "G")
+            bundle.glasses?.let {
+                stringBuilder.appendLine("G $kitNumber")
+            }
+            
+            // Add battery labels with sequential numbering
+            bundle.battery01?.let {
+                stringBuilder.appendLine("Battery $kitNumber-1")
+            }
+            
+            bundle.battery02?.let {
+                stringBuilder.appendLine("Battery $kitNumber-2")
+            }
+            
+            bundle.battery03?.let {
+                stringBuilder.appendLine("Battery $kitNumber-3")
+            }
+            
+            // Add pads label using component name
+            bundle.pads?.let {
+                stringBuilder.appendLine("Pads $kitNumber")
+            }
+            
+            // Skip unused01 and unused02 as requested
         }
         
         return stringBuilder.toString()

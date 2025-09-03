@@ -119,4 +119,62 @@ class FileNamingService {
         
         return matchResult?.groupValues?.get(1)
     }
+    
+    /**
+     * Generates a filename for kit bundle exports
+     * Pattern: kit_bundles_MM-dd-yy_[LocationID].[extension]
+     */
+    fun generateKitBundleFilename(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val dateStr = date.format(dateFormatter)
+        val sanitizedLocationId = sanitizeLocationId(locationId)
+        return "kit_bundles_${dateStr}_$sanitizedLocationId.${format.extension}"
+    }
+    
+    /**
+     * Generates a filename specifically for kit label CSV exports
+     * Pattern: kit_labels_MM-DD_[DeviceName]_[LocationID].csv
+     * Uses MM-DD format as requested by user for label printing
+     */
+    fun generateKitLabelFilename(
+        date: LocalDate,
+        deviceName: String?,
+        locationId: String?
+    ): String {
+        val labelDateFormatter = DateTimeFormatter.ofPattern("MM-dd")
+        val dateStr = date.format(labelDateFormatter)
+        
+        val parts = mutableListOf<String>()
+        parts.add("kit_labels")
+        parts.add(dateStr)
+        
+        // Add device name if present
+        deviceName?.takeIf { it.isNotBlank() }?.let {
+            parts.add(sanitizeLocationId(it))
+        }
+        
+        // Add location ID if present
+        locationId?.takeIf { it.isNotBlank() }?.let {
+            parts.add(sanitizeLocationId(it))
+        }
+        
+        return "${parts.joinToString("_")}.csv"
+    }
+    
+    /**
+     * Generates a temporary filename for kit label exports
+     * Pattern: temp_kit_labels_MM-DD_[DeviceName]_[LocationID]_[timestamp].csv
+     */
+    fun generateTempKitLabelFilename(
+        date: LocalDate,
+        deviceName: String?,
+        locationId: String?
+    ): String {
+        val baseFilename = generateKitLabelFilename(date, deviceName, locationId)
+        val timestamp = System.currentTimeMillis()
+        return "temp_${baseFilename.removeSuffix(".csv")}_$timestamp.csv"
+    }
 }

@@ -237,5 +237,6 @@ enum class ExportFormat(val extension: String, val mimeType: String) {
     JSON("json", "application/json"),
     CSV("csv", "text/csv"),
     XML("xml", "application/xml"),
-    TXT("txt", "text/plain")
+    TXT("txt", "text/plain"),
+    KIT_LABELS_CSV("csv", "text/csv")
 }

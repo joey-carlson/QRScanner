@@ -23,14 +23,31 @@ class ExportMethodActivity : AppCompatActivity() {
     private lateinit var tempFileManager: TempFileManager
     private lateinit var s3ExportManager: S3ExportManager
     
+    // Kit labels export specific
+    private var exportType: String? = null
+    private var csvContent: String? = null
+    private var filename: String? = null
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityExportMethodBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        // Get dates from intent
-        startDate = LocalDate.parse(intent.getStringExtra("start_date"))
-        endDate = LocalDate.parse(intent.getStringExtra("end_date"))
+        // Check if this is kit labels export
+        exportType = intent.getStringExtra("export_type")
+        
+        if (exportType == "kit_labels") {
+            // Kit labels export mode
+            csvContent = intent.getStringExtra("csv_content")
+            filename = intent.getStringExtra("filename")
+            // Use dummy dates for compatibility
+            startDate = LocalDate.now()
+            endDate = LocalDate.now()
+        } else {
+            // Regular export mode - get dates from intent
+            startDate = LocalDate.parse(intent.getStringExtra("start_date"))
+            endDate = LocalDate.parse(intent.getStringExtra("end_date"))
+        }
         
         // Initialize export components
         exportCoordinator = ExportCoordinator(this)
@@ -41,7 +58,7 @@ class ExportMethodActivity : AppCompatActivity() {
         // Set up toolbar
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Export Method"
+        supportActionBar?.title = if (exportType == "kit_labels") "Export Kit Labels" else "Export Method"
         
         // Set up export methods list
         setupExportMethods()
@@ -53,74 +70,93 @@ class ExportMethodActivity : AppCompatActivity() {
     }
     
     private fun setupExportMethods() {
-        val exportMethods = listOf(
-            ExportMethod(
-                "Save to Downloads",
-                "Save JSON files to your device's Downloads folder",
-                "📁",
-                true
-            ),
-            ExportMethod(
-                "Save as CSV",
-                "Save CSV files to Downloads (spreadsheet compatible)",
-                "📊",
-                true
-            ),
-            ExportMethod(
-                "Share via Android",
-                "Share JSON files using any installed app",
-                "📤",
-                true
-            ),
-            ExportMethod(
-                "Share CSV",
-                "Share CSV files (spreadsheet compatible)",
-                "📈",
-                true
-            ),
-            ExportMethod(
-                "Email",
-                "Send JSON files as email attachments",
-                "📧",
-                true
-            ),
-            ExportMethod(
-                "SMS/Text",
-                "Send JSON file links via text message",
-                "💬",
-                true
-            ),
-            ExportMethod(
-                "Slack",
-                "Upload to Slack channel or DM",
-                "🔗",
-                false
-            ),
-            ExportMethod(
-                "S3 Bucket",
-                "Upload JSON files directly to AWS S3",
-                "☁️",
-                true
-            ),
-            ExportMethod(
-                "S3 CSV",
-                "Upload CSV files directly to AWS S3",
-                "☁️",
-                true
-            ),
-            ExportMethod(
-                "Google Drive",
-                "Save to Google Drive",
-                "📄",
-                false
-            ),
-            ExportMethod(
-                "Dropbox",
-                "Save to Dropbox",
-                "📦",
-                false
+        val exportMethods = if (exportType == "kit_labels") {
+            // Limited export options for kit labels (CSV for label printing)
+            listOf(
+                ExportMethod(
+                    "Save to Downloads",
+                    "Save kit labels CSV to your device's Downloads folder",
+                    "📁",
+                    true
+                ),
+                ExportMethod(
+                    "Share via Android",
+                    "Share kit labels CSV using any installed app",
+                    "📤",
+                    true
+                )
             )
-        )
+        } else {
+            // Full export options for regular exports
+            listOf(
+                ExportMethod(
+                    "Save to Downloads",
+                    "Save JSON files to your device's Downloads folder",
+                    "📁",
+                    true
+                ),
+                ExportMethod(
+                    "Save as CSV",
+                    "Save CSV files to Downloads (spreadsheet compatible)",
+                    "📊",
+                    true
+                ),
+                ExportMethod(
+                    "Share via Android",
+                    "Share JSON files using any installed app",
+                    "📤",
+                    true
+                ),
+                ExportMethod(
+                    "Share CSV",
+                    "Share CSV files (spreadsheet compatible)",
+                    "📈",
+                    true
+                ),
+                ExportMethod(
+                    "Email",
+                    "Send JSON files as email attachments",
+                    "📧",
+                    true
+                ),
+                ExportMethod(
+                    "SMS/Text",
+                    "Send JSON file links via text message",
+                    "💬",
+                    true
+                ),
+                ExportMethod(
+                    "Slack",
+                    "Upload to Slack channel or DM",
+                    "🔗",
+                    false
+                ),
+                ExportMethod(
+                    "S3 Bucket",
+                    "Upload JSON files directly to AWS S3",
+                    "☁️",
+                    true
+                ),
+                ExportMethod(
+                    "S3 CSV",
+                    "Upload CSV files directly to AWS S3",
+                    "☁️",
+                    true
+                ),
+                ExportMethod(
+                    "Google Drive",
+                    "Save to Google Drive",
+                    "📄",
+                    false
+                ),
+                ExportMethod(
+                    "Dropbox",
+                    "Save to Dropbox",
+                    "📦",
+                    false
+                )
+            )
+        }
         
         val adapter = ExportMethodAdapter(exportMethods) { method ->
             handleExportMethodClick(method)
@@ -131,33 +167,46 @@ class ExportMethodActivity : AppCompatActivity() {
     }
     
     private fun handleExportMethodClick(method: ExportMethod) {
-        when (method.name) {
-            "Save to Downloads" -> {
-                exportToDownloads()
+        if (exportType == "kit_labels") {
+            // Handle kit labels export
+            when (method.name) {
+                "Save to Downloads" -> {
+                    saveKitLabelsToDownloads()
+                }
+                "Share via Android" -> {
+                    shareKitLabelsViaAndroid()
+                }
             }
-            "Save as CSV" -> {
-                exportCsvToDownloads()
-            }
-            "Share via Android" -> {
-                shareViaAndroid()
-            }
-            "Share CSV" -> {
-                shareCsvViaAndroid()
-            }
-            "Email" -> {
-                exportViaEmail()
-            }
-            "SMS/Text" -> {
-                exportViaSMS()
-            }
-            "S3 Bucket" -> {
-                exportToS3()
-            }
-            "S3 CSV" -> {
-                exportCsvToS3()
-            }
-            else -> {
-                Toast.makeText(this, "${method.name} - Coming in future update", Toast.LENGTH_SHORT).show()
+        } else {
+            // Handle regular exports
+            when (method.name) {
+                "Save to Downloads" -> {
+                    exportToDownloads()
+                }
+                "Save as CSV" -> {
+                    exportCsvToDownloads()
+                }
+                "Share via Android" -> {
+                    shareViaAndroid()
+                }
+                "Share CSV" -> {
+                    shareCsvViaAndroid()
+                }
+                "Email" -> {
+                    exportViaEmail()
+                }
+                "SMS/Text" -> {
+                    exportViaSMS()
+                }
+                "S3 Bucket" -> {
+                    exportToS3()
+                }
+                "S3 CSV" -> {
+                    exportCsvToS3()
+                }
+                else -> {
+                    Toast.makeText(this, "${method.name} - Coming in future update", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -437,6 +486,100 @@ class ExportMethodActivity : AppCompatActivity() {
                         message
                     ) { finish() }
                 }
+            }
+        }
+    }
+    
+    // Kit labels export methods
+    private fun saveKitLabelsToDownloads() {
+        lifecycleScope.launch {
+            val progressDialog = DialogUtils.createProgressDialog(
+                this@ExportMethodActivity,
+                "Saving Kit Labels",
+                "Saving kit labels CSV to Downloads..."
+            )
+            progressDialog.show()
+            
+            try {
+                val fileManager = com.joeycarlson.qrscanner.util.FileManager(this@ExportMethodActivity)
+                when (val result = fileManager.saveToDownloads(
+                    filename ?: "kit_labels.csv",
+                    csvContent ?: "",
+                    "text/csv"
+                )) {
+                    is com.joeycarlson.qrscanner.util.FileManager.FileResult.Success -> {
+                        progressDialog.dismiss()
+                        DialogUtils.showSuccessDialog(
+                            this@ExportMethodActivity,
+                            "Export Complete",
+                            "Kit labels CSV saved to Downloads folder"
+                        ) { finish() }
+                    }
+                    is com.joeycarlson.qrscanner.util.FileManager.FileResult.Error -> {
+                        progressDialog.dismiss()
+                        DialogUtils.showErrorDialog(
+                            this@ExportMethodActivity,
+                            "Export Failed",
+                            "Failed to save kit labels CSV to Downloads: ${result.message}"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                DialogUtils.showErrorDialog(
+                    this@ExportMethodActivity,
+                    "Export Failed",
+                    "Error: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun shareKitLabelsViaAndroid() {
+        lifecycleScope.launch {
+            val progressDialog = DialogUtils.createProgressDialog(
+                this@ExportMethodActivity,
+                "Preparing Share",
+                "Preparing kit labels CSV for sharing..."
+            )
+            progressDialog.show()
+            
+            try {
+                // Create temp file for sharing
+                val tempFile = tempFileManager.createTempFile(
+                    filename ?: "kit_labels.csv",
+                    csvContent ?: ""
+                )
+                
+                val uri = tempFileManager.getUriForFile(tempFile)
+                
+                progressDialog.dismiss()
+                
+                // Create share intent
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/csv"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "Kit Labels CSV")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                
+                val chooser = Intent.createChooser(shareIntent, "Share Kit Labels CSV")
+                startActivity(chooser)
+                
+                // Clean up temp file after a delay
+                lifecycleScope.launch {
+                    kotlinx.coroutines.delay(AppConfig.TEMP_FILE_CLEANUP_DELAY)
+                    tempFileManager.cleanupFiles(listOf(tempFile))
+                }
+                
+                finish()
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                DialogUtils.showErrorDialog(
+                    this@ExportMethodActivity,
+                    "Share Failed",
+                    "Error: ${e.message}"
+                )
             }
         }
     }

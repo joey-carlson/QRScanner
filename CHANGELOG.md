@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-09-02
+
+### Added
+- **Kit Labels CSV Export for Bulk Printing**
+  - New "Export Kit Labels" menu option in Kit Bundle activity
+  - Single-column CSV format optimized for label printers
+  - One label per row for easy bulk printing workflows
+  - Component name mapping for concise labels:
+    - Controller components mapped to "Puck"
+    - Glasses components mapped to "G"
+    - Other components use their standard names
+  - Kit and component numbering based on kit number (e.g., Kit 123, Puck 123, G 123)
+  - Sequential battery numbering (Battery 123-1, Battery 123-2, Battery 123-3)
+  - Unused components (unused01/unused02) automatically excluded
+  - Filename includes date (MM-DD format), device name, and location ID
+  - Integrated with existing export system (Save to Downloads, Share via Android)
+  - Settings menu access added to Kit Bundle activity
+
+### Technical
+- New `KIT_LABELS_CSV` export format in ExportFormat enum
+- Extended `ContentGenerator` with `generateKitLabelsCsvContent()` method
+- Enhanced `FileNamingService` with kit label specific filename generation
+- Updated `ExportMethodActivity` to handle kit labels export type
+- Menu resource added for Kit Bundle activity (menu_kit_bundle.xml)
+- Version bumped to 2.2.0 (Build 22) for kit labels export feature
+
 ## [2.1.0] - 2025-08-30
 
 ### Added
@@ -21,20 +47,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real-time text preprocessing and normalization
   - Performance-optimized scanning with frame throttling
 
+- **Smart Component Detection for Kit Bundle**
+  - Three-tier confidence system for automatic component type detection:
+    - HIGH (>90%): Automatic assignment without user interaction
+    - MEDIUM (70-90%): Component confirmation dialog for user verification
+    - LOW (<70%): Manual component selection dialog
+  - Real-world DSN pattern recognition for controllers, batteries, and glasses
+  - Duplicate DSN prevention within kit sessions
+  - Dynamic requirement tracking and progress display
+  - Minimum requirements validation (1 glasses, 1 controller, 2+ batteries)
+  - Available slot management with flexible battery assignment
+  - Component confirmation dialog for medium confidence detections
+  - Component selection dialog for manual override
+  - Visual progress indicators showing kit completion status
+
 ### Technical
 - New OCR package with specialized classes:
   - `HybridScanAnalyzer`: Unified scanner supporting barcode and OCR
   - `TextRecognitionAnalyzer`: ML Kit text recognition processor
-  - `DsnValidator`: Pattern matching and validation for serial numbers
+  - `DsnValidator`: Enhanced pattern matching with confidence scoring
   - `ScanMode`: Enum for scanning mode management
   - `OcrVerificationDialog`: Manual verification UI for OCR results
   - `ScanModeSelector`: UI component for mode switching
+- Kit Bundle smart detection enhancements:
+  - `KitBundleModels`: Comprehensive data models for requirements tracking
+  - `ComponentDetectionResult`: Confidence-based detection results
+  - `ComponentConfirmationDialog`: UI for medium confidence verification
+  - `ComponentSelectionDialog`: UI for manual component selection
+  - `KitBundleViewModel`: Enhanced with state management and validation
+  - `KitBundleActivity`: Updated with dialog integration and progress UI
 - OCR performance requirements:
   - Processing within 3 seconds per scan attempt
   - 80% confidence threshold for automatic acceptance
   - Support for 8pt to 48pt font sizes
   - Multiple text orientations (0°, 90°, 180°, 270°)
-- Version bumped to 2.1.0 (Build 21) for OCR feature
+- Version bumped to 2.1.0 (Build 21) for OCR and smart detection features
+
+### Fixed
+- Temporarily disabled manual entry dialog in Hybrid scan mode due to closure issues
+- Replaced manual entry dialog with toast message for better user experience
+- Added TODO for implementing improved manual input functionality in future update
 
 ## [2.0.0] - 2025-08-30
 
