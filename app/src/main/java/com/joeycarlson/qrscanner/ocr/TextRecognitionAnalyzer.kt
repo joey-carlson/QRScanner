@@ -49,7 +49,7 @@ class TextRecognitionAnalyzer(
                 for (block in visionText.textBlocks) {
                     for (line in block.lines) {
                         val text = line.text
-                        val confidence = line.confidence ?: 0f
+                        val confidence = line.confidence ?: 0.8f
                         val boundingBox = line.boundingBox
                         
                         recognizedTexts.add(

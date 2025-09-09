@@ -205,11 +205,51 @@ class DsnValidator {
     }
     
     /**
+     * Corrects common OCR mistakes in alphanumeric codes
+     */
+    fun correctOcrMistakes(text: String): String {
+        var corrected = text
+        
+        // For real-world patterns, apply specific corrections
+        // Controller pattern: G0G46K... - the 0s should be zeros
+        if (corrected.matches(Regex("^G[O0]G46K.*"))) {
+            corrected = corrected.replace("GOG46K", "G0G46K")
+        }
+        
+        // Battery pattern: G0G4NU... - the 0 should be zero
+        if (corrected.matches(Regex("^G[O0]G4NU.*"))) {
+            corrected = corrected.replace("GOG4NU", "G0G4NU")
+        }
+        
+        // Glasses pattern: G0G348... - the 0 should be zero
+        if (corrected.matches(Regex("^G[O0]G348.*"))) {
+            corrected = corrected.replace("GOG348", "G0G348")
+        }
+        
+        // For patterns with known numeric positions, correct O to 0
+        // Pattern: Letter-Zero-Letter at the beginning (common in serial numbers)
+        corrected = corrected.replace(Regex("^([A-Z])O([A-Z])"), "$10$2")
+        
+        // For serial numbers that should be all numeric after a prefix
+        // If we have a known prefix followed by what should be numbers
+        if (corrected.matches(Regex("^G0G[A-Z0-9]{3}[O0-9]+$"))) {
+            // Replace O with 0 in the numeric portion (after the first 6 characters)
+            val prefix = corrected.substring(0, 6)
+            val numericPart = corrected.substring(6).replace("O", "0")
+            corrected = prefix + numericPart
+        }
+        
+        return corrected
+    }
+    
+    /**
      * Normalizes DSN for consistent storage
      */
     fun normalizeDsn(text: String): String {
-        return text.trim()
-            .uppercase()
+        // First correct common OCR mistakes
+        val corrected = correctOcrMistakes(text.trim().uppercase())
+        
+        return corrected
             .replace(Regex("\\s+"), "-") // Replace spaces with dashes
             .replace(Regex("[^A-Z0-9\\-_/.]"), "") // Remove invalid characters
     }

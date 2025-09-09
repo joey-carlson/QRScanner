@@ -52,7 +52,8 @@ class CheckInViewModel(
         
         viewModelScope.launch {
             // Validate the barcode format
-            if (!BarcodeValidator.isValidKitId(barcodeData)) {
+            val validationResult = BarcodeValidator.validateBarcodeData(barcodeData)
+            if (!validationResult.isValid) {
                 handleInvalidBarcode()
                 return@launch
             }

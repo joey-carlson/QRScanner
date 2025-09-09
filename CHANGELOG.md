@@ -5,6 +5,117 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] - 2025-09-09
+
+### Fixed
+- **Enhanced 16 KB Page Size Compatibility**
+  - Added bundle ABI split disabling to improve ML Kit native library alignment
+  - Resolves warnings for libbarhopper_v3.so, libimage_processing_util_jni.so, and libmlkit_google_ocr_pipeline.so
+  - Ensures compatibility with Android 15+ devices requiring 16 KB page size support
+
+### Technical
+- Added `bundle { abi { enableSplit = false } }` configuration in build.gradle
+- Version bumped to 2.4.3 (Build 26) for enhanced 16 KB compatibility
+
+## [2.4.2] - 2025-09-09
+
+### Added
+- **Duplicate Component Handling for Kit Bundle**
+  - New dialog prompts when scanning a component already assigned to another slot
+  - Option to ignore the duplicate scan and continue
+  - Option to reassign the component to a different slot (moves from original)
+  - Prevents the same DSN from being assigned to multiple slots
+  - Clear visual feedback showing current and suggested slot assignments
+  - Automatic slot suggestions based on component type detection
+
+### Fixed
+- Fixed issue where the same component DSN could be assigned to multiple slots without warning
+- Fixed missing duplicate detection UI in Kit Bundle mode
+- Fixed Gradle build configuration issue preventing builds from starting
+- Fixed OCR performance degradation by restoring null-safe confidence handling
+
+### Technical
+- Added `DuplicateComponentDialog` for handling duplicate component scenarios
+- Added duplicate handler methods to `KitBundleViewModel`:
+  - `ignoreDuplicateComponent()` - Ignores scan and resumes
+  - `reassignDuplicateComponent()` - Moves component to new slot
+  - `clearDuplicateResult()` - Clears duplicate state
+- Enhanced `KitBundleActivity` with duplicate result observer and dialog handling
+- Version bumped to 2.4.2 (Build 26) for duplicate handling and build fixes
+
+## [2.4.1] - 2025-09-09
+
+### Fixed
+- **OCR Character Recognition Improvements**
+  - Fixed OCR incorrectly reading "0" (zero) as "O" (letter O) in alphanumeric serial numbers
+  - Added `correctOcrMistakes` method to DsnValidator for intelligent character correction
+  - Specific pattern corrections for real-world DSN formats:
+    - Controller patterns (G0G46K...) now correctly interpret zeros
+    - Battery patterns (G0G4NU...) properly handle numeric sequences
+    - Glasses patterns (G0G348...) maintain accurate character recognition
+  - General correction for Letter-Zero-Letter patterns at beginning of serial numbers
+  - Numeric portion correction for known prefixes to ensure all zeros are properly interpreted
+
+### Technical
+- Enhanced DsnValidator with OCR mistake correction logic
+- Pattern-based character substitution for known serial number formats
+- Fixed 16 KB page size compatibility for Android 15+ devices:
+  - Added `packagingOptions` with `useLegacyPackaging = true` in build.gradle
+  - Added `android:extractNativeLibs="true"` to AndroidManifest.xml
+  - Resolves ML Kit native library alignment issues (libbarhopper_v3.so, libimage_processing_util_jni.so, libmlkit_google_ocr_pipeline.so)
+- Version bumped to 2.4.1 (Build 25) for OCR fix and Android 15+ compatibility
+
+## [2.4.0] - 2025-09-02
+
+### Added
+- **User Check In Feature (Placeholder)**
+  - New "User Check In" button on home screen
+  - Positioned as 3rd option between "Kit Check In" and "Kit Bundle"
+  - Placeholder activity with "Coming Soon" message
+  - Foundation for future user check-in functionality
+  - Prepared for tracking when users return equipment
+
+### Changed
+- **Updated Button Labels on Home Screen**
+  - "Check Out" renamed to "Kit Check Out" for clarity
+  - "Check In" renamed to "Kit Check In" for consistency
+  - Better differentiation between kit and user operations
+- **Documentation Updates**
+  - All documentation now shows "joecrls + Cline" as author
+  - Reflects collaborative development with AI assistance
+
+### Technical
+- New `UserCheckInActivity` as placeholder for future implementation
+- Activity layout with coming soon UI elements
+- String resources for User Check In feature
+- Version bumped to 2.4.0 (Build 24) for UI updates and placeholder feature
+
+## [2.3.0] - 2025-09-02
+
+### Added
+- **Check In Feature**
+  - New "Check In" mode accessible from the home screen
+  - Kit-only scanning workflow (no user code required)
+  - Displays between "Check Out" and "Kit Bundle" on home screen
+  - Scans kit ID codes and marks them as "Checked In"
+  - Separate JSON storage with "qr_checkins" prefix
+  - Same export capabilities as Check Out feature
+  - Simplified UI with kit-only status display
+  - Visual confirmation overlay on successful check-in
+  - Haptic feedback for scan confirmation
+  - Undo functionality for last scanned kit
+  - Clear all functionality for bulk operations
+
+### Technical
+- New `CheckInRecord` data class with simplified structure
+- `CheckInRepository` for persisting check-in records
+- `CheckInViewModel` with kit-only scanning logic
+- `CheckInActivity` with full camera integration
+- Enhanced `FileNamingService` with check-in specific methods
+- Extended `ContentGenerator` with check-in export formats (JSON, CSV, TXT)
+- Filename pattern: `qr_checkins_MM-dd-yy_[LocationID].json`
+- Version bumped to 2.3.0 (Build 23) for Check In feature
+
 ## [2.2.0] - 2025-09-02
 
 ### Added

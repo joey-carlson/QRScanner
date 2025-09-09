@@ -248,6 +248,61 @@ class KitBundleActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Collect review mode state
+                launch {
+                    viewModel.isReviewMode.collect { isReviewMode ->
+                        if (isReviewMode) {
+                            binding.reviewPanel.visibility = View.VISIBLE
+                            binding.reviewButtonSection.visibility = View.VISIBLE
+                            binding.scanModeSelector.visibility = View.GONE
+                            binding.bottomButtonSection.visibility = View.GONE
+                            
+                            // Animate fade in
+                            val fadeInAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 0f, 1f)
+                            fadeInAnimator.duration = 300
+                            fadeInAnimator.start()
+                        } else {
+                            // Animate fade out
+                            if (binding.reviewPanel.visibility == View.VISIBLE) {
+                                val fadeOutAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 1f, 0f)
+                                fadeOutAnimator.duration = 300
+                                fadeOutAnimator.start()
+                                binding.reviewPanel.postDelayed({
+                                    binding.reviewPanel.visibility = View.GONE
+                                    binding.reviewButtonSection.visibility = View.GONE
+                                    binding.scanModeSelector.visibility = View.VISIBLE
+                                    binding.bottomButtonSection.visibility = View.VISIBLE
+                                }, 300)
+                            }
+                        }
+                    }
+                }
+                
+                // Collect review kit code
+                launch {
+                    viewModel.reviewKitCode.collect { kitCode ->
+                        if (binding.reviewKitCodeInput.text.toString() != kitCode) {
+                            binding.reviewKitCodeInput.setText(kitCode)
+                        }
+                    }
+                }
+                
+                // Collect review components
+                launch {
+                    viewModel.reviewComponents.collect { components ->
+                        updateComponentInputs(components)
+                    }
+                }
+                
+                // Collect duplicate component results
+                launch {
+                    viewModel.duplicateComponentResult.collect { result ->
+                        result?.let {
+                            showDuplicateComponentDialog(it)
+                        }
+                    }
+                }
             }
         }
     }
@@ -338,6 +393,29 @@ class KitBundleActivity : AppCompatActivity() {
             // Skip functionality not implemented in current version
             // Hide button or implement in ViewModel if needed
         }
+        
+        // Review panel button click listeners
+        binding.reviewConfirmButton.setOnClickListener {
+            viewModel.confirmReview()
+        }
+        
+        binding.reviewCancelButton.setOnClickListener {
+            viewModel.cancelReview()
+        }
+        
+        // Text watcher for review kit code input
+        binding.reviewKitCodeInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                s?.let {
+                    val newText = it.toString()
+                    if (newText != viewModel.reviewKitCode.value) {
+                        viewModel.updateReviewKitCode(newText)
+                    }
+                }
+            }
+        })
     }
     
     private fun startCamera() {
@@ -549,6 +627,46 @@ class KitBundleActivity : AppCompatActivity() {
         dialog.show(supportFragmentManager, "component_selection")
     }
     
+    private fun showDuplicateComponentDialog(duplicateResult: DuplicateComponentResult) {
+        val suggestedSlotDisplayName = duplicateResult.suggestedNewSlot?.let { slot ->
+            getSlotDisplayName(slot)
+        }
+        
+        val dialog = DuplicateComponentDialog.newInstance(
+            dsn = duplicateResult.dsn,
+            currentSlot = duplicateResult.currentSlot,
+            currentSlotDisplayName = duplicateResult.currentSlotDisplayName,
+            suggestedNewSlot = duplicateResult.suggestedNewSlot,
+            suggestedSlotDisplayName = suggestedSlotDisplayName
+        )
+        
+        dialog.setOnDuplicateActionListener(object : DuplicateComponentDialog.OnDuplicateActionListener {
+            override fun onIgnore() {
+                viewModel.ignoreDuplicateComponent()
+            }
+            
+            override fun onReassign(newSlot: String) {
+                viewModel.reassignDuplicateComponent(newSlot)
+            }
+        })
+        
+        dialog.show(supportFragmentManager, "duplicate_component")
+    }
+    
+    private fun getSlotDisplayName(slot: String): String {
+        return when (slot) {
+            "glasses" -> "Glasses"
+            "controller" -> "Controller"
+            "battery01" -> "Battery 01"
+            "battery02" -> "Battery 02"
+            "battery03" -> "Battery 03"
+            "pads" -> "Pads"
+            "unused01" -> "Unused 01"
+            "unused02" -> "Unused 02"
+            else -> slot
+        }
+    }
+    
     private fun getAvailableComponentSlots(): List<ComponentSlot> {
         // Create all possible component slots
         val allSlots = listOf(
@@ -574,7 +692,7 @@ class KitBundleActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                onBackPressed()
+                onBackPressedDispatcher.onBackPressed()
                 true
             }
             R.id.action_settings -> {
@@ -638,6 +756,65 @@ class KitBundleActivity : AppCompatActivity() {
                     "Error exporting kit labels: ${e.message}",
                     Toast.LENGTH_LONG
                 ).show()
+            }
+        }
+    }
+    
+    private fun updateComponentInputs(components: Map<String, String>) {
+        binding.componentInputsContainer.removeAllViews()
+        
+        val componentSlots = listOf(
+            "glasses" to "Glasses",
+            "controller" to "Controller",
+            "battery01" to "Battery 01",
+            "battery02" to "Battery 02",
+            "battery03" to "Battery 03",
+            "pads" to "Pads",
+            "unused01" to "Unused 01",
+            "unused02" to "Unused 02"
+        )
+        
+        componentSlots.forEach { (slot, displayName) ->
+            val componentValue = components[slot]
+            if (componentValue != null) {
+                val inputLayout = com.google.android.material.textfield.TextInputLayout(this).apply {
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        bottomMargin = resources.getDimensionPixelSize(R.dimen.spacing_small)
+                    }
+                    hint = displayName
+                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                    setBoxStrokeColorStateList(
+                        android.content.res.ColorStateList.valueOf(
+                            ContextCompat.getColor(this@KitBundleActivity, android.R.color.white)
+                        )
+                    )
+                    setHintTextColor(
+                        android.content.res.ColorStateList.valueOf(
+                            ContextCompat.getColor(this@KitBundleActivity, android.R.color.white)
+                        )
+                    )
+                }
+                
+                val inputEditText = com.google.android.material.textfield.TextInputEditText(this).apply {
+                    setText(componentValue)
+                    setTextColor(ContextCompat.getColor(this@KitBundleActivity, android.R.color.white))
+                    addTextChangedListener(object : android.text.TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                        override fun afterTextChanged(s: android.text.Editable?) {
+                            s?.let {
+                                val newText = it.toString()
+                                viewModel.updateReviewComponent(slot, newText)
+                            }
+                        }
+                    })
+                }
+                
+                inputLayout.addView(inputEditText)
+                binding.componentInputsContainer.addView(inputLayout)
             }
         }
     }

@@ -15,7 +15,8 @@ import kotlinx.coroutines.Job
 enum class ScanState {
     IDLE,           // Ready to scan either user or kit
     USER_SCANNED,   // User scanned, waiting for kit
-    KIT_SCANNED     // Kit scanned, waiting for user
+    KIT_SCANNED,    // Kit scanned, waiting for user
+    REVIEW_PENDING  // Both scanned, waiting for review confirmation
 }
 
 class ScanViewModel(
@@ -46,6 +47,12 @@ class ScanViewModel(
     
     private val _checkoutConfirmationMessage = MutableStateFlow("")
     val checkoutConfirmationMessage: StateFlow<String> = _checkoutConfirmationMessage.asStateFlow()
+    
+    private val _reviewUserId = MutableStateFlow("")
+    val reviewUserId: StateFlow<String> = _reviewUserId.asStateFlow()
+    
+    private val _reviewKitId = MutableStateFlow("")
+    val reviewKitId: StateFlow<String> = _reviewKitId.asStateFlow()
     
     private var pendingUserId: String? = null
     private var pendingKitId: String? = null
@@ -99,10 +106,10 @@ class ScanViewModel(
                         _scanSuccess.value = true
                     }
                     "KIT" -> {
-                        // Kit barcode - complete the checkout
+                        // Kit barcode - enter review mode
                         pendingKitId = sanitizedData
                         _scanSuccess.value = true
-                        completeCheckout()
+                        enterReviewMode()
                     }
                     "OTHER" -> {
                         // Save OTHER type immediately
@@ -115,10 +122,10 @@ class ScanViewModel(
             ScanState.KIT_SCANNED -> {
                 when (barcodeType) {
                     "USER" -> {
-                        // User barcode - complete the checkout
+                        // User barcode - enter review mode
                         pendingUserId = sanitizedData
                         _scanSuccess.value = true
-                        completeCheckout()
+                        enterReviewMode()
                     }
                     "KIT" -> {
                         // Another kit barcode - replace the pending one
@@ -134,6 +141,12 @@ class ScanViewModel(
                 }
             }
             
+            ScanState.REVIEW_PENDING -> {
+                // In review mode, don't process new barcodes
+                // User should confirm or cancel the current review first
+                _statusMessage.value = "Please confirm or cancel the current review"
+                _scanFailure.value = true
+            }
         }
     }
     
@@ -273,8 +286,43 @@ class ScanViewModel(
         }
     }
     
+    private fun enterReviewMode() {
+        val userId = pendingUserId
+        val kitId = pendingKitId
+        
+        if (userId != null && kitId != null) {
+            // Update review fields
+            _reviewUserId.value = userId
+            _reviewKitId.value = kitId
+            
+            // Update state
+            _scanState.value = ScanState.REVIEW_PENDING
+            _isScanning.value = false
+            _statusMessage.value = "Review and confirm checkout"
+        }
+    }
+    
+    fun confirmReview() {
+        // Use the values from review fields (which may have been edited)
+        pendingUserId = _reviewUserId.value
+        pendingKitId = _reviewKitId.value
+        
+        // Complete the checkout with reviewed values
+        completeCheckout()
+    }
+    
+    fun updateReviewUserId(userId: String) {
+        _reviewUserId.value = userId
+    }
+    
+    fun updateReviewKitId(kitId: String) {
+        _reviewKitId.value = kitId
+    }
+    
     fun clearState() {
         hideUndoButton()
         resetScanState()
+        _reviewUserId.value = ""
+        _reviewKitId.value = ""
     }
 }

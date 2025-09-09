@@ -20,6 +20,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
+import android.text.Editable
+import android.text.TextWatcher
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -30,6 +32,7 @@ import com.joeycarlson.qrscanner.databinding.ActivityMainBinding
 import com.joeycarlson.qrscanner.export.ExportActivity
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
+import com.joeycarlson.qrscanner.ui.ScanState
 import com.joeycarlson.qrscanner.ui.ScanViewModel
 import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
@@ -201,6 +204,50 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Collect scan state to show/hide review panel
+                launch {
+                    viewModel.scanState.collect { state ->
+                        when (state) {
+                            ScanState.REVIEW_PENDING -> {
+                                binding.reviewPanel.visibility = View.VISIBLE
+                                // Show review panel with animation
+                                val fadeInAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 0f, 1f)
+                                fadeInAnimator.duration = 300
+                                fadeInAnimator.start()
+                            }
+                            else -> {
+                                // Hide review panel if visible
+                                if (binding.reviewPanel.visibility == View.VISIBLE) {
+                                    val fadeOutAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 1f, 0f)
+                                    fadeOutAnimator.duration = 300
+                                    fadeOutAnimator.start()
+                                    binding.reviewPanel.postDelayed({
+                                        binding.reviewPanel.visibility = View.GONE
+                                    }, 300)
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Collect review user ID
+                launch {
+                    viewModel.reviewUserId.collect { userId ->
+                        if (binding.reviewUserIdInput.text.toString() != userId) {
+                            binding.reviewUserIdInput.setText(userId)
+                        }
+                    }
+                }
+                
+                // Collect review kit ID
+                launch {
+                    viewModel.reviewKitId.collect { kitId ->
+                        if (binding.reviewKitIdInput.text.toString() != kitId) {
+                            binding.reviewKitIdInput.setText(kitId)
+                        }
+                    }
+                }
             }
         }
     }
@@ -307,6 +354,42 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         }
+        
+        // Review panel button click listeners
+        binding.reviewConfirmButton.setOnClickListener {
+            viewModel.confirmReview()
+        }
+        
+        binding.reviewCancelButton.setOnClickListener {
+            viewModel.clearState()
+        }
+        
+        // Text watchers for review input fields
+        binding.reviewUserIdInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                s?.let {
+                    val newText = it.toString()
+                    if (newText != viewModel.reviewUserId.value) {
+                        viewModel.updateReviewUserId(newText)
+                    }
+                }
+            }
+        })
+        
+        binding.reviewKitIdInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                s?.let {
+                    val newText = it.toString()
+                    if (newText != viewModel.reviewKitId.value) {
+                        viewModel.updateReviewKitId(newText)
+                    }
+                }
+            }
+        })
     }
     
     private fun startCamera() {

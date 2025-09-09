@@ -2,6 +2,7 @@ package com.joeycarlson.qrscanner.export
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.joeycarlson.qrscanner.data.CheckInRecord
 import com.joeycarlson.qrscanner.data.CheckoutRecord
 import com.joeycarlson.qrscanner.data.KitBundle
 
@@ -46,6 +47,23 @@ class ContentGenerator {
             ExportFormat.XML -> generateKitBundleXmlContent(bundles, locationId)
             ExportFormat.TXT -> generateKitBundleTxtContent(bundles, locationId)
             ExportFormat.KIT_LABELS_CSV -> generateKitLabelsCsvContent(bundles)
+        }
+    }
+    
+    /**
+     * Generates content in the specified format for check-in records
+     */
+    fun generateCheckInContent(
+        records: List<CheckInRecord>,
+        format: ExportFormat,
+        locationId: String
+    ): String {
+        return when (format) {
+            ExportFormat.JSON -> generateCheckInJsonContent(records)
+            ExportFormat.CSV -> generateCheckInCsvContent(records, locationId)
+            ExportFormat.XML -> throw IllegalArgumentException("XML format is not supported for check-ins")
+            ExportFormat.TXT -> generateCheckInTxtContent(records, locationId)
+            ExportFormat.KIT_LABELS_CSV -> throw IllegalArgumentException("KIT_LABELS_CSV format is only for kit bundles")
         }
     }
     
@@ -264,6 +282,59 @@ class ContentGenerator {
             }
             
             // Skip unused01 and unused02 as requested
+        }
+        
+        return stringBuilder.toString()
+    }
+    
+    /**
+     * Generates JSON content from check-in records
+     */
+    private fun generateCheckInJsonContent(records: List<CheckInRecord>): String {
+        return gson.toJson(records)
+    }
+    
+    /**
+     * Generates CSV content from check-in records
+     */
+    private fun generateCheckInCsvContent(records: List<CheckInRecord>, locationId: String): String {
+        val stringBuilder = StringBuilder()
+        
+        // CSV header
+        stringBuilder.appendLine("Kit,Type,Value,Timestamp,Location")
+        
+        // CSV data rows
+        records.forEach { record ->
+            stringBuilder.append("\"${record.kitId}\",")
+            stringBuilder.append("\"${record.type}\",")
+            stringBuilder.append("\"${record.value}\",")
+            stringBuilder.append("\"${record.timestamp}\",")
+            stringBuilder.appendLine("\"$locationId\"")
+        }
+        
+        return stringBuilder.toString()
+    }
+    
+    /**
+     * Generates plain text content from check-in records
+     */
+    private fun generateCheckInTxtContent(records: List<CheckInRecord>, locationId: String): String {
+        val stringBuilder = StringBuilder()
+        
+        stringBuilder.appendLine("QR Check-In Records")
+        stringBuilder.appendLine("Location: $locationId")
+        stringBuilder.appendLine("Total Records: ${records.size}")
+        stringBuilder.appendLine("=".repeat(50))
+        stringBuilder.appendLine()
+        
+        records.forEachIndexed { index, record ->
+            stringBuilder.appendLine("Record ${index + 1}:")
+            stringBuilder.appendLine("  Kit: ${record.kitId}")
+            stringBuilder.appendLine("  Type: ${record.type}")
+            stringBuilder.appendLine("  Value: ${record.value}")
+            stringBuilder.appendLine("  Timestamp: ${record.timestamp}")
+            stringBuilder.appendLine("  Location: $locationId")
+            stringBuilder.appendLine()
         }
         
         return stringBuilder.toString()

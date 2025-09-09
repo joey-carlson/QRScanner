@@ -37,9 +37,10 @@
     
     <!-- Missing Home Activity strings -->
     <string name="home_subtitle">Choose an option to get started</string>
-    <string name="home_checkout_title">Check Out</string>
-    <string name="home_check_in_title">Check In</string>
+    <string name="home_checkout_title">Kit Check Out</string>
+    <string name="home_check_in_title">Kit Check In</string>
     <string name="home_kit_bundle_title">Kit Bundle</string>
+    <string name="home_user_check_in_title">User Check In</string>
     <string name="version_placeholder">Version</string>
     <string name="version_format">Version %1$s (Build %2$d)</string>
     
@@ -53,4 +54,13 @@
     <string name="checkin_failed">✗ Failed to save check-in</string>
     <string name="checkin_complete">CHECK-IN COMPLETE</string>
     <string name="kit_checked_in">Kit %1$s\nChecked In</string>
+    
+    <!-- User Check In Activity -->
+    <string name="user_check_in_mode_title">User Check In</string>
+    <string name="coming_soon">Coming Soon</string>
+    <string name="user_check_in_coming_soon_description">The User Check In feature is currently under development.\n\nThis feature will allow you to check in users when they return equipment.</string>
+    <string name="back_to_home">Back to Home</string>
+    
+    <!-- Kit Bundle Review -->
+    <string name="confirm_and_save">Confirm &amp; Save</string>
 </resources>

@@ -177,4 +177,65 @@ class FileNamingService {
         val timestamp = System.currentTimeMillis()
         return "temp_${baseFilename.removeSuffix(".csv")}_$timestamp.csv"
     }
+    
+    /**
+     * Generates a filename for check-in exports
+     * Pattern: qr_checkins_MM-dd-yy_[LocationID].[extension]
+     */
+    fun generateCheckInFilename(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val dateStr = date.format(dateFormatter)
+        val sanitizedLocationId = sanitizeLocationId(locationId)
+        return "qr_checkins_${dateStr}_$sanitizedLocationId.${format.extension}"
+    }
+    
+    /**
+     * Generates a filename for S3 uploads of check-in data
+     * Pattern: [LocationID]/[Year]/[Month]/qr_checkins_MM-dd-yy_[LocationID].[extension]
+     */
+    fun generateCheckInS3Key(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val sanitizedLocationId = sanitizeLocationId(locationId)
+        val year = date.year
+        val month = String.format("%02d", date.monthValue)
+        val filename = generateCheckInFilename(date, locationId, format)
+        
+        return "$sanitizedLocationId/$year/$month/$filename"
+    }
+    
+    /**
+     * Generates a descriptive filename for multi-day check-in exports
+     * Pattern: qr_checkins_[StartDate]_to_[EndDate]_[LocationID].[extension]
+     */
+    fun generateCheckInRangeFilename(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val startStr = startDate.format(dateFormatter)
+        val endStr = endDate.format(dateFormatter)
+        val sanitizedLocationId = sanitizeLocationId(locationId)
+        return "qr_checkins_${startStr}_to_${endStr}_$sanitizedLocationId.${format.extension}"
+    }
+    
+    /**
+     * Generates a temporary filename for check-in exports
+     * Pattern: temp_qr_checkins_MM-dd-yy_[LocationID]_[timestamp].[extension]
+     */
+    fun generateTempCheckInFilename(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val baseFilename = generateCheckInFilename(date, locationId, format)
+        val timestamp = System.currentTimeMillis()
+        return "temp_${baseFilename.removeSuffix(".${format.extension}")}_$timestamp.${format.extension}"
+    }
 }

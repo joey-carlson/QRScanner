@@ -96,6 +96,17 @@ data class ComponentDetectionResult(
 )
 
 /**
+ * Result when a duplicate component is scanned
+ */
+data class DuplicateComponentResult(
+    val dsn: String,
+    val currentSlot: String,
+    val currentSlotDisplayName: String,
+    val componentType: DsnValidator.ComponentType?,
+    val suggestedNewSlot: String? = null
+)
+
+/**
  * Represents a scanned component in the current kit session
  */
 data class ScannedComponent(

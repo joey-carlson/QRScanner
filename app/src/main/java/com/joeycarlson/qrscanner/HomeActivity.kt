@@ -44,6 +44,12 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
         }
         
+        // User Check In button - launches UserCheckInActivity (placeholder)
+        binding.userCheckinButton.setOnClickListener {
+            val intent = Intent(this, UserCheckInActivity::class.java)
+            startActivity(intent)
+        }
+        
         // Kit Bundle button - launches KitBundleActivity
         binding.kitBundleButton.setOnClickListener {
             val intent = Intent(this, com.joeycarlson.qrscanner.kitbundle.KitBundleActivity::class.java)

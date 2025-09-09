@@ -12,8 +12,8 @@ android {
         applicationId "com.joeycarlson.qrscanner"
         minSdk 24
         targetSdk 34
-        versionCode 22
-        versionName "2.2.0"
+        versionCode 26
+        versionName "2.4.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,6 +34,17 @@ android {
     }
     buildFeatures {
         viewBinding true
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+    
+    bundle {
+        abi {
+            enableSplit = false
+        }
     }
     
     applicationVariants.all { variant ->
@@ -144,14 +155,15 @@ https://github.com/joey-carlson/QRScanner
 }
 
 // Automatically run copy task after successful builds
-afterEvaluate {
-    tasks.matching { it.name == 'assembleDebug' }.all { task ->
-        task.finalizedBy copyApksToSharedLocation
-    }
-    tasks.matching { it.name == 'assembleRelease' }.all { task ->
-        task.finalizedBy copyApksToSharedLocation
-    }
-}
+// Temporarily commented out due to Gradle compatibility issue
+// afterEvaluate {
+//     tasks.matching { it.name == 'assembleDebug' }.all { task ->
+//         task.finalizedBy copyApksToSharedLocation
+//     }
+//     tasks.matching { it.name == 'assembleRelease' }.all { task ->
+//         task.finalizedBy copyApksToSharedLocation
+//     }
+// }
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'

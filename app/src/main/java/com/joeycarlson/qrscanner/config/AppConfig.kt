@@ -8,8 +8,8 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    const val VERSION_NAME = "2.1.0"
-    const val VERSION_CODE = 21
+    const val VERSION_NAME = "2.4.0"
+    const val VERSION_CODE = 24
     const val APPLICATION_ID = "com.joeycarlson.qrscanner"
     
     // Build configuration - will be set dynamically when BuildConfig is available

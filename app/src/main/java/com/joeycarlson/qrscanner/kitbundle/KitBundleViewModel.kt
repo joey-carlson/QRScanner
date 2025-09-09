@@ -56,6 +56,20 @@ class KitBundleViewModel(
     private val _componentDetectionResult = MutableStateFlow<ComponentDetectionResult?>(null)
     val componentDetectionResult: StateFlow<ComponentDetectionResult?> = _componentDetectionResult.asStateFlow()
     
+    // Duplicate handling state
+    private val _duplicateComponentResult = MutableStateFlow<DuplicateComponentResult?>(null)
+    val duplicateComponentResult: StateFlow<DuplicateComponentResult?> = _duplicateComponentResult.asStateFlow()
+    
+    // Review state flows
+    private val _isReviewMode = MutableStateFlow(false)
+    val isReviewMode: StateFlow<Boolean> = _isReviewMode.asStateFlow()
+    
+    private val _reviewKitCode = MutableStateFlow("")
+    val reviewKitCode: StateFlow<String> = _reviewKitCode.asStateFlow()
+    
+    private val _reviewComponents = MutableStateFlow<Map<String, String>>(emptyMap())
+    val reviewComponents: StateFlow<Map<String, String>> = _reviewComponents.asStateFlow()
+    
     // Bundle state using the new models
     private var kitBundleState: KitBundleState? = null
     
@@ -114,24 +128,37 @@ class KitBundleViewModel(
         
         // Check for duplicate DSN
         if (state.isDuplicateDsn(componentDsn)) {
-            _statusMessage.value = "⚠️ Duplicate DSN - already scanned in this kit"
-            _scanFailure.value = true
+            // Find which slot currently has this DSN
+            val currentEntry = state.scannedComponents.entries.find { (_, component) ->
+                component.dsn == componentDsn
+            }
             
-            viewModelScope.launch {
-                delay(600)
-                _scanFailure.value = false
-                delay(900)
-                _isScanning.value = true
+            if (currentEntry != null) {
+                val (currentSlot, currentComponent) = currentEntry
+                
+                // Detect component type for suggested new slot
+                val (componentType, _) = dsnValidator.inferComponentTypeWithConfidence(componentDsn)
+                val suggestedNewSlot = getSuggestedSlot(componentType ?: currentComponent.componentType, state)
+                
+                // Create duplicate result and show dialog
+                _duplicateComponentResult.value = DuplicateComponentResult(
+                    dsn = componentDsn,
+                    currentSlot = currentSlot,
+                    currentSlotDisplayName = getSlotDisplayName(currentSlot),
+                    componentType = componentType ?: currentComponent.componentType,
+                    suggestedNewSlot = suggestedNewSlot
+                )
+                _isScanning.value = false
             }
             return
         }
         
         // Detect component type with confidence
-        val (componentType, patternConfidence) = dsnValidator.inferComponentTypeWithConfidence(componentDsn)
+        val (componentType, _) = dsnValidator.inferComponentTypeWithConfidence(componentDsn)
         val overallConfidence = dsnValidator.getDetectionConfidence(componentDsn, ocrConfidence)
         
-        // Create detection result
-        val detectionResult = ComponentDetectionResult(
+        // Create detection result and process based on confidence level
+        val result = ComponentDetectionResult(
             dsn = componentDsn,
             componentType = componentType,
             confidenceLevel = overallConfidence,
@@ -142,16 +169,16 @@ class KitBundleViewModel(
         when (overallConfidence) {
             DsnValidator.ConfidenceLevel.HIGH -> {
                 // Auto-assign with high confidence
-                autoAssignComponent(detectionResult)
+                autoAssignComponent(result)
             }
             DsnValidator.ConfidenceLevel.MEDIUM -> {
                 // Show confirmation dialog
-                _componentDetectionResult.value = detectionResult
+                _componentDetectionResult.value = result
                 _isScanning.value = false
             }
             DsnValidator.ConfidenceLevel.LOW -> {
                 // Show manual selection dialog
-                _componentDetectionResult.value = detectionResult
+                _componentDetectionResult.value = result
                 _isScanning.value = false
             }
         }
@@ -173,7 +200,6 @@ class KitBundleViewModel(
     
     fun confirmComponentAssignment(dsn: String, slot: String) {
         val state = kitBundleState ?: return
-        val detectionResult = _componentDetectionResult.value ?: return
         
         // Get component type for the slot
         val componentType = getComponentTypeForSlot(slot)
@@ -288,11 +314,156 @@ class KitBundleViewModel(
         val state = kitBundleState ?: return
         val status = state.getRequirementStatus()
         
-        _showSaveButton.value = status.isComplete
+        if (status.isComplete && !_isReviewMode.value) {
+            // Enter review mode when minimum requirements are met
+            enterReviewMode()
+        }
+    }
+    
+    private fun enterReviewMode() {
+        val state = kitBundleState ?: return
+        
+        // Prepare review data
+        _reviewKitCode.value = state.baseKitCode
+        
+        // Convert scanned components to review format (slot -> DSN)
+        val reviewComponentsMap = mutableMapOf<String, String>()
+        state.scannedComponents.forEach { (slot, component) ->
+            reviewComponentsMap[slot] = component.dsn
+        }
+        _reviewComponents.value = reviewComponentsMap
+        
+        // Enter review mode
+        _isReviewMode.value = true
+        _isScanning.value = false
+        _showSaveButton.value = true
+        _statusMessage.value = "Review kit bundle before saving"
+        _instructionText.value = "Check all components are correct"
+    }
+    
+    fun updateReviewKitCode(kitCode: String) {
+        _reviewKitCode.value = kitCode
+    }
+    
+    fun updateReviewComponent(slot: String, dsn: String) {
+        val currentComponents = _reviewComponents.value.toMutableMap()
+        if (dsn.isNotBlank()) {
+            currentComponents[slot] = dsn
+        } else {
+            currentComponents.remove(slot)
+        }
+        _reviewComponents.value = currentComponents
+    }
+    
+    fun confirmReview() {
+        // Update kit bundle state with reviewed values
+        val reviewedKitCode = _reviewKitCode.value
+        val reviewedComponents = _reviewComponents.value
+        
+        // Create new state with reviewed values
+        val newComponents = mutableMapOf<String, ScannedComponent>()
+        val newDsns = mutableSetOf<String>()
+        
+        reviewedComponents.forEach { (slot, dsn) ->
+            val componentType = getComponentTypeForSlot(slot)
+            newComponents[slot] = ScannedComponent(
+                dsn = dsn,
+                componentType = componentType,
+                assignedSlot = slot
+            )
+            newDsns.add(dsn)
+        }
+        
+        kitBundleState = KitBundleState(
+            baseKitCode = reviewedKitCode,
+            scannedComponents = newComponents,
+            scannedDsns = newDsns
+        )
+        
+        // Exit review mode
+        _isReviewMode.value = false
+        
+        // Save the kit bundle
+        saveKitBundle()
+    }
+    
+    fun cancelReview() {
+        // Exit review mode and resume scanning
+        _isReviewMode.value = false
+        _isScanning.value = true
+        _showSaveButton.value = false
+        _statusMessage.value = "Continue scanning components"
+        
+        // Update instruction based on current requirements
+        updateRequirementProgress()
     }
     
     fun cancelComponentDetection() {
         _componentDetectionResult.value = null
+        _isScanning.value = true
+    }
+    
+    fun ignoreDuplicateComponent() {
+        // Clear the duplicate result and resume scanning
+        _duplicateComponentResult.value = null
+        _isScanning.value = true
+        _statusMessage.value = "Duplicate component ignored"
+        
+        // Show brief failure flash to indicate rejection
+        _scanFailure.value = true
+        viewModelScope.launch {
+            delay(600)
+            _scanFailure.value = false
+        }
+    }
+    
+    fun reassignDuplicateComponent(newSlot: String) {
+        val duplicateResult = _duplicateComponentResult.value ?: return
+        val state = kitBundleState ?: return
+        
+        // Remove the component from its current slot
+        val updatedComponents = state.scannedComponents.toMutableMap()
+        updatedComponents.remove(duplicateResult.currentSlot)
+        
+        // Assign to new slot
+        val componentType = getComponentTypeForSlot(newSlot)
+        val scannedComponent = ScannedComponent(
+            dsn = duplicateResult.dsn,
+            componentType = componentType,
+            assignedSlot = newSlot
+        )
+        updatedComponents[newSlot] = scannedComponent
+        
+        // Update state
+        kitBundleState = state.copy(
+            scannedComponents = updatedComponents
+        )
+        
+        // Clear duplicate result
+        _duplicateComponentResult.value = null
+        
+        // Update UI
+        val displayName = getSlotDisplayName(newSlot)
+        val oldDisplayName = getSlotDisplayName(duplicateResult.currentSlot)
+        _statusMessage.value = "Moved from $oldDisplayName to $displayName"
+        _scanSuccess.value = true
+        
+        // Update progress and summary
+        updateRequirementProgress()
+        updateComponentSummary()
+        checkCompletionStatus()
+        
+        // Resume scanning
+        viewModelScope.launch {
+            delay(600)
+            _scanSuccess.value = false
+            delay(900)
+            _isScanning.value = true
+        }
+    }
+    
+    fun clearDuplicateResult() {
+        _duplicateComponentResult.value = null
         _isScanning.value = true
     }
     

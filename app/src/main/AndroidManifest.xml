@@ -22,6 +22,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.QRScanner"
+        android:extractNativeLibs="true"
         tools:targetApi="31">
         <!-- Home Activity - Main launcher -->
         <activity
@@ -46,6 +47,14 @@
             android:name=".CheckInActivity"
             android:exported="false"
             android:label="@string/check_in_mode_title"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".HomeActivity" />
+            
+        <!-- UserCheckInActivity - User Check In feature (placeholder) -->
+        <activity
+            android:name=".UserCheckInActivity"
+            android:exported="false"
+            android:label="@string/user_check_in_mode_title"
             android:screenOrientation="portrait"
             android:parentActivityName=".HomeActivity" />
             
