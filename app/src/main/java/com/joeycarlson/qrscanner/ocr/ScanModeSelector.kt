@@ -21,7 +21,6 @@ class ScanModeSelector @JvmOverloads constructor(
     private val toggleGroup: MaterialButtonToggleGroup
     private val barcodeButton: MaterialButton
     private val ocrButton: MaterialButton
-    private val hybridButton: MaterialButton
     
     private var onModeChangeListener: ((ScanMode) -> Unit)? = null
     
@@ -32,7 +31,6 @@ class ScanModeSelector @JvmOverloads constructor(
         toggleGroup = findViewById(R.id.scanModeToggleGroup)
         barcodeButton = findViewById(R.id.barcodeModeButton)
         ocrButton = findViewById(R.id.ocrModeButton)
-        hybridButton = findViewById(R.id.hybridModeButton)
         
         // Set default selection
         toggleGroup.check(R.id.barcodeModeButton)
@@ -43,7 +41,6 @@ class ScanModeSelector @JvmOverloads constructor(
                 val mode = when (checkedId) {
                     R.id.barcodeModeButton -> ScanMode.BARCODE_ONLY
                     R.id.ocrModeButton -> ScanMode.OCR_ONLY
-                    R.id.hybridModeButton -> ScanMode.HYBRID
                     else -> ScanMode.BARCODE_ONLY
                 }
                 onModeChangeListener?.invoke(mode)
@@ -58,7 +55,6 @@ class ScanModeSelector @JvmOverloads constructor(
         val buttonId = when (mode) {
             ScanMode.BARCODE_ONLY -> R.id.barcodeModeButton
             ScanMode.OCR_ONLY -> R.id.ocrModeButton
-            ScanMode.HYBRID -> R.id.hybridModeButton
         }
         toggleGroup.check(buttonId)
     }
@@ -70,7 +66,6 @@ class ScanModeSelector @JvmOverloads constructor(
         return when (toggleGroup.checkedButtonId) {
             R.id.barcodeModeButton -> ScanMode.BARCODE_ONLY
             R.id.ocrModeButton -> ScanMode.OCR_ONLY
-            R.id.hybridModeButton -> ScanMode.HYBRID
             else -> ScanMode.BARCODE_ONLY
         }
     }
@@ -90,6 +85,5 @@ class ScanModeSelector @JvmOverloads constructor(
         toggleGroup.isEnabled = enabled
         barcodeButton.isEnabled = enabled
         ocrButton.isEnabled = enabled
-        hybridButton.isEnabled = enabled
     }
 }

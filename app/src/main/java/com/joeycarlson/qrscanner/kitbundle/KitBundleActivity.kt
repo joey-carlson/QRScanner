@@ -184,6 +184,13 @@ class KitBundleActivity : AppCompatActivity() {
                     }
                 }
                 
+                // Collect export button visibility
+                launch {
+                    viewModel.showExportButton.collect { show ->
+                        binding.exportFab.visibility = if (show) View.VISIBLE else View.GONE
+                    }
+                }
+                
                 // Skip button is not used in current implementation
                 // Remove or implement skipCurrentComponent in ViewModel if needed
                 
@@ -253,6 +260,9 @@ class KitBundleActivity : AppCompatActivity() {
                 launch {
                     viewModel.isReviewMode.collect { isReviewMode ->
                         if (isReviewMode) {
+                            // Pause the image analyzer to stop processing frames
+                            imageAnalyzer?.clearAnalyzer()
+                            
                             binding.reviewPanel.visibility = View.VISIBLE
                             binding.reviewButtonSection.visibility = View.VISIBLE
                             binding.scanModeSelector.visibility = View.GONE
@@ -263,6 +273,9 @@ class KitBundleActivity : AppCompatActivity() {
                             fadeInAnimator.duration = 300
                             fadeInAnimator.start()
                         } else {
+                            // Resume the image analyzer
+                            imageAnalyzer?.setAnalyzer(cameraExecutor, hybridAnalyzer)
+                            
                             // Animate fade out
                             if (binding.reviewPanel.visibility == View.VISIBLE) {
                                 val fadeOutAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 1f, 0f)
@@ -416,6 +429,15 @@ class KitBundleActivity : AppCompatActivity() {
                 }
             }
         })
+        
+        // Export button click listener
+        binding.exportFab.setOnClickListener {
+            // Launch the export activity with kit bundle type
+            val intent = Intent(this, ExportActivity::class.java).apply {
+                putExtra("export_type", "kit_bundle")
+            }
+            startActivity(intent)
+        }
     }
     
     private fun startCamera() {
@@ -474,7 +496,6 @@ class KitBundleActivity : AppCompatActivity() {
             val instruction = when (mode) {
                 ScanMode.BARCODE_ONLY -> "Position the barcode within the frame"
                 ScanMode.OCR_ONLY -> "Position the serial number text within the frame"
-                ScanMode.HYBRID -> "Position the barcode or serial number within the frame"
             }
             runOnUiThread {
                 binding.instructionText.text = instruction

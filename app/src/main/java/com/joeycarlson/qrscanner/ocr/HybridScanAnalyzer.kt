@@ -57,7 +57,6 @@ class HybridScanAnalyzer(
         when (scanMode) {
             ScanMode.BARCODE_ONLY -> analyzeBarcodeOnly(image, imageProxy)
             ScanMode.OCR_ONLY -> analyzeOcrOnly(image, imageProxy)
-            ScanMode.HYBRID -> analyzeHybrid(image, imageProxy)
         }
     }
     
@@ -112,67 +111,6 @@ class HybridScanAnalyzer(
             }
     }
     
-    private fun analyzeHybrid(image: InputImage, imageProxy: ImageProxy) {
-        // First try barcode scanning (usually faster and more reliable)
-        barcodeScanner.process(image)
-            .addOnSuccessListener { barcodes ->
-                if (barcodes.isNotEmpty() && !resultFoundInFrame) {
-                    val barcode = barcodes.first()
-                    barcode.rawValue?.let { value ->
-                        resultFoundInFrame = true
-                        onScanResult(
-                            ScanResult.BarcodeResult(
-                                rawValue = value,
-                                format = getBarcodeFormatName(barcode.format)
-                            )
-                        )
-                    }
-                    imageProxy.close()
-                } else {
-                    // No barcode found, try OCR
-                    analyzeWithOcrFallback(image, imageProxy)
-                }
-            }
-            .addOnFailureListener {
-                // Barcode scanning failed, try OCR
-                analyzeWithOcrFallback(image, imageProxy)
-            }
-    }
-    
-    private fun analyzeWithOcrFallback(image: InputImage, imageProxy: ImageProxy) {
-        textRecognizer.process(image)
-            .addOnSuccessListener { visionText ->
-                if (!resultFoundInFrame) {
-                    val recognizedTexts = extractRecognizedTexts(visionText)
-                    val dsnCandidates = dsnValidator.findDsns(recognizedTexts)
-                    
-                    if (dsnCandidates.isNotEmpty()) {
-                        val bestCandidate = dsnCandidates.first()
-                        resultFoundInFrame = true
-                        onScanResult(
-                            ScanResult.OcrResult(
-                                text = bestCandidate.dsn,
-                                confidence = bestCandidate.confidence,
-                                inferredComponentType = bestCandidate.componentType,
-                                requiresManualVerification = bestCandidate.confidence < 0.9f
-                            )
-                        )
-                    } else if (recognizedTexts.isNotEmpty()) {
-                        // No valid DSN found, but we have text - might need manual input
-                        onScanResult(
-                            ScanResult.ManualInputRequired(
-                                reason = "No valid serial number detected. Please enter manually."
-                            )
-                        )
-                    }
-                }
-                imageProxy.close()
-            }
-            .addOnFailureListener { exception ->
-                onError(exception)
-                imageProxy.close()
-            }
-    }
     
     private fun extractRecognizedTexts(visionText: com.google.mlkit.vision.text.Text): List<RecognizedText> {
         val recognizedTexts = mutableListOf<RecognizedText>()

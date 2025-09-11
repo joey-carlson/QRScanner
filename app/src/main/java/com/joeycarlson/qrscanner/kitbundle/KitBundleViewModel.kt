@@ -40,6 +40,9 @@ class KitBundleViewModel(
     private val _showSaveButton = MutableStateFlow(false)
     val showSaveButton: StateFlow<Boolean> = _showSaveButton.asStateFlow()
     
+    private val _showExportButton = MutableStateFlow(false)
+    val showExportButton: StateFlow<Boolean> = _showExportButton.asStateFlow()
+    
     private val _showBundleConfirmation = MutableStateFlow(false)
     val showBundleConfirmation: StateFlow<Boolean> = _showBundleConfirmation.asStateFlow()
     
@@ -308,6 +311,9 @@ class KitBundleViewModel(
         }
         
         _componentSummary.value = summary.toString().trimEnd()
+        
+        // Show export button when we have any components
+        _showExportButton.value = state.scannedComponents.isNotEmpty()
     }
     
     private fun checkCompletionStatus() {
@@ -404,16 +410,19 @@ class KitBundleViewModel(
     }
     
     fun ignoreDuplicateComponent() {
-        // Clear the duplicate result and resume scanning
+        // Clear the duplicate result
         _duplicateComponentResult.value = null
-        _isScanning.value = true
         _statusMessage.value = "Duplicate component ignored"
         
         // Show brief failure flash to indicate rejection
         _scanFailure.value = true
+        
         viewModelScope.launch {
             delay(600)
             _scanFailure.value = false
+            // Add a longer delay before resuming scanning to prevent immediate re-scan
+            delay(1500)  // Total 2.1 seconds before scanning resumes
+            _isScanning.value = true
         }
     }
     

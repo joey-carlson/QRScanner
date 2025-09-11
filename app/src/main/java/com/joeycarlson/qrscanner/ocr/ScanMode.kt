@@ -15,13 +15,7 @@ enum class ScanMode {
      * OCR text recognition only
      * Uses ML Kit Text Recognition
      */
-    OCR_ONLY,
-    
-    /**
-     * Hybrid mode with automatic detection
-     * Attempts both barcode and OCR simultaneously
-     */
-    HYBRID
+    OCR_ONLY
 }
 
 /**

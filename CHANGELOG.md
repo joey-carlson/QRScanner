@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] - 2025-09-10
+
+### Fixed
+- **Removed Hybrid Scan Mode**
+  - Removed the problematic Hybrid scan mode option from Kit Bundle feature
+  - Hybrid mode was causing continuous error messages that persisted even when switching modes
+  - Users can now only select between "Barcode" and "OCR" scan modes
+  - This simplifies the scanning experience and eliminates the error loop issue
+
+### Changed
+- Simplified scan mode selector UI to show only two options instead of three
+- Updated HybridScanAnalyzer to remove unused hybrid mode logic
+- Kit Bundle scanning now defaults to Barcode mode with OCR as an alternative
+
+### Technical
+- Removed HYBRID enum value from ScanMode
+- Updated ScanModeSelector UI component and layout
+- Cleaned up analyzeHybrid() and analyzeWithOcrFallback() methods
+- Version bumped to 2.4.4 (Build 27) for scan mode fix
+
 ## [2.4.3] - 2025-09-09
 
 ### Fixed
