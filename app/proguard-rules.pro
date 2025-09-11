@@ -24,6 +24,20 @@
 -keep class com.google.mlkit.** { *; }
 -keep class com.google.android.gms.** { *; }
 
+# Keep native methods for ML Kit
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Don't strip or optimize native libraries
+-keep class com.google.mlkit.vision.** { *; }
+-keep class com.google.mlkit.common.** { *; }
+-dontwarn com.google.mlkit.**
+
+# Keep barcode and text recognition specific classes
+-keep class com.google.mlkit.vision.barcode.** { *; }
+-keep class com.google.mlkit.vision.text.** { *; }
+
 # Keep Gson classes
 -keepattributes Signature
 -keepattributes *Annotation*
