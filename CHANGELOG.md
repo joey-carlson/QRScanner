@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] - 2025-09-11
+
+### Fixed
+- **Complete 16KB Page Size Compatibility for Android 16+**
+  - Fixed ML Kit native library alignment issues for 16KB page sizes
+  - Resolved errors with libbarhopper_v3.so, libimage_processing_util_jni.so, and libmlkit_google_ocr_pipeline.so
+  - App now fully compatible with Pixel 8a and other devices running Android 16
+  - Ensures compliance with Google Play requirement for 16KB support (mandatory from November 2025)
+
+### Changed
+- Updated compile and target SDK to 35 for Android 16 support
+- Updated Android Gradle Plugin to 8.7.2
+- Updated Kotlin to 1.9.22
+- Updated ML Kit dependencies:
+  - Barcode Scanning: 17.2.0 → 17.3.0
+  - Text Recognition: 16.0.0 → 16.0.1
+- Updated CameraX libraries: 1.3.1 → 1.3.4
+
+### Technical
+- Added `android.experimental.enable16KPageSizes=true` to gradle.properties
+- Added NDK ABI filters for all architectures (arm64-v8a, armeabi-v7a, x86, x86_64)
+- Enhanced packaging options with `keepDebugSymbols` for native libraries
+- Maintained existing bundle and packaging configurations
+- Version bumped to 2.4.5 (Build 28) for 16KB compatibility
+
 ## [2.4.4] - 2025-09-10
 
 ### Fixed
