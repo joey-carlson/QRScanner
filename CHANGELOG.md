@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.6] - 2025-09-11
+
+### Fixed
+- **Removed deprecated gradle property for AGP 8.13.0 compatibility**
+  - Removed `android.bundle.enableUncompressedNativeLibs` from gradle.properties (deprecated in AGP 8.1+)
+  - Build now completes successfully without deprecated property warnings
+  - Maintains proper 16KB alignment for native libraries
+
+### Technical
+- Updated Android Gradle Plugin to 8.13.0 (from 8.7.2)
+- Version bumped to 2.4.6 (Build 29) for AGP compatibility fix
+
 ## [2.4.5] - 2025-09-11
 
 ### Fixed
