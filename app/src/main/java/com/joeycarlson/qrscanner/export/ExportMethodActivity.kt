@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.joeycarlson.qrscanner.databinding.ActivityExportMethodBinding
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.config.AppConfig
+import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -32,6 +33,10 @@ class ExportMethodActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityExportMethodBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Set up window insets to handle system UI overlaps
+        WindowInsetsHelper.setupWindowInsets(this)
+        WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
         // Check if this is kit labels export
         exportType = intent.getStringExtra("export_type")

@@ -36,6 +36,8 @@ import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.ocr.*
 import com.joeycarlson.qrscanner.SettingsActivity
 import com.joeycarlson.qrscanner.export.*
+import com.joeycarlson.qrscanner.util.LogManager
+import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import java.time.LocalDate
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -96,6 +98,12 @@ class KitBundleActivity : AppCompatActivity() {
         binding = ActivityKitBundleBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
+        // Set up edge-to-edge display and handle system UI insets
+        WindowInsetsHelper.setupWindowInsets(this)
+        
+        // Apply padding to the root view to avoid system UI overlap
+        WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
+        
         // Set up action bar with back navigation
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
@@ -155,6 +163,13 @@ class KitBundleActivity : AppCompatActivity() {
                             View.VISIBLE
                         } else {
                             View.INVISIBLE
+                        }
+                        
+                        // Also pause/resume the image analyzer to prevent processing while dialogs are shown
+                        if (isScanning) {
+                            imageAnalyzer?.setAnalyzer(cameraExecutor, hybridAnalyzer)
+                        } else {
+                            imageAnalyzer?.clearAnalyzer()
                         }
                     }
                 }
@@ -432,11 +447,14 @@ class KitBundleActivity : AppCompatActivity() {
         
         // Export button click listener
         binding.exportFab.setOnClickListener {
-            // Launch the export activity with kit bundle type
-            val intent = Intent(this, ExportActivity::class.java).apply {
+            // Launch the unified export activity with kit bundle type
+            val intent = Intent(this, UnifiedExportActivity::class.java).apply {
                 putExtra("export_type", "kit_bundle")
             }
             startActivity(intent)
+            
+            // Log export action
+            LogManager.getInstance(this).log("KitBundleActivity", "Export button clicked")
         }
     }
     

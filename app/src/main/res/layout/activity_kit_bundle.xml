@@ -317,7 +317,7 @@
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_menu_share"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/bottomButtonSection"
+        app:layout_constraintTop_toBottomOf="@id/componentSummaryCard"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Bundle Confirmation Overlay -->

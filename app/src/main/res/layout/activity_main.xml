@@ -222,13 +222,15 @@
                 android:textColor="@android:color/white"
                 android:visibility="gone" />
 
-            <Button
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/exportButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Export"
-                android:backgroundTint="@color/primary"
-                android:textColor="@android:color/white" />
+                android:layout_marginStart="8dp"
+                app:fabSize="mini"
+                app:backgroundTint="@color/primary"
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="@android:color/white" />
 
         </LinearLayout>
 

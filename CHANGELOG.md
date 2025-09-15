@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-09-15
+
+### Added
+- **Sophisticated OCR Confidence Tuning System**
+  - Multi-factor confidence scoring combining ML Kit confidence, pattern matching, stability, and environmental factors
+  - Component-specific confidence thresholds (batteries require higher confidence for safety)
+  - Three sensitivity modes: Conservative, Balanced (default), and Aggressive
+  - Environmental adaptation using device sensors:
+    - Light sensor for optimal OCR lighting detection (100-1000 lux)
+    - Accelerometer for device stability tracking
+  - Bounding box stability analysis to detect motion during scanning
+  - Historical confidence tracking for improved accuracy
+  - Configurable weights for different confidence factors
+  - Manual verification triggers based on component type and confidence level
+
+### Technical
+- New OCR confidence infrastructure:
+  - `OcrConfidenceConfig`: Configuration data class for sensitivity modes and thresholds
+  - `OcrConfidenceManager`: Central manager for sophisticated confidence calculations
+  - `EnvironmentalAnalyzer`: Sensor-based environmental condition detection
+- Enhanced TextRecognitionAnalyzer and HybridScanAnalyzer with confidence system integration
+- Multi-factor scoring formula: mlKitConfidence * 0.5 + patternMatch * 0.25 + stability * 0.15 + environmental * 0.1
+- Component-aware thresholds: Batteries (0.9 base, 0.95 manual), others (0.85 base, 0.9 manual)
+- Version bumped to 2.5.0 (Build 30) for sophisticated OCR confidence system
+
 ## [2.4.6] - 2025-09-11
 
 ### Fixed

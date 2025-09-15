@@ -1,4 +1,4 @@
-# QR Scanner - Advanced Kit Management System v2.4.6
+# QR Scanner - Advanced Kit Management System v2.5.0
 
 An Android application for scanning QR codes and barcodes to track kit movements and manage kit component bundles. The app supports OCR text recognition, multiple scanning modes, and comprehensive export capabilities including AWS S3 integration.
 
@@ -77,6 +77,30 @@ An Android application for scanning QR codes and barcodes to track kit movements
 - **DSN Pattern Recognition**: Validates Device Serial Numbers
 - **Confidence Indicators**: Visual feedback for OCR accuracy
 - **Component Type Inference**: Automatically detects component type from DSN
+
+### Sophisticated OCR Confidence Tuning (v2.5.0)
+- **Multi-Factor Confidence Scoring**:
+  - ML Kit confidence (50% weight)
+  - Pattern matching accuracy (25% weight)
+  - Bounding box stability (15% weight)
+  - Environmental conditions (10% weight)
+- **Component-Specific Thresholds**:
+  - Battery components require 90% base confidence (95% for manual verification)
+  - Other components require 85% base confidence (90% for manual verification)
+  - Safety-critical components get stricter validation
+- **Environmental Adaptation**:
+  - Light sensor integration for optimal OCR conditions (100-1000 lux)
+  - Accelerometer-based stability detection
+  - Automatic adjustment based on scanning conditions
+- **Three Sensitivity Modes**:
+  - **Conservative**: Highest accuracy requirements, more manual verifications
+  - **Balanced** (default): Optimal trade-off between speed and accuracy
+  - **Aggressive**: Faster scanning with lower thresholds
+- **Advanced Features**:
+  - Historical confidence tracking for improved accuracy over time
+  - Motion detection to prevent blurry scans
+  - Real-time environmental factor analysis
+  - Configurable weights and thresholds per deployment
 
 ### Export System
 - **Multiple Formats**:
@@ -345,7 +369,10 @@ app/
 │   │   ├── ocr/
 │   │   │   ├── TextRecognitionAnalyzer.kt
 │   │   │   ├── DsnValidator.kt
-│   │   │   └── ScanModeSelector.kt
+│   │   │   ├── ScanModeSelector.kt
+│   │   │   ├── OcrConfidenceConfig.kt
+│   │   │   ├── OcrConfidenceManager.kt
+│   │   │   └── EnvironmentalAnalyzer.kt
 │   │   ├── ui/
 │   │   │   ├── ScanViewModel.kt
 │   │   │   ├── CheckInViewModel.kt

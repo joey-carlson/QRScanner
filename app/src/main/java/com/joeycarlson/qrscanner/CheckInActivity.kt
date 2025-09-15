@@ -33,6 +33,7 @@ import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.ui.CheckInViewModel
 import com.joeycarlson.qrscanner.ui.CheckInViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
+import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -91,6 +92,12 @@ class CheckInActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityCheckinBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Set up edge-to-edge display and handle system UI insets
+        WindowInsetsHelper.setupWindowInsets(this)
+        
+        // Apply padding to the root view to avoid system UI overlap
+        WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
         // Set up action bar with back navigation
         supportActionBar?.apply {

@@ -2,8 +2,8 @@
 
 ## Document Control
 
-**Document Version:** 1.5  
-**Last Updated:** 2025-09-05  
+**Document Version:** 1.6  
+**Last Updated:** 2025-09-15  
 **Author:** joecrls + Cline  
 **Status:** Active  
 
@@ -11,6 +11,7 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.6 | 2025-09-15 | joecrls + Cline | Added sophisticated OCR confidence tuning system with multi-factor scoring, environmental adaptation, and component-specific thresholds |
 | 1.5 | 2025-09-05 | joecrls + Cline | Added Kit Bundle advanced features (smart detection, review panel, labels export), expanded export requirements, added architectural requirements |
 | 1.4 | 2025-09-02 | joecrls + Cline | Updated UI labels for clarity (Kit Check Out/In), added User Check In placeholder |
 | 1.3 | 2025-09-02 | joecrls + Cline | Added Check In feature requirements and specifications |

@@ -12,6 +12,7 @@ import com.joeycarlson.qrscanner.export.S3Configuration
 import com.joeycarlson.qrscanner.export.S3ExportManager
 import com.joeycarlson.qrscanner.export.S3TestResult
 import com.joeycarlson.qrscanner.ui.DialogUtils
+import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import kotlinx.coroutines.launch
 
 class SettingsActivity : AppCompatActivity() {
@@ -25,6 +26,10 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Set up window insets to handle system UI overlaps
+        WindowInsetsHelper.setupWindowInsets(this)
+        WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         s3Configuration = S3Configuration(this)

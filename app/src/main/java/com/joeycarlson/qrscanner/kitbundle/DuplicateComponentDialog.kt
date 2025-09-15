@@ -32,7 +32,7 @@ class DuplicateComponentDialog : DialogFragment() {
             "Would you like to ignore this scan?"
         }
         
-        val builder = AlertDialog.Builder(requireContext())
+        val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
             .setTitle("Duplicate Component Detected")
             .setMessage(message)
             .setCancelable(false)

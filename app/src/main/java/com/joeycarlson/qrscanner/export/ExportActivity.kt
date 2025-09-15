@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.joeycarlson.qrscanner.databinding.ActivityExportBinding
+import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -22,6 +23,10 @@ class ExportActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityExportBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Set up window insets to handle system UI overlaps
+        WindowInsetsHelper.setupWindowInsets(this)
+        WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
         // Set up toolbar
         setSupportActionBar(binding.toolbar)

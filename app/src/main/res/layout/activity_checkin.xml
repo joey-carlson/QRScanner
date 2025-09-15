@@ -169,14 +169,23 @@
                 style="@style/Widget.Material3.Button.TextButton" />
 
             <!-- Export Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/exportButton"
+            <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="Export"
-                style="@style/Widget.Material3.Button.TonalButton" />
+                android:layout_marginStart="4dp">
+                
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/exportButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:fabSize="mini"
+                    app:backgroundTint="@color/primary"
+                    android:src="@android:drawable/ic_menu_share"
+                    app:tint="@android:color/white" />
+                    
+            </FrameLayout>
 
         </LinearLayout>
 
