@@ -1,5 +1,6 @@
 package com.joeycarlson.qrscanner.ocr
 
+import android.content.Context
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -7,21 +8,31 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.joeycarlson.qrscanner.ocr.DsnValidator.ComponentType
 import java.util.concurrent.Executors
 
 /**
  * Hybrid analyzer that can perform barcode scanning, OCR, or both
- * based on the selected scan mode
+ * based on the selected scan mode with sophisticated confidence tuning
  */
 class HybridScanAnalyzer(
     private var scanMode: ScanMode = ScanMode.BARCODE_ONLY,
     private val onScanResult: (ScanResult) -> Unit,
-    private val onError: (Exception) -> Unit
+    private val onError: (Exception) -> Unit,
+    private val context: Context? = null,
+    private val confidenceConfig: OcrConfidenceConfig = OcrConfidenceConfig()
 ) : ImageAnalysis.Analyzer {
     
     private val barcodeScanner = BarcodeScanning.getClient()
     private val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     private val dsnValidator = DsnValidator()
+    
+    private val confidenceManager: OcrConfidenceManager? = context?.let {
+        OcrConfidenceManager(it, confidenceConfig)
+    }
+    private val environmentalAnalyzer: EnvironmentalAnalyzer? = context?.let { 
+        EnvironmentalAnalyzer(it)
+    }
     
     private var lastAnalyzedTimestamp = 0L
     private val analysisInterval = 300L // Analyze every 300ms
@@ -30,6 +41,9 @@ class HybridScanAnalyzer(
     
     // Track if we've found a result in the current frame to avoid duplicates
     private var resultFoundInFrame = false
+    
+    // Track inferred component type for confidence calculations
+    private var currentComponentType: ComponentType? = null
     
     fun setScanMode(mode: ScanMode) {
         scanMode = mode
@@ -92,13 +106,27 @@ class HybridScanAnalyzer(
                     
                     if (dsnCandidates.isNotEmpty()) {
                         val bestCandidate = dsnCandidates.first()
+                        currentComponentType = bestCandidate.componentType
+                        
+                        // Calculate enhanced confidence if available
+                        val enhancedResult = confidenceManager?.calculateConfidence(
+                            mlKitConfidence = bestCandidate.confidence,
+                            recognizedText = bestCandidate.dsn,
+                            boundingBox = bestCandidate.boundingBox,
+                            componentType = currentComponentType,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        
+                        val requiresManualVerification = enhancedResult?.requiresManualVerification ?: 
+                            (bestCandidate.confidence < 0.9f)
+                        
                         resultFoundInFrame = true
                         onScanResult(
                             ScanResult.OcrResult(
                                 text = bestCandidate.dsn,
-                                confidence = bestCandidate.confidence,
+                                confidence = enhancedResult?.confidence ?: bestCandidate.confidence,
                                 inferredComponentType = bestCandidate.componentType,
-                                requiresManualVerification = bestCandidate.confidence < 0.9f
+                                requiresManualVerification = requiresManualVerification
                             )
                         )
                     }
@@ -118,14 +146,32 @@ class HybridScanAnalyzer(
         for (block in visionText.textBlocks) {
             for (line in block.lines) {
                 val text = line.text
-                val confidence = line.confidence ?: 0.8f
+                val mlKitConfidence = line.confidence
                 val boundingBox = line.boundingBox
+                
+                // Calculate sophisticated confidence score
+                val enhancedResult = confidenceManager?.calculateConfidence(
+                    mlKitConfidence = mlKitConfidence,
+                    recognizedText = text,
+                    boundingBox = boundingBox,
+                    componentType = currentComponentType,
+                    timestamp = System.currentTimeMillis()
+                )
+                
+                // Update environmental factor if available
+                environmentalAnalyzer?.getEnvironmentalScore()?.let { score ->
+                    confidenceManager?.updateEnvironmentalFactor(score)
+                }
+                
+                val finalConfidence = enhancedResult?.confidence ?: mlKitConfidence ?: 0.8f
+                val requiresVerification = enhancedResult?.requiresManualVerification ?: false
                 
                 recognizedTexts.add(
                     RecognizedText(
                         text = text,
-                        confidence = confidence,
-                        boundingBox = boundingBox
+                        confidence = finalConfidence,
+                        boundingBox = boundingBox,
+                        requiresManualVerification = requiresVerification
                     )
                 )
             }
@@ -157,5 +203,25 @@ class HybridScanAnalyzer(
         barcodeScanner.close()
         textRecognizer.close()
         executor.shutdown()
+        environmentalAnalyzer?.cleanup()
+    }
+    
+    /**
+     * Update confidence configuration
+     */
+    fun updateConfidenceConfig(config: OcrConfidenceConfig) {
+        confidenceManager?.updateConfig(config)
+    }
+    
+    /**
+     * Get confidence history for analysis
+     */
+    fun getConfidenceHistory(): List<Float> = confidenceManager?.getConfidenceHistory() ?: emptyList()
+    
+    /**
+     * Set the component type being scanned (useful for kit bundle scanning)
+     */
+    fun setComponentType(componentType: ComponentType?) {
+        currentComponentType = componentType
     }
 }

@@ -1,25 +1,37 @@
 package com.joeycarlson.qrscanner.ocr
 
+import android.content.Context
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.joeycarlson.qrscanner.ocr.DsnValidator.ComponentType
 import java.util.concurrent.TimeUnit
 
 /**
  * Analyzer for ML Kit Text Recognition
- * Processes camera frames to detect and extract text
+ * Processes camera frames to detect and extract text with sophisticated confidence tuning
  */
 class TextRecognitionAnalyzer(
     private val onTextDetected: (TextRecognitionResult) -> Unit,
-    private val onError: (Exception) -> Unit
+    private val onError: (Exception) -> Unit,
+    private val context: Context? = null,
+    private val componentType: ComponentType? = null,
+    private val confidenceConfig: OcrConfidenceConfig = OcrConfidenceConfig()
 ) : ImageAnalysis.Analyzer {
     
     private val textRecognizer: TextRecognizer = TextRecognition.getClient(
         TextRecognizerOptions.DEFAULT_OPTIONS
     )
+    
+    private val confidenceManager: OcrConfidenceManager? = context?.let {
+        OcrConfidenceManager(it, confidenceConfig)
+    }
+    private val environmentalAnalyzer: EnvironmentalAnalyzer? = context?.let { 
+        EnvironmentalAnalyzer(it)
+    }
     
     private var lastAnalyzedTimestamp = 0L
     private val analysisInterval = 500L // Analyze every 500ms for performance
@@ -49,14 +61,32 @@ class TextRecognitionAnalyzer(
                 for (block in visionText.textBlocks) {
                     for (line in block.lines) {
                         val text = line.text
-                        val confidence = line.confidence ?: 0.8f
+                        val mlKitConfidence = line.confidence
                         val boundingBox = line.boundingBox
+                        
+                        // Calculate sophisticated confidence score
+                        val enhancedResult = confidenceManager?.calculateConfidence(
+                            mlKitConfidence = mlKitConfidence,
+                            recognizedText = text,
+                            boundingBox = boundingBox,
+                            componentType = componentType,
+                            timestamp = currentTimestamp
+                        )
+                        
+                        // Update environmental factor if available
+                        environmentalAnalyzer?.getEnvironmentalScore()?.let { score ->
+                            confidenceManager?.updateEnvironmentalFactor(score)
+                        }
+                        
+                        val finalConfidence = enhancedResult?.confidence ?: mlKitConfidence ?: 0.8f
+                        val requiresVerification = enhancedResult?.requiresManualVerification ?: false
                         
                         recognizedTexts.add(
                             RecognizedText(
                                 text = text,
-                                confidence = confidence,
-                                boundingBox = boundingBox
+                                confidence = finalConfidence,
+                                boundingBox = boundingBox,
+                                requiresManualVerification = requiresVerification
                             )
                         )
                     }
@@ -80,7 +110,20 @@ class TextRecognitionAnalyzer(
     
     fun close() {
         textRecognizer.close()
+        environmentalAnalyzer?.close()
     }
+    
+    /**
+     * Update confidence configuration
+     */
+    fun updateConfidenceConfig(config: OcrConfidenceConfig) {
+        confidenceManager?.updateConfig(config)
+    }
+    
+    /**
+     * Get confidence history for analysis
+     */
+    fun getConfidenceHistory(): List<Float> = confidenceManager?.getConfidenceHistory() ?: emptyList()
 }
 
 /**
@@ -89,7 +132,8 @@ class TextRecognitionAnalyzer(
 data class RecognizedText(
     val text: String,
     val confidence: Float,
-    val boundingBox: android.graphics.Rect?
+    val boundingBox: android.graphics.Rect?,
+    val requiresManualVerification: Boolean = false
 )
 
 /**
