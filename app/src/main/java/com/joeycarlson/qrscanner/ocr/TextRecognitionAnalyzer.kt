@@ -110,7 +110,7 @@ class TextRecognitionAnalyzer(
     
     fun close() {
         textRecognizer.close()
-        environmentalAnalyzer?.close()
+        environmentalAnalyzer?.cleanup()
     }
     
     /**
