@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.2] - 2025-09-16
+
+### Changed
+- **Standardized Kit Bundle UI to Match Kit Check Out Design**
+  - Replaced custom ScanModeSelector component with discrete purple buttons
+  - Added separate "Barcode" and "OCR" buttons using @color/button_color
+  - Buttons now use the same purple design as Kit Check Out screen
+  - Updated button click handling to switch between scan modes
+  - Visual feedback with alpha changes when switching modes
+  - Removed references to ScanModeSelector throughout the codebase
+  - Consistent UI design across all kit-related screens
+
+### Technical
+- Removed `setupScanModeSelector()` method from KitBundleActivity
+- Added discrete button click listeners for barcode and OCR modes
+- Updated activity_kit_bundle.xml layout structure
+- Fixed constraint references from scanModeSelector to statusContainer
+- Version bumped to 2.5.2 (Build 32) for UI standardization
+
 ## [2.5.1] - 2025-09-15
 
 ### Changed

@@ -227,7 +227,7 @@
         android:orientation="horizontal"
         android:padding="16dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/scanModeSelector"
+        app:layout_constraintBottom_toTopOf="@id/statusContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -253,76 +253,76 @@
 
     </LinearLayout>
 
-    <!-- Scan Mode Selector -->
-    <com.joeycarlson.qrscanner.ocr.ScanModeSelector
-        android:id="@+id/scanModeSelector"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="#E6000000"
-        app:layout_constraintBottom_toTopOf="@id/bottomButtonSection"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <!-- Bottom Button Section -->
+    <!-- Status Container matching Kit Check Out design -->
     <LinearLayout
-        android:id="@+id/bottomButtonSection"
-        android:layout_width="match_parent"
+        android:id="@+id/statusContainer"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#B3000000"
-        android:orientation="horizontal"
+        android:background="@android:color/black"
+        android:orientation="vertical"
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/clearButton"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/bottomStatusText"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:text="@string/clear"
-            app:backgroundTint="@color/button_color"
-            android:textColor="@android:color/white" />
+            android:gravity="center"
+            android:text="Ready to scan"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/skipButton"
-            android:layout_width="0dp"
+        <!-- Button Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:text="@string/skip"
-            android:visibility="gone"
-            app:backgroundTint="@color/button_color"
-            android:textColor="@android:color/white" />
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="center">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/saveButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/save_bundle"
-            android:visibility="gone"
-            app:backgroundTint="@color/button_color"
-            android:textColor="@android:color/white" />
+            <Button
+                android:id="@+id/barcodeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Barcode"
+                android:backgroundTint="@color/button_color"
+                android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/ocrButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="OCR"
+                android:backgroundTint="@color/button_color"
+                android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/clearButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Clear"
+                android:backgroundTint="@color/button_color"
+                android:textColor="@android:color/white" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/exportButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                app:fabSize="mini"
+                app:backgroundTint="@color/primary"
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="@android:color/white" />
+
+        </LinearLayout>
 
     </LinearLayout>
-
-    <!-- Export Button - Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/exportFab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:src="@android:drawable/ic_menu_share"
-        android:visibility="gone"
-        app:backgroundTint="@color/button_color"
-        app:tint="@android:color/white"
-        app:layout_constraintTop_toBottomOf="@id/componentSummaryCard"
-        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Bundle Confirmation Overlay -->
     <LinearLayout

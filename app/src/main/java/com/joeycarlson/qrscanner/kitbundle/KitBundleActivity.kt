@@ -129,7 +129,6 @@ class KitBundleActivity : AppCompatActivity() {
         
         setupObservers()
         setupClickListeners()
-        setupScanModeSelector()
         
         // Request permissions
         if (allPermissionsGranted()) {
@@ -280,7 +279,7 @@ class KitBundleActivity : AppCompatActivity() {
                             
                             binding.reviewPanel.visibility = View.VISIBLE
                             binding.reviewButtonSection.visibility = View.VISIBLE
-                            binding.scanModeSelector.visibility = View.GONE
+                            binding.statusContainer.visibility = View.GONE
                             binding.bottomButtonSection.visibility = View.GONE
                             
                             // Animate fade in
@@ -299,7 +298,7 @@ class KitBundleActivity : AppCompatActivity() {
                                 binding.reviewPanel.postDelayed({
                                     binding.reviewPanel.visibility = View.GONE
                                     binding.reviewButtonSection.visibility = View.GONE
-                                    binding.scanModeSelector.visibility = View.VISIBLE
+                                    binding.statusContainer.visibility = View.VISIBLE
                                     binding.bottomButtonSection.visibility = View.VISIBLE
                                 }, 300)
                             }
@@ -398,6 +397,28 @@ class KitBundleActivity : AppCompatActivity() {
     }
     
     private fun setupClickListeners() {
+        // Barcode button click listener
+        binding.barcodeButton.setOnClickListener {
+            currentScanMode = ScanMode.BARCODE_ONLY
+            hybridAnalyzer.setScanMode(currentScanMode)
+            binding.instructionText.text = "Position the barcode within the frame"
+            
+            // Update button states for visual feedback
+            binding.barcodeButton.alpha = 1.0f
+            binding.ocrButton.alpha = 0.6f
+        }
+        
+        // OCR button click listener
+        binding.ocrButton.setOnClickListener {
+            currentScanMode = ScanMode.OCR_ONLY
+            hybridAnalyzer.setScanMode(currentScanMode)
+            binding.instructionText.text = "Position the serial number text within the frame"
+            
+            // Update button states for visual feedback
+            binding.ocrButton.alpha = 1.0f
+            binding.barcodeButton.alpha = 0.6f
+        }
+        
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
         }
@@ -505,21 +526,6 @@ class KitBundleActivity : AppCompatActivity() {
         }
     }
     
-    private fun setupScanModeSelector() {
-        binding.scanModeSelector.setOnModeChangeListener { mode ->
-            currentScanMode = mode
-            hybridAnalyzer.setScanMode(mode)
-            
-            // Update instruction text based on mode
-            val instruction = when (mode) {
-                ScanMode.BARCODE_ONLY -> "Position the barcode within the frame"
-                ScanMode.OCR_ONLY -> "Position the serial number text within the frame"
-            }
-            runOnUiThread {
-                binding.instructionText.text = instruction
-            }
-        }
-    }
     
     private fun handleScanResult(result: ScanResult) {
         if (viewModel.isScanning.value != true) return
