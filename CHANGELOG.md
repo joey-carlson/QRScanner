@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2025-09-15
+
+### Changed
+- **Moved Log Export UI to Settings Screen**
+  - Export Diagnostic Logs button now available in Settings under "Diagnostic Tools" section
+  - Removed from Export Method screens for better UI organization
+  - Consistent with diagnostic/troubleshooting functionality placement
+
+### Fixed
+- **Settings Screen Theme Support**
+  - Fixed Settings screen to properly respect system light/dark mode
+  - Replaced hardcoded colors with theme-aware attributes
+  - All text, backgrounds, and UI elements now adapt to system theme
+  - Improved text hint contrast for better readability in both themes
+
+- **Standardized "Ready to Scan" UI**
+  - Kit Check In and Kit Bundle screens now use consistent purple buttons
+  - Matches Kit Check Out design pattern with @color/button_color
+  - All buttons use white text on purple background
+  - Export FAB uses purple theme for visual consistency
+  - Removed Material3 styled buttons in favor of unified design
+
+- **Kit Bundle Button Styling for Material3**
+  - Fixed button styling issue where purple background wasn't showing
+  - Removed incorrect Material3 style references that caused build failures
+  - Buttons now rely on `app:backgroundTint` attribute with Material3 theme
+  - Clear, Skip, Save, and Confirm buttons now properly display purple background
+
+### Technical
+- Replaced all hardcoded colors in Settings layout with theme attributes:
+  - `@color/background` → `?attr/colorSurface`
+  - `@color/text_primary` → `?attr/colorOnSurface`
+  - `@color/text_secondary` → `?attr/colorOnSurfaceVariant`
+  - `@color/text_hint` → `?attr/colorOnSurfaceVariant`
+  - `@color/divider` → `?attr/colorOutline`
+- Fixed Material3 compatibility by removing incorrect style attributes and using `app:backgroundTint` for button coloring
+- Version bumped to 2.5.1 (Build 31) for UI improvements
+
 ## [2.5.0] - 2025-09-15
 
 ### Added

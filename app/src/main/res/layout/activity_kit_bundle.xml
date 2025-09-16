@@ -239,15 +239,17 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="Cancel"
-            android:textColor="@android:color/white"
-            app:strokeColor="@android:color/white" />
+            android:textColor="@color/button_color"
+            app:strokeColor="@color/button_color" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/reviewConfirmButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/confirm_and_save" />
+            android:text="@string/confirm_and_save"
+            app:backgroundTint="@color/button_color"
+            android:textColor="@android:color/white" />
 
     </LinearLayout>
 
@@ -278,26 +280,24 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/clearButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="@string/clear"
-            android:textColor="@android:color/white"
-            app:strokeColor="@android:color/white" />
+            app:backgroundTint="@color/button_color"
+            android:textColor="@android:color/white" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/skipButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="@string/skip"
-            android:textColor="@android:color/white"
             android:visibility="gone"
-            app:strokeColor="@android:color/white" />
+            app:backgroundTint="@color/button_color"
+            android:textColor="@android:color/white" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/saveButton"
@@ -305,7 +305,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/save_bundle"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:backgroundTint="@color/button_color"
+            android:textColor="@android:color/white" />
 
     </LinearLayout>
 
@@ -317,6 +319,8 @@
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_menu_share"
         android:visibility="gone"
+        app:backgroundTint="@color/button_color"
+        app:tint="@android:color/white"
         app:layout_constraintTop_toBottomOf="@id/componentSummaryCard"
         app:layout_constraintEnd_toEndOf="parent" />
 

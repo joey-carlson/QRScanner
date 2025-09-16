@@ -143,7 +143,8 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp"
                 android:text="@string/clear"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                app:backgroundTint="@color/button_color"
+                android:textColor="@android:color/white" />
 
             <!-- Undo Button -->
             <com.google.android.material.button.MaterialButton
@@ -155,7 +156,8 @@
                 android:layout_marginEnd="4dp"
                 android:text="Undo"
                 android:visibility="gone"
-                style="@style/Widget.Material3.Button.TonalButton" />
+                app:backgroundTint="@color/button_color"
+                android:textColor="@android:color/white" />
 
             <!-- Settings Button -->
             <com.google.android.material.button.MaterialButton
@@ -166,7 +168,8 @@
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
                 android:text="@string/settings"
-                style="@style/Widget.Material3.Button.TextButton" />
+                app:backgroundTint="@color/button_color"
+                android:textColor="@android:color/white" />
 
             <!-- Export Button -->
             <FrameLayout
@@ -181,7 +184,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     app:fabSize="mini"
-                    app:backgroundTint="@color/primary"
+                    app:backgroundTint="@color/button_color"
                     android:src="@android:drawable/ic_menu_share"
                     app:tint="@android:color/white" />
                     

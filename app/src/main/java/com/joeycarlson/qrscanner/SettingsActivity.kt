@@ -1,5 +1,6 @@
 package com.joeycarlson.qrscanner
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ArrayAdapter
@@ -11,8 +12,11 @@ import com.joeycarlson.qrscanner.databinding.ActivitySettingsBinding
 import com.joeycarlson.qrscanner.export.S3Configuration
 import com.joeycarlson.qrscanner.export.S3ExportManager
 import com.joeycarlson.qrscanner.export.S3TestResult
+import com.joeycarlson.qrscanner.export.TempFileManager
 import com.joeycarlson.qrscanner.ui.DialogUtils
+import com.joeycarlson.qrscanner.util.LogManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SettingsActivity : AppCompatActivity() {
@@ -21,6 +25,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var prefs: android.content.SharedPreferences
     private lateinit var s3Configuration: S3Configuration
     private lateinit var s3ExportManager: S3ExportManager
+    private lateinit var logManager: LogManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +39,7 @@ class SettingsActivity : AppCompatActivity() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         s3Configuration = S3Configuration(this)
         s3ExportManager = S3ExportManager(this)
+        logManager = LogManager.getInstance(this)
         
         // Set up toolbar
         setSupportActionBar(binding.toolbar)
@@ -60,6 +66,11 @@ class SettingsActivity : AppCompatActivity() {
         // Set up test S3 connection button
         binding.testS3Button.setOnClickListener {
             testS3Connection()
+        }
+        
+        // Set up export logs button
+        binding.exportLogsButton.setOnClickListener {
+            exportLogs()
         }
     }
     
@@ -314,6 +325,57 @@ class SettingsActivity : AppCompatActivity() {
                     this@SettingsActivity,
                     "S3 Connection Failed",
                     "Unexpected error: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * Export diagnostic logs for troubleshooting
+     */
+    private fun exportLogs() {
+        lifecycleScope.launch {
+            val progressDialog = DialogUtils.createProgressDialog(
+                this@SettingsActivity,
+                "Exporting Logs",
+                "Preparing diagnostic logs..."
+            )
+            progressDialog.show()
+            
+            try {
+                val logContent = logManager.exportLogs()
+                val tempFileManager = TempFileManager(this@SettingsActivity)
+                val logFile = tempFileManager.createTempFile("qrscanner_logs.txt", logContent)
+                val uri = tempFileManager.getUriForFile(logFile)
+                
+                progressDialog.dismiss()
+                
+                // Create share intent
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "QR Scanner Diagnostic Logs")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                
+                val chooser = Intent.createChooser(shareIntent, "Share Logs")
+                startActivity(chooser)
+                
+                // Clean up temp file after a delay
+                lifecycleScope.launch {
+                    delay(5000)
+                    tempFileManager.cleanupFiles(listOf(logFile))
+                }
+                
+                // Log the export action
+                logManager.log("SettingsActivity", "Diagnostic logs exported")
+                
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                DialogUtils.showErrorDialog(
+                    this@SettingsActivity,
+                    "Export Failed",
+                    "Error exporting logs: ${e.message}"
                 )
             }
         }
