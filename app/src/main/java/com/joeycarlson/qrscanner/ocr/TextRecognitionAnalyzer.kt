@@ -34,7 +34,15 @@ class TextRecognitionAnalyzer(
     }
     
     private var lastAnalyzedTimestamp = 0L
-    private val analysisInterval = 500L // Analyze every 500ms for performance
+    private val analysisInterval = 300L // Analyze every 300ms for better responsiveness
+    
+    // Image preprocessor for enhancing OCR performance
+    private val imagePreprocessor = ImagePreprocessor()
+    
+    // Multi-frame averaging for stability
+    private val frameResults = mutableListOf<com.joeycarlson.qrscanner.ocr.FrameResult>()
+    private val maxFramesToAverage = 5
+    private val frameResultTimeout = 1500L // 1.5 seconds
     
     override fun analyze(imageProxy: ImageProxy) {
         val currentTimestamp = System.currentTimeMillis()
@@ -52,7 +60,12 @@ class TextRecognitionAnalyzer(
             return
         }
         
-        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        // Clean up old frame results
+        frameResults.removeAll { currentTimestamp - it.timestamp > frameResultTimeout }
+        
+        // Apply image preprocessing to enhance OCR performance
+        val preprocessedImage = imagePreprocessor.preprocessImage(mediaImage)
+        val image = InputImage.fromBitmap(preprocessedImage, imageProxy.imageInfo.rotationDegrees)
         
         textRecognizer.process(image)
             .addOnSuccessListener { visionText ->
@@ -63,6 +76,16 @@ class TextRecognitionAnalyzer(
                         val text = line.text
                         val mlKitConfidence = line.confidence
                         val boundingBox = line.boundingBox
+                        
+                        // Add to frame results for averaging
+                        frameResults.add(
+                            FrameResult(
+                                text = text,
+                                confidence = mlKitConfidence ?: 0.8f,
+                                timestamp = currentTimestamp,
+                                boundingBox = boundingBox
+                            )
+                        )
                         
                         // Calculate sophisticated confidence score
                         val enhancedResult = confidenceManager?.calculateConfidence(
@@ -92,10 +115,13 @@ class TextRecognitionAnalyzer(
                     }
                 }
                 
-                if (recognizedTexts.isNotEmpty()) {
+                // Apply multi-frame averaging for stability
+                val averagedTexts = applyMultiFrameAveraging(recognizedTexts, currentTimestamp)
+                
+                if (averagedTexts.isNotEmpty()) {
                     onTextDetected(
                         TextRecognitionResult(
-                            texts = recognizedTexts,
+                            texts = averagedTexts,
                             timestamp = currentTimestamp
                         )
                     )
@@ -124,22 +150,84 @@ class TextRecognitionAnalyzer(
      * Get confidence history for analysis
      */
     fun getConfidenceHistory(): List<Float> = confidenceManager?.getConfidenceHistory() ?: emptyList()
+    
+    /**
+     * Apply multi-frame averaging to improve stability and reduce false positives
+     */
+    private fun applyMultiFrameAveraging(
+        currentFrameTexts: List<RecognizedText>,
+        currentTimestamp: Long
+    ): List<RecognizedText> {
+        if (frameResults.size < 2) {
+            // Not enough frames for averaging
+            return currentFrameTexts
+        }
+        
+        val recentFrames = frameResults
+            .filter { currentTimestamp - it.timestamp <= frameResultTimeout }
+            .takeLast(maxFramesToAverage)
+        
+        // Group by similar text (considering OCR variations)
+        val textGroups = mutableMapOf<String, MutableList<FrameResult>>()
+        recentFrames.forEach { frame ->
+            val normalizedText = DsnValidator.correctOcrMistakes(frame.text)
+            var foundGroup = false
+            
+            for ((key, group) in textGroups) {
+                if (DsnValidator.isSimilarText(normalizedText, key)) {
+                    group.add(frame)
+                    foundGroup = true
+                    break
+                }
+            }
+            
+            if (!foundGroup) {
+                textGroups[normalizedText] = mutableListOf(frame)
+            }
+        }
+        
+        // Calculate averaged results
+        val averagedResults = mutableListOf<RecognizedText>()
+        
+        textGroups.forEach { (normalizedText, frames) ->
+            if (frames.size >= 2) { // Only average if text appears in multiple frames
+                val avgConfidence = frames.map { it.confidence }.average().toFloat()
+                val mostRecentFrame = frames.maxByOrNull { it.timestamp }
+                
+                // Find corresponding current frame text
+                val currentText = currentFrameTexts.find { 
+                    DsnValidator.isSimilarText(
+                        DsnValidator.correctOcrMistakes(it.text), 
+                        normalizedText
+                    )
+                }
+                
+                if (currentText != null) {
+                    averagedResults.add(
+                        currentText.copy(
+                            confidence = (currentText.confidence + avgConfidence) / 2f,
+                            requiresManualVerification = currentText.requiresManualVerification 
+                                && avgConfidence < confidenceConfig.manualVerificationThreshold
+                        )
+                    )
+                }
+            }
+        }
+        
+        // Include high-confidence single-frame results
+        currentFrameTexts.forEach { text ->
+            if (text.confidence >= confidenceConfig.highConfidenceThreshold &&
+                averagedResults.none { 
+                    DsnValidator.isSimilarText(
+                        DsnValidator.correctOcrMistakes(it.text),
+                        DsnValidator.correctOcrMistakes(text.text)
+                    )
+                }
+            ) {
+                averagedResults.add(text)
+            }
+        }
+        
+        return averagedResults
+    }
 }
-
-/**
- * Data class representing a single recognized text element
- */
-data class RecognizedText(
-    val text: String,
-    val confidence: Float,
-    val boundingBox: android.graphics.Rect?,
-    val requiresManualVerification: Boolean = false
-)
-
-/**
- * Data class representing the complete result of text recognition
- */
-data class TextRecognitionResult(
-    val texts: List<RecognizedText>,
-    val timestamp: Long
-)

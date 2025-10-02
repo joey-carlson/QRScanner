@@ -66,6 +66,14 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".HomeActivity" />
             
+        <!-- InventoryManagementActivity - Inventory Management feature -->
+        <activity
+            android:name=".inventory.InventoryManagementActivity"
+            android:exported="false"
+            android:label="@string/inventory_management_title"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".HomeActivity" />
+            
         <!-- Settings Activity -->
         <activity
             android:name=".SettingsActivity"

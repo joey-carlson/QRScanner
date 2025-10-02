@@ -238,4 +238,49 @@ class FileNamingService {
         val timestamp = System.currentTimeMillis()
         return "temp_${baseFilename.removeSuffix(".${format.extension}")}_$timestamp.${format.extension}"
     }
+    
+    /**
+     * Generates a filename for inventory exports
+     * Pattern: device_inventory_MM-dd-yy_[LocationID].[extension]
+     */
+    fun generateInventoryFilename(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val dateStr = date.format(dateFormatter)
+        val sanitizedLocationId = sanitizeLocationId(locationId)
+        return "device_inventory_${dateStr}_$sanitizedLocationId.${format.extension}"
+    }
+    
+    /**
+     * Generates a filename for S3 uploads of inventory
+     * Pattern: [LocationID]/[Year]/[Month]/device_inventory_MM-dd-yy_[LocationID].[extension]
+     */
+    fun generateInventoryS3Key(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val sanitizedLocationId = sanitizeLocationId(locationId)
+        val year = date.year
+        val month = String.format("%02d", date.monthValue)
+        val filename = generateInventoryFilename(date, locationId, format)
+        
+        return "$sanitizedLocationId/$year/$month/$filename"
+    }
+    
+    /**
+     * Generates a temporary filename for inventory exports
+     * Pattern: temp_device_inventory_MM-dd-yy_[LocationID]_[timestamp].[extension]
+     */
+    fun generateTempInventoryFilename(
+        date: LocalDate,
+        locationId: String,
+        format: ExportFormat
+    ): String {
+        val baseFilename = generateInventoryFilename(date, locationId, format)
+        val timestamp = System.currentTimeMillis()
+        return "temp_${baseFilename.removeSuffix(".${format.extension}")}_$timestamp.${format.extension}"
+    }
 }

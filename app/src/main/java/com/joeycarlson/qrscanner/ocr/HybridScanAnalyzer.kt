@@ -45,6 +45,14 @@ class HybridScanAnalyzer(
     // Track inferred component type for confidence calculations
     private var currentComponentType: ComponentType? = null
     
+    // Image preprocessor for enhancing OCR performance
+    private val imagePreprocessor = ImagePreprocessor()
+    
+    // Multi-frame results for averaging
+    private val frameResults = mutableListOf<com.joeycarlson.qrscanner.ocr.FrameResult>()
+    private val maxFramesToAverage = 5
+    private val frameResultTimeout = 1500L // 1.5 seconds
+    
     fun setScanMode(mode: ScanMode) {
         scanMode = mode
     }
@@ -98,50 +106,80 @@ class HybridScanAnalyzer(
     }
     
     private fun analyzeOcrOnly(image: InputImage, imageProxy: ImageProxy) {
-        textRecognizer.process(image)
-            .addOnSuccessListener { visionText ->
-                if (!resultFoundInFrame) {
-                    val recognizedTexts = extractRecognizedTexts(visionText)
-                    val dsnCandidates = dsnValidator.findDsns(recognizedTexts)
-                    
-                    if (dsnCandidates.isNotEmpty()) {
-                        val bestCandidate = dsnCandidates.first()
-                        currentComponentType = bestCandidate.componentType
+        val currentTimestamp = System.currentTimeMillis()
+        
+        // Clean up old frame results
+        frameResults.removeAll { currentTimestamp - it.timestamp > frameResultTimeout }
+        
+        @androidx.camera.core.ExperimentalGetImage
+        val mediaImage = imageProxy.image
+        if (mediaImage != null) {
+            // Apply image preprocessing to enhance OCR performance
+            val preprocessedImage = imagePreprocessor.preprocessImage(mediaImage)
+            val enhancedImage = InputImage.fromBitmap(preprocessedImage, imageProxy.imageInfo.rotationDegrees)
+            
+            textRecognizer.process(enhancedImage)
+                .addOnSuccessListener { visionText ->
+                    if (!resultFoundInFrame) {
+                        val recognizedTexts = extractRecognizedTexts(visionText)
                         
-                        // Calculate enhanced confidence if available
-                        val enhancedResult = confidenceManager?.calculateConfidence(
-                            mlKitConfidence = bestCandidate.confidence,
-                            recognizedText = bestCandidate.dsn,
-                            boundingBox = bestCandidate.boundingBox,
-                            componentType = currentComponentType,
-                            timestamp = System.currentTimeMillis()
-                        )
-                        
-                        val requiresManualVerification = enhancedResult?.requiresManualVerification ?: 
-                            (bestCandidate.confidence < 0.9f)
-                        
-                        resultFoundInFrame = true
-                        onScanResult(
-                            ScanResult.OcrResult(
-                                text = bestCandidate.dsn,
-                                confidence = enhancedResult?.confidence ?: bestCandidate.confidence,
-                                inferredComponentType = bestCandidate.componentType,
-                                requiresManualVerification = requiresManualVerification
+                        // Add to frame results for multi-frame averaging
+                        recognizedTexts.forEach { text ->
+                            frameResults.add(
+                                FrameResult(
+                                    text = text.text,
+                                    confidence = text.confidence,
+                                    timestamp = currentTimestamp,
+                                    boundingBox = text.boundingBox
+                                )
                             )
-                        )
+                        }
+                        
+                        // Apply multi-frame averaging for stability
+                        val averagedTexts = applyMultiFrameAveraging(recognizedTexts, currentTimestamp)
+                        val dsnCandidates = dsnValidator.findDsns(averagedTexts)
+                        
+                        if (dsnCandidates.isNotEmpty()) {
+                            val bestCandidate = dsnCandidates.first()
+                            currentComponentType = bestCandidate.componentType
+                            
+                            // Calculate enhanced confidence if available
+                            val enhancedResult = confidenceManager?.calculateConfidence(
+                                mlKitConfidence = bestCandidate.confidence,
+                                recognizedText = bestCandidate.dsn,
+                                boundingBox = bestCandidate.boundingBox,
+                                componentType = currentComponentType,
+                                timestamp = currentTimestamp
+                            )
+                            
+                            val requiresManualVerification = enhancedResult?.requiresManualVerification ?: 
+                                (bestCandidate.confidence < 0.9f)
+                            
+                            resultFoundInFrame = true
+                            onScanResult(
+                                ScanResult.OcrResult(
+                                    text = bestCandidate.dsn,
+                                    confidence = enhancedResult?.confidence ?: bestCandidate.confidence,
+                                    inferredComponentType = bestCandidate.componentType,
+                                    requiresManualVerification = requiresManualVerification
+                                )
+                            )
+                        }
                     }
+                    imageProxy.close()
                 }
-                imageProxy.close()
-            }
-            .addOnFailureListener { exception ->
-                onError(exception)
-                imageProxy.close()
-            }
+                .addOnFailureListener { exception ->
+                    onError(exception)
+                    imageProxy.close()
+                }
+        } else {
+            imageProxy.close()
+        }
     }
     
     
-    private fun extractRecognizedTexts(visionText: com.google.mlkit.vision.text.Text): List<RecognizedText> {
-        val recognizedTexts = mutableListOf<RecognizedText>()
+    private fun extractRecognizedTexts(visionText: com.google.mlkit.vision.text.Text): List<com.joeycarlson.qrscanner.ocr.RecognizedText> {
+        val recognizedTexts = mutableListOf<com.joeycarlson.qrscanner.ocr.RecognizedText>()
         
         for (block in visionText.textBlocks) {
             for (line in block.lines) {
@@ -167,7 +205,7 @@ class HybridScanAnalyzer(
                 val requiresVerification = enhancedResult?.requiresManualVerification ?: false
                 
                 recognizedTexts.add(
-                    RecognizedText(
+                    com.joeycarlson.qrscanner.ocr.RecognizedText(
                         text = text,
                         confidence = finalConfidence,
                         boundingBox = boundingBox,
@@ -223,5 +261,85 @@ class HybridScanAnalyzer(
      */
     fun setComponentType(componentType: ComponentType?) {
         currentComponentType = componentType
+    }
+    
+    /**
+     * Apply multi-frame averaging to improve stability and reduce false positives
+     */
+    private fun applyMultiFrameAveraging(
+        currentFrameTexts: List<com.joeycarlson.qrscanner.ocr.RecognizedText>,
+        currentTimestamp: Long
+    ): List<com.joeycarlson.qrscanner.ocr.RecognizedText> {
+        if (frameResults.size < 2) {
+            // Not enough frames for averaging
+            return currentFrameTexts
+        }
+        
+        val recentFrames = frameResults
+            .filter { currentTimestamp - it.timestamp <= frameResultTimeout }
+            .takeLast(maxFramesToAverage)
+        
+        // Group by similar text (considering OCR variations)
+        val textGroups = mutableMapOf<String, MutableList<FrameResult>>()
+        recentFrames.forEach { frame ->
+            val normalizedText = DsnValidator.correctOcrMistakes(frame.text)
+            var foundGroup = false
+            
+            for ((key, group) in textGroups) {
+                if (DsnValidator.isSimilarText(normalizedText, key)) {
+                    group.add(frame)
+                    foundGroup = true
+                    break
+                }
+            }
+            
+            if (!foundGroup) {
+                textGroups[normalizedText] = mutableListOf(frame)
+            }
+        }
+        
+        // Calculate averaged results
+        val averagedResults = mutableListOf<com.joeycarlson.qrscanner.ocr.RecognizedText>()
+        
+        textGroups.forEach { (normalizedText, frames) ->
+            if (frames.size >= 2) { // Only average if text appears in multiple frames
+                val avgConfidence = frames.map { it.confidence }.average().toFloat()
+                val mostRecentFrame = frames.maxByOrNull { it.timestamp }
+                
+                // Find corresponding current frame text
+                val currentText = currentFrameTexts.find { 
+                    DsnValidator.isSimilarText(
+                        DsnValidator.correctOcrMistakes(it.text), 
+                        normalizedText
+                    )
+                }
+                
+                if (currentText != null) {
+                    averagedResults.add(
+                        currentText.copy(
+                            confidence = (currentText.confidence + avgConfidence) / 2f,
+                            requiresManualVerification = currentText.requiresManualVerification 
+                                && avgConfidence < confidenceConfig.manualVerificationThreshold
+                        )
+                    )
+                }
+            }
+        }
+        
+        // Include high-confidence single-frame results
+        currentFrameTexts.forEach { text ->
+            if (text.confidence >= confidenceConfig.highConfidenceThreshold &&
+                averagedResults.none { 
+                    DsnValidator.isSimilarText(
+                        DsnValidator.correctOcrMistakes(it.text),
+                        DsnValidator.correctOcrMistakes(text.text)
+                    )
+                }
+            ) {
+                averagedResults.add(text)
+            }
+        }
+        
+        return averagedResults
     }
 }

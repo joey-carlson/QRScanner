@@ -63,4 +63,25 @@
     
     <!-- Kit Bundle Review -->
     <string name="confirm_and_save">Confirm &amp; Save</string>
+    
+    <!-- Inventory Management -->
+    <string name="home_inventory_management_title">Inventory Management</string>
+    <string name="inventory_management_title">Inventory Management</string>
+    <string name="inventory_management_description">Scan devices to create inventory lists</string>
+    <string name="inventory_select_component_type">Select Component Type</string>
+    <string name="component_glasses">Glasses</string>
+    <string name="component_controller">Controller</string>
+    <string name="component_battery">Battery</string>
+    <string name="inventory_ready_to_scan">Ready to scan - Select component type</string>
+    <string name="inventory_items_scanned">%1$d items scanned</string>
+    <string name="export">Export</string>
+    <string name="scan_mode_barcode">Barcode</string>
+    <string name="scan_mode_ocr">OCR</string>
+    <string name="inventory_scanning_barcode">Scanning for barcodes...</string>
+    <string name="inventory_scanning_ocr">Scanning for text...</string>
+    <string name="inventory_scan_success">✓ %1$s scanned</string>
+    <string name="inventory_duplicate_scan">Device already scanned</string>
+    <string name="inventory_export_success">✓ Inventory exported</string>
+    <string name="inventory_export_failed">✗ Export failed</string>
+    <string name="inventory_cleared">Inventory cleared</string>
 </resources>

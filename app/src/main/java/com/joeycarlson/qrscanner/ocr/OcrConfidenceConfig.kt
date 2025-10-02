@@ -11,6 +11,7 @@ data class OcrConfidenceConfig(
     val sensitivityMode: SensitivityMode = SensitivityMode.BALANCED,
     val baseConfidenceThreshold: Float = 0.85f,
     val manualVerificationThreshold: Float = 0.9f,
+    val highConfidenceThreshold: Float = 0.95f,
     
     // Component-specific thresholds
     val componentThresholds: Map<ComponentType, ComponentConfidenceConfig> = defaultComponentThresholds(),

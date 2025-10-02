@@ -112,6 +112,152 @@ class DsnValidator {
         private const val MIN_CONFIDENCE_THRESHOLD = 0.8f
         private const val HIGH_CONFIDENCE_THRESHOLD = 0.9f
         private const val MEDIUM_CONFIDENCE_THRESHOLD = 0.7f
+        
+        /**
+         * Corrects common OCR mistakes in alphanumeric codes
+         */
+        @JvmStatic
+        fun correctOcrMistakes(text: String): String {
+            var corrected = text.trim().uppercase()
+            
+            // Common character confusions in OCR
+            val charConfusions = mapOf(
+                "O" to "0", // Letter O to zero
+                "I" to "1", // Letter I to one
+                "l" to "1", // Lowercase L to one
+                "S" to "5", // Letter S to five
+                "Z" to "2", // Letter Z to two
+                "G" to "6", // Letter G to six (sometimes)
+                "B" to "8", // Letter B to eight
+                "Q" to "0", // Letter Q to zero
+                "|" to "1", // Pipe to one
+                "(" to "C", // Parenthesis to C
+                ")" to "D", // Parenthesis to D
+            )
+            
+            // For real-world patterns, apply specific corrections
+            // Controller pattern: G0G46K... - the 0s should be zeros
+            if (corrected.matches(Regex("^G[O0Q]G46K.*"))) {
+                corrected = corrected.replace(Regex("^G[O0Q]G46K"), "G0G46K")
+            }
+            
+            // Battery pattern: G0G4NU... - the 0 should be zero
+            if (corrected.matches(Regex("^G[O0Q]G4NU.*"))) {
+                corrected = corrected.replace(Regex("^G[O0Q]G4NU"), "G0G4NU")
+            }
+            
+            // Glasses pattern: G0G348... - the 0 should be zero
+            if (corrected.matches(Regex("^G[O0Q]G348.*"))) {
+                corrected = corrected.replace(Regex("^G[O0Q]G348"), "G0G348")
+            }
+            
+            // For patterns with known numeric positions, correct O to 0
+            // Pattern: Letter-Zero-Letter at the beginning (common in serial numbers)
+            corrected = corrected.replace(Regex("^([A-Z])[OQ]([A-Z])"), "$10$2")
+            
+            // For serial numbers that should be all numeric after a prefix
+            // If we have a known prefix followed by what should be numbers
+            if (corrected.matches(Regex("^G0G[A-Z0-9]{3}[O0Q-9ILSZGB]+$"))) {
+                // Replace confusing characters with numbers in the numeric portion
+                val prefix = corrected.substring(0, 6)
+                var numericPart = corrected.substring(6)
+                
+                // Apply character corrections in numeric portion
+                numericPart = numericPart
+                    .replace("O", "0")
+                    .replace("Q", "0")
+                    .replace("I", "1")
+                    .replace("l", "1")
+                    .replace("S", "5")
+                    .replace("Z", "2")
+                
+                corrected = prefix + numericPart
+            }
+            
+            // Additional pattern-specific corrections
+            // For patterns like H1B-POR2 (from the image), ensure consistent format
+            if (corrected.matches(Regex("^H[I1l][B8]-POR[0-9]+$"))) {
+                corrected = corrected
+                    .replace(Regex("^H[I1l]"), "H1")
+                    .replace("B8", "B")
+            }
+            
+            return corrected
+        }
+        
+        /**
+         * Checks if two texts are similar (considering OCR variations)
+         */
+        @JvmStatic
+        fun isSimilarText(text1: String, text2: String): Boolean {
+            // If texts are exactly equal after normalization
+            if (text1.trim().uppercase() == text2.trim().uppercase()) {
+                return true
+            }
+            
+            // Apply OCR corrections and compare
+            val corrected1 = correctOcrMistakes(text1)
+            val corrected2 = correctOcrMistakes(text2)
+            
+            if (corrected1 == corrected2) {
+                return true
+            }
+            
+            // Check if they differ by only one character (common OCR error)
+            if (corrected1.length == corrected2.length && corrected1.length > 0) {
+                var differences = 0
+                for (i in corrected1.indices) {
+                    if (corrected1[i] != corrected2[i]) {
+                        differences++
+                        if (differences > 1) break
+                    }
+                }
+                if (differences == 1) {
+                    return true
+                }
+            }
+            
+            // Check Levenshtein distance for small variations
+            val maxLength = maxOf(corrected1.length, corrected2.length)
+            if (maxLength > 0) {
+                val distance = levenshteinDistance(corrected1, corrected2)
+                val similarity = 1.0 - (distance.toDouble() / maxLength)
+                return similarity >= 0.85 // 85% similarity threshold
+            }
+            
+            return false
+        }
+        
+        /**
+         * Calculate Levenshtein distance between two strings
+         */
+        private fun levenshteinDistance(s1: String, s2: String): Int {
+            val len1 = s1.length
+            val len2 = s2.length
+            
+            val dp = Array(len1 + 1) { IntArray(len2 + 1) }
+            
+            for (i in 0..len1) {
+                dp[i][0] = i
+            }
+            
+            for (j in 0..len2) {
+                dp[0][j] = j
+            }
+            
+            for (i in 1..len1) {
+                for (j in 1..len2) {
+                    val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
+                    dp[i][j] = minOf(
+                        dp[i - 1][j] + 1,      // deletion
+                        dp[i][j - 1] + 1,      // insertion
+                        dp[i - 1][j - 1] + cost // substitution
+                    )
+                }
+            }
+            
+            return dp[len1][len2]
+        }
     }
     
     /**
@@ -204,49 +350,12 @@ class DsnValidator {
                normalizedDsn.contains("BATTERY")
     }
     
-    /**
-     * Corrects common OCR mistakes in alphanumeric codes
-     */
-    fun correctOcrMistakes(text: String): String {
-        var corrected = text
-        
-        // For real-world patterns, apply specific corrections
-        // Controller pattern: G0G46K... - the 0s should be zeros
-        if (corrected.matches(Regex("^G[O0]G46K.*"))) {
-            corrected = corrected.replace("GOG46K", "G0G46K")
-        }
-        
-        // Battery pattern: G0G4NU... - the 0 should be zero
-        if (corrected.matches(Regex("^G[O0]G4NU.*"))) {
-            corrected = corrected.replace("GOG4NU", "G0G4NU")
-        }
-        
-        // Glasses pattern: G0G348... - the 0 should be zero
-        if (corrected.matches(Regex("^G[O0]G348.*"))) {
-            corrected = corrected.replace("GOG348", "G0G348")
-        }
-        
-        // For patterns with known numeric positions, correct O to 0
-        // Pattern: Letter-Zero-Letter at the beginning (common in serial numbers)
-        corrected = corrected.replace(Regex("^([A-Z])O([A-Z])"), "$10$2")
-        
-        // For serial numbers that should be all numeric after a prefix
-        // If we have a known prefix followed by what should be numbers
-        if (corrected.matches(Regex("^G0G[A-Z0-9]{3}[O0-9]+$"))) {
-            // Replace O with 0 in the numeric portion (after the first 6 characters)
-            val prefix = corrected.substring(0, 6)
-            val numericPart = corrected.substring(6).replace("O", "0")
-            corrected = prefix + numericPart
-        }
-        
-        return corrected
-    }
     
     /**
      * Normalizes DSN for consistent storage
      */
     fun normalizeDsn(text: String): String {
-        // First correct common OCR mistakes
+        // First correct common OCR mistakes using the companion object function
         val corrected = correctOcrMistakes(text.trim().uppercase())
         
         return corrected

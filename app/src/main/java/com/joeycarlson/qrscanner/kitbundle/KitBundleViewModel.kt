@@ -73,6 +73,10 @@ class KitBundleViewModel(
     private val _reviewComponents = MutableStateFlow<Map<String, String>>(emptyMap())
     val reviewComponents: StateFlow<Map<String, String>> = _reviewComponents.asStateFlow()
     
+    // Error message flow
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    
     // Bundle state using the new models
     private var kitBundleState: KitBundleState? = null
     
@@ -552,6 +556,29 @@ class KitBundleViewModel(
         _scanFailure.value = false
         _showBundleConfirmation.value = false
         _componentDetectionResult.value = null
+        _errorMessage.value = null
+    }
+    
+    fun showError(error: String) {
+        _errorMessage.value = error
+        _scanFailure.value = true
+        
+        viewModelScope.launch {
+            delay(600)
+            _scanFailure.value = false
+            delay(2000)
+            _errorMessage.value = null
+        }
+    }
+    
+    fun saveCurrentBundle() {
+        // Redirect to the main save method
+        saveKitBundle()
+    }
+    
+    fun skipToNextBundle() {
+        // Clear current state and start fresh
+        clearState()
     }
     
     fun resumeScanning() {

@@ -56,6 +56,12 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
         }
         
+        // Inventory Management button - launches InventoryManagementActivity
+        binding.inventoryManagementButton.setOnClickListener {
+            val intent = Intent(this, com.joeycarlson.qrscanner.inventory.InventoryManagementActivity::class.java)
+            startActivity(intent)
+        }
+        
         // Settings button
         binding.settingsButton.setOnClickListener {
             val intent = Intent(this, SettingsActivity::class.java)

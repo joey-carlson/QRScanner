@@ -123,6 +123,7 @@
             android:id="@+id/kitBundleCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             app:cardElevation="4dp"
             app:cardCornerRadius="12dp">
 
@@ -131,6 +132,29 @@
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:text="@string/home_kit_bundle_title"
+                android:textSize="20sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                app:icon="@drawable/ic_launcher_foreground"
+                app:iconSize="48dp"
+                app:iconGravity="top"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Inventory Management Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/inventoryManagementCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardElevation="4dp"
+            app:cardCornerRadius="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/inventoryManagementButton"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:text="@string/home_inventory_management_title"
                 android:textSize="20sp"
                 style="@style/Widget.Material3.Button.TonalButton"
                 app:icon="@drawable/ic_launcher_foreground"

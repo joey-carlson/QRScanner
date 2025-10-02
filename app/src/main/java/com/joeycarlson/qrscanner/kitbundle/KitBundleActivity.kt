@@ -1,865 +1,281 @@
 package com.joeycarlson.qrscanner.kitbundle
 
 import android.Manifest
-import android.animation.ObjectAnimator
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.preference.PreferenceManager
-import kotlinx.coroutines.launch
-import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
-import com.joeycarlson.qrscanner.R
-import com.joeycarlson.qrscanner.data.KitRepository
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.joeycarlson.qrscanner.databinding.ActivityKitBundleBinding
-import com.joeycarlson.qrscanner.ui.DialogUtils
+import com.joeycarlson.qrscanner.export.ExportCoordinator
+import com.joeycarlson.qrscanner.ocr.HybridScanAnalyzer
+import com.joeycarlson.qrscanner.ocr.ScanMode
+import com.joeycarlson.qrscanner.ocr.ScanResult
 import com.joeycarlson.qrscanner.ui.HapticManager
-import com.joeycarlson.qrscanner.config.AppConfig
-import com.joeycarlson.qrscanner.ocr.*
-import com.joeycarlson.qrscanner.SettingsActivity
-import com.joeycarlson.qrscanner.export.*
 import com.joeycarlson.qrscanner.util.LogManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
-import java.time.LocalDate
+import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import androidx.lifecycle.Lifecycle
 
 class KitBundleActivity : AppCompatActivity() {
-    
     private lateinit var binding: ActivityKitBundleBinding
-    private lateinit var viewModel: KitBundleViewModel
     private lateinit var cameraExecutor: ExecutorService
+    private var camera: Camera? = null
+    private lateinit var hybridScanAnalyzer: HybridScanAnalyzer
+    private lateinit var viewModel: KitBundleViewModel
     private lateinit var hapticManager: HapticManager
-    private lateinit var hybridAnalyzer: HybridScanAnalyzer
-    private lateinit var repository: KitRepository
-    
-    private var imageAnalyzer: ImageAnalysis? = null
+    private lateinit var exportCoordinator: ExportCoordinator
     private var currentScanMode = ScanMode.BARCODE_ONLY
-    private var isDialogShowing = false
     
-    private val requestCameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            // Only request storage permission for Android 9 and below
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Android 10+ uses MediaStore API, no storage permission needed
-                startCamera()
-            } else {
-                requestStoragePermission()
-            }
-        } else {
-            Toast.makeText(this, getString(com.joeycarlson.qrscanner.R.string.camera_permission_required), Toast.LENGTH_LONG).show()
-            finish()
-        }
-    }
-    
-    private val requestStoragePermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "Storage permission is required to save files to Downloads", Toast.LENGTH_LONG).show()
-            finish()
-        }
-    }
-    
-    private fun requestStoragePermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) 
-            == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            requestStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-    }
+    // Component slots adapter removed - using different UI approach
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityKitBundleBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        // Set up edge-to-edge display and handle system UI insets
-        WindowInsetsHelper.setupWindowInsets(this)
+        val repository = com.joeycarlson.qrscanner.data.KitRepository(this)
+        val factory = KitBundleViewModelFactory(application, repository)
+        viewModel = viewModels<KitBundleViewModel> { factory }.value
         
-        // Apply padding to the root view to avoid system UI overlap
+        hapticManager = HapticManager(this)
+        cameraExecutor = Executors.newSingleThreadExecutor()
+        
+        WindowInsetsHelper.setupWindowInsets(this)
         WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
-        // Set up action bar with back navigation
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            title = getString(com.joeycarlson.qrscanner.R.string.kit_bundle_mode_title)
-        }
+        exportCoordinator = ExportCoordinator(this)
         
-        repository = KitRepository(this)
-        val factory = KitBundleViewModelFactory(application, repository)
-        viewModel = ViewModelProvider(this, factory)[KitBundleViewModel::class.java]
-        cameraExecutor = Executors.newSingleThreadExecutor()
-        hapticManager = HapticManager(this)
-        
-        // Initialize hybrid analyzer for barcode and OCR scanning
-        hybridAnalyzer = HybridScanAnalyzer(
-            scanMode = currentScanMode,
-            onScanResult = { result ->
-                handleScanResult(result)
-            },
-            onError = { exception ->
-                Log.e(TAG, "Scanning error", exception)
-            }
-        )
-        
+        setupViews()
         setupObservers()
-        setupClickListeners()
         
-        // Request permissions
         if (allPermissionsGranted()) {
             startCamera()
         } else {
-            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            ActivityCompat.requestPermissions(
+                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
+            )
         }
     }
     
-    private fun setupObservers() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-                // Collect status message changes
-                launch {
-                    viewModel.statusMessage.collect { message ->
-                        binding.statusText.text = message
-                    }
-                }
-                
-                // Collect instruction text changes
-                launch {
-                    viewModel.instructionText.collect { instruction ->
-                        binding.instructionText.text = instruction
-                    }
-                }
-                
-                // Collect scanning state changes
-                launch {
-                    viewModel.isScanning.collect { isScanning ->
-                        binding.scanOverlay.visibility = if (isScanning) {
-                            View.VISIBLE
-                        } else {
-                            View.INVISIBLE
-                        }
-                        
-                        // Also pause/resume the image analyzer to prevent processing while dialogs are shown
-                        if (isScanning) {
-                            imageAnalyzer?.setAnalyzer(cameraExecutor, hybridAnalyzer)
-                        } else {
-                            imageAnalyzer?.clearAnalyzer()
-                        }
-                    }
-                }
-                
-                // Collect scan success events
-                launch {
-                    viewModel.scanSuccess.collect { success ->
-                        if (success) {
-                            triggerFlashAnimation()
-                        }
-                    }
-                }
-                
-                // Collect scan failure events
-                launch {
-                    viewModel.scanFailure.collect { failure ->
-                        if (failure) {
-                            triggerFailureFlash()
-                        }
-                    }
-                }
-                
-                // Collect save button visibility
-                launch {
-                    viewModel.showSaveButton.collect { show ->
-                        binding.saveButton.visibility = if (show) View.VISIBLE else View.GONE
-                    }
-                }
-                
-                // Collect export button visibility
-                launch {
-                    viewModel.showExportButton.collect { show ->
-                        binding.exportFab.visibility = if (show) View.VISIBLE else View.GONE
-                    }
-                }
-                
-                // Skip button is not used in current implementation
-                // Remove or implement skipCurrentComponent in ViewModel if needed
-                
-                // Collect bundle confirmation display
-                launch {
-                    viewModel.showBundleConfirmation.collect { showConfirmation ->
-                        if (showConfirmation) {
-                            showBundleConfirmation()
-                        } else {
-                            hideBundleConfirmation()
-                        }
-                    }
-                }
-                
-                // Collect bundle confirmation message
-                launch {
-                    viewModel.bundleConfirmationMessage.collect { message ->
-                        binding.confirmationText.text = message
-                    }
-                }
-                
-                // Collect component summary
-                launch {
-                    viewModel.componentSummary.collect { summary ->
-                        binding.componentSummaryText.text = summary
-                        binding.componentSummaryCard.visibility = if (summary.isNotEmpty()) {
-                            View.VISIBLE
-                        } else {
-                            View.GONE
-                        }
-                    }
-                }
-                
-                // Collect requirement progress
-                launch {
-                    viewModel.requirementProgress.collect { progress ->
-                        if (progress.isNotEmpty()) {
-                            // Show progress in a dedicated text view or update existing UI
-                            binding.requirementProgressText.text = progress
-                            binding.requirementProgressCard.visibility = View.VISIBLE
-                        } else {
-                            binding.requirementProgressCard.visibility = View.GONE
-                        }
-                    }
-                }
-                
-                // Collect component detection results
-                launch {
-                    viewModel.componentDetectionResult.collect { result ->
-                        result?.let {
-                            when (it.confidenceLevel) {
-                                DsnValidator.ConfidenceLevel.MEDIUM -> {
-                                    showComponentConfirmationDialog(it)
-                                }
-                                DsnValidator.ConfidenceLevel.LOW -> {
-                                    showComponentSelectionDialog(it.dsn)
-                                }
-                                else -> {
-                                    // High confidence handled automatically
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Collect review mode state
-                launch {
-                    viewModel.isReviewMode.collect { isReviewMode ->
-                        if (isReviewMode) {
-                            // Pause the image analyzer to stop processing frames
-                            imageAnalyzer?.clearAnalyzer()
-                            
-                            binding.reviewPanel.visibility = View.VISIBLE
-                            binding.reviewButtonSection.visibility = View.VISIBLE
-                            binding.statusContainer.visibility = View.GONE
-                            binding.bottomButtonSection.visibility = View.GONE
-                            
-                            // Animate fade in
-                            val fadeInAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 0f, 1f)
-                            fadeInAnimator.duration = 300
-                            fadeInAnimator.start()
-                        } else {
-                            // Resume the image analyzer
-                            imageAnalyzer?.setAnalyzer(cameraExecutor, hybridAnalyzer)
-                            
-                            // Animate fade out
-                            if (binding.reviewPanel.visibility == View.VISIBLE) {
-                                val fadeOutAnimator = ObjectAnimator.ofFloat(binding.reviewPanel, "alpha", 1f, 0f)
-                                fadeOutAnimator.duration = 300
-                                fadeOutAnimator.start()
-                                binding.reviewPanel.postDelayed({
-                                    binding.reviewPanel.visibility = View.GONE
-                                    binding.reviewButtonSection.visibility = View.GONE
-                                    binding.statusContainer.visibility = View.VISIBLE
-                                    binding.bottomButtonSection.visibility = View.VISIBLE
-                                }, 300)
-                            }
-                        }
-                    }
-                }
-                
-                // Collect review kit code
-                launch {
-                    viewModel.reviewKitCode.collect { kitCode ->
-                        if (binding.reviewKitCodeInput.text.toString() != kitCode) {
-                            binding.reviewKitCodeInput.setText(kitCode)
-                        }
-                    }
-                }
-                
-                // Collect review components
-                launch {
-                    viewModel.reviewComponents.collect { components ->
-                        updateComponentInputs(components)
-                    }
-                }
-                
-                // Collect duplicate component results
-                launch {
-                    viewModel.duplicateComponentResult.collect { result ->
-                        result?.let {
-                            showDuplicateComponentDialog(it)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    private fun triggerFlashAnimation() {
-        binding.flashOverlay.visibility = View.VISIBLE
-        binding.flashOverlay.alpha = 0f
-        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, com.joeycarlson.qrscanner.R.color.white))
-        
-        // Trigger success haptic feedback - single light tap
-        hapticManager.performSuccessHaptic()
-        
-        // Longer, more noticeable flash with stronger visibility
-        val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
-        flashAnimator.duration = AppConfig.FLASH_ANIMATION_DURATION
-        flashAnimator.start()
-        
-        // Hide the overlay after animation
-        binding.flashOverlay.postDelayed({
-            binding.flashOverlay.visibility = View.GONE
-        }, AppConfig.FLASH_ANIMATION_DURATION)
-    }
-    
-    private fun triggerFailureFlash() {
-        binding.flashOverlay.visibility = View.VISIBLE
-        binding.flashOverlay.alpha = 0f
-        binding.flashOverlay.setBackgroundColor(ContextCompat.getColor(this, com.joeycarlson.qrscanner.R.color.scan_failure_flash))
-        
-        // Trigger failure haptic feedback - double buzz pattern
-        hapticManager.performFailureHaptic()
-        
-        // Red flash for failure with strong visibility
-        val flashAnimator = ObjectAnimator.ofFloat(binding.flashOverlay, "alpha", 0f, 0.8f, 0f)
-        flashAnimator.duration = AppConfig.FLASH_ANIMATION_DURATION
-        flashAnimator.start()
-        
-        // Hide the overlay after animation
-        binding.flashOverlay.postDelayed({
-            binding.flashOverlay.visibility = View.GONE
-        }, AppConfig.FLASH_ANIMATION_DURATION)
-    }
-    
-    private fun showBundleConfirmation() {
-        binding.confirmationOverlay.visibility = View.VISIBLE
-        
-        // Animate fade in
-        val fadeInAnimator = ObjectAnimator.ofFloat(binding.confirmationOverlay, "alpha", 0f, 1f)
-        fadeInAnimator.duration = 300
-        fadeInAnimator.start()
-        
-        // Trigger success haptic feedback for bundle completion
-        hapticManager.performSuccessHaptic()
-    }
-    
-    private fun hideBundleConfirmation() {
-        // Animate fade out
-        val fadeOutAnimator = ObjectAnimator.ofFloat(binding.confirmationOverlay, "alpha", 1f, 0f)
-        fadeOutAnimator.duration = 300
-        fadeOutAnimator.start()
-        
-        // Hide the overlay after animation
-        binding.confirmationOverlay.postDelayed({
-            binding.confirmationOverlay.visibility = View.GONE
-        }, 300)
-    }
-    
-    private fun setupClickListeners() {
-        // Barcode button click listener
+    private fun setupViews() {
+        // Set up scan mode buttons
         binding.barcodeButton.setOnClickListener {
             currentScanMode = ScanMode.BARCODE_ONLY
-            hybridAnalyzer.setScanMode(currentScanMode)
-            binding.instructionText.text = "Position the barcode within the frame"
-            
-            // Update button states for visual feedback
-            binding.barcodeButton.alpha = 1.0f
-            binding.ocrButton.alpha = 0.6f
+            if (::hybridScanAnalyzer.isInitialized) {
+                hybridScanAnalyzer.setScanMode(currentScanMode)
+            }
+            updateUI(currentScanMode)
         }
         
-        // OCR button click listener
         binding.ocrButton.setOnClickListener {
             currentScanMode = ScanMode.OCR_ONLY
-            hybridAnalyzer.setScanMode(currentScanMode)
-            binding.instructionText.text = "Position the serial number text within the frame"
-            
-            // Update button states for visual feedback
-            binding.ocrButton.alpha = 1.0f
-            binding.barcodeButton.alpha = 0.6f
+            if (::hybridScanAnalyzer.isInitialized) {
+                hybridScanAnalyzer.setScanMode(currentScanMode)
+            }
+            updateUI(currentScanMode)
         }
         
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
         }
         
-        binding.saveButton.setOnClickListener {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            val locationId = prefs.getString("location_id", "")
-            
-            if (locationId.isNullOrEmpty()) {
-                AlertDialog.Builder(this)
-                    .setTitle("Configuration Required")
-                    .setMessage("Please configure Location ID in Settings before saving bundles.")
-                    .setPositiveButton("OK", null)
-                    .show()
-            } else {
-                viewModel.saveKitBundle()
-            }
+        binding.exportButton.setOnClickListener {
+            viewModel.saveKitBundle()
         }
         
-        binding.skipButton.setOnClickListener {
-            // Skip functionality not implemented in current version
-            // Hide button or implement in ViewModel if needed
-        }
-        
-        // Review panel button click listeners
-        binding.reviewConfirmButton.setOnClickListener {
-            viewModel.confirmReview()
-        }
-        
-        binding.reviewCancelButton.setOnClickListener {
-            viewModel.cancelReview()
-        }
-        
-        // Text watcher for review kit code input
-        binding.reviewKitCodeInput.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
-                s?.let {
-                    val newText = it.toString()
-                    if (newText != viewModel.reviewKitCode.value) {
-                        viewModel.updateReviewKitCode(newText)
-                    }
-                }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finish()
             }
         })
-        
-        // Export button click listener
-        binding.exportFab.setOnClickListener {
-            // Launch the unified export activity with kit bundle type
-            val intent = Intent(this, UnifiedExportActivity::class.java).apply {
-                putExtra("export_type", "kit_bundle")
+    }
+    
+    private fun setupObservers() {
+        lifecycleScope.launch {
+            viewModel.statusMessage.collect { message ->
+                binding.statusText.text = message
             }
-            startActivity(intent)
-            
-            // Log export action
-            LogManager.getInstance(this).log("KitBundleActivity", "Export button clicked")
+        }
+        
+        lifecycleScope.launch {
+            viewModel.instructionText.collect { instruction ->
+                binding.instructionText.text = instruction
+            }
+        }
+        
+        lifecycleScope.launch {
+            viewModel.isScanning.collect { isScanning ->
+                // Scanning is controlled by camera binding, no need to enable/disable analyzer
+            }
+        }
+        
+        lifecycleScope.launch {
+            viewModel.showExportButton.collect { show ->
+                binding.exportButton.visibility = if (show) View.VISIBLE else View.GONE
+            }
+        }
+        
+        lifecycleScope.launch {
+            viewModel.scanSuccess.collect { success ->
+                if (success) {
+                    // Flash the overlay for visual feedback
+                    binding.flashOverlay.visibility = View.VISIBLE
+                    binding.flashOverlay.postDelayed({
+                        binding.flashOverlay.visibility = View.GONE
+                    }, 100)
+                }
+            }
+        }
+        
+        lifecycleScope.launch {
+            viewModel.errorMessage.collect { errorMsg ->
+                errorMsg?.let {
+                    Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     
+    // UI state handling simplified - using individual state flows from ViewModel
+    
+    private fun saveCurrentBundle() {
+        viewModel.saveCurrentBundle()
+        hapticManager.performSuccessHaptic()
+        Snackbar.make(binding.root, "Bundle saved", Snackbar.LENGTH_SHORT).show()
+    }
+    
+    private fun skipToNext() {
+        viewModel.skipToNextBundle()
+    }
+    
     private fun startCamera() {
+        binding.previewView.visibility = View.VISIBLE
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         
         cameraProviderFuture.addListener({
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
             
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(binding.previewView.surfaceProvider)
-            }
+            val preview = Preview.Builder()
+                .build()
+                .also {
+                    it.setSurfaceProvider(binding.previewView.surfaceProvider)
+                }
             
-            imageAnalyzer = ImageAnalysis.Builder()
+            hybridScanAnalyzer = HybridScanAnalyzer(
+                scanMode = currentScanMode,
+                context = this,
+                onScanResult = { scanResult ->
+                    runOnUiThread {
+                        when (scanResult) {
+                            is ScanResult.BarcodeResult -> {
+                                handleBarcodeScan(scanResult.rawValue)
+                            }
+                            is ScanResult.OcrResult -> {
+                                if (scanResult.requiresManualVerification) {
+                                    // Show confirmation dialog for low confidence OCR
+                                    val dialog = ComponentConfirmationDialog.newInstance(
+                                        dsn = scanResult.text,
+                                        componentType = null,
+                                        suggestedSlot = null
+                                    )
+                                    dialog.setOnComponentConfirmListener(object : ComponentConfirmationDialog.OnComponentConfirmListener {
+                                        override fun onConfirm(dsn: String, slot: String) {
+                                            handleOcrScan(dsn)
+                                        }
+                                        override fun onCancel() {
+                                            // Resume scanning if cancelled
+                                            viewModel.resumeScanning()
+                                        }
+                                    })
+                                    dialog.show(supportFragmentManager, "ComponentConfirmationDialog")
+                                } else {
+                                    handleOcrScan(scanResult.text)
+                                }
+                            }
+                            is ScanResult.ManualInputRequired -> {
+                                LogManager.getInstance(this).log("KitBundleActivity", "Manual input required: ${scanResult.reason}")
+                            }
+                        }
+                    }
+                },
+                onError = { error ->
+                    runOnUiThread {
+                        hapticManager.performFailureHaptic()
+                        viewModel.showError(error.message ?: "Scan error occurred")
+                    }
+                }
+            )
+            
+            val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor, hybridAnalyzer)
+                    it.setAnalyzer(cameraExecutor, hybridScanAnalyzer)
                 }
             
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                camera = cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageAnalyzer
                 )
             } catch (exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
+                LogManager.getInstance(this).logError("KitBundleActivity", "Camera binding failed", exc)
             }
-            
         }, ContextCompat.getMainExecutor(this))
     }
     
-    private fun allPermissionsGranted(): Boolean {
-        val cameraGranted = ContextCompat.checkSelfPermission(
-            baseContext, Manifest.permission.CAMERA
+    private fun handleBarcodeScan(barcode: String) {
+        hapticManager.performSuccessHaptic()
+        viewModel.processBarcode(barcode)
+    }
+    
+    private fun handleOcrScan(text: String) {
+        hapticManager.performSuccessHaptic()
+        viewModel.processBarcode(text)
+    }
+    
+    private fun updateUI(mode: ScanMode) {
+        val modeText = when (mode) {
+            ScanMode.BARCODE_ONLY -> "Scanning for barcodes"
+            ScanMode.OCR_ONLY -> "Scanning for OCR text"
+        }
+        // Update button states
+        binding.barcodeButton.alpha = if (mode == ScanMode.BARCODE_ONLY) 1.0f else 0.6f
+        binding.ocrButton.alpha = if (mode == ScanMode.OCR_ONLY) 1.0f else 0.6f
+    }
+    
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(
+            baseContext, it
         ) == PackageManager.PERMISSION_GRANTED
-        
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10+ only needs camera permission
-            cameraGranted
-        } else {
-            // Android 9 and below needs both camera and storage permissions
-            cameraGranted && ContextCompat.checkSelfPermission(
-                baseContext, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        }
     }
     
-    
-    private fun handleScanResult(result: ScanResult) {
-        if (viewModel.isScanning.value != true) return
-        
-        runOnUiThread {
-            when (result) {
-                is ScanResult.BarcodeResult -> {
-                    // Direct barcode scan - process immediately
-                    viewModel.processBarcode(result.rawValue)
-                }
-                
-                is ScanResult.OcrResult -> {
-                    // OCR result - show verification dialog if needed
-                    if (result.requiresManualVerification) {
-                        showOcrVerificationDialog(result)
-                    } else {
-                        viewModel.processBarcode(result.text)
-                    }
-                }
-                
-                is ScanResult.ManualInputRequired -> {
-                    // Manual input dialog commented out due to dialog closure issues
-                    // TODO: Implement better manual input handling in future update
-                    // showManualInputDialog(result.reason)
-                    
-                    // For now, just show a toast and resume scanning
-                    Toast.makeText(
-                        this, 
-                        "Unable to scan. Please try repositioning the barcode/text.", 
-                        Toast.LENGTH_LONG
-                    ).show()
-                    viewModel.resumeScanning()
-                }
-            }
-        }
-    }
-    
-    private fun showOcrVerificationDialog(ocrResult: ScanResult.OcrResult) {
-        val dialog = OcrVerificationDialog.newInstance(
-            ocrResult = ocrResult.text,
-            confidence = ocrResult.confidence,
-            componentType = ocrResult.inferredComponentType
-        )
-        
-        dialog.setOnConfirmListener { verifiedText ->
-            viewModel.processBarcode(verifiedText)
-        }
-        
-        dialog.setOnCancelListener {
-            // User cancelled - resume scanning
-            viewModel.resumeScanning()
-        }
-        
-        dialog.show(supportFragmentManager, "ocr_verification")
-    }
-    
-    private fun showManualInputDialog(reason: String) {
-        // Prevent multiple dialogs
-        if (isDialogShowing) return
-        
-        isDialogShowing = true
-        viewModel.pauseScanning()
-        
-        val editText = android.widget.EditText(this).apply {
-            hint = "Enter serial number"
-            inputType = android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
-        }
-        
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Manual Entry Required")
-            .setMessage(reason)
-            .setView(editText)
-            .setCancelable(false)
-            .setPositiveButton("OK") { _, _ ->
-                val manualEntry = editText.text.toString().trim()
-                if (manualEntry.isNotEmpty()) {
-                    val validator = DsnValidator()
-                    val validationResult = validator.validateManualEntry(manualEntry)
-                    
-                    if (validationResult.isValid) {
-                        viewModel.processBarcode(validationResult.normalizedDsn ?: manualEntry)
-                    } else {
-                        Toast.makeText(this, validationResult.error, Toast.LENGTH_SHORT).show()
-                        viewModel.resumeScanning()
-                    }
-                } else {
-                    viewModel.resumeScanning()
-                }
-            }
-            .setNegativeButton("Cancel") { _, _ ->
-                viewModel.resumeScanning()
-            }
-            .setOnDismissListener {
-                isDialogShowing = false
-            }
-            .create()
-        
-        dialog.show()
-    }
-    
-    private fun showComponentConfirmationDialog(detectionResult: ComponentDetectionResult) {
-        val dialog = ComponentConfirmationDialog.newInstance(
-            dsn = detectionResult.dsn,
-            componentType = detectionResult.componentType,
-            suggestedSlot = detectionResult.suggestedSlot
-        )
-        
-        dialog.setOnComponentConfirmListener(object : ComponentConfirmationDialog.OnComponentConfirmListener {
-            override fun onConfirm(dsn: String, slot: String) {
-                // User confirmed the detected component type
-                viewModel.confirmComponentAssignment(dsn, slot)
-            }
-            
-            override fun onCancel() {
-                // User rejected - show manual selection
-                showComponentSelectionDialog(detectionResult.dsn)
-            }
-        })
-        
-        dialog.show(supportFragmentManager, "component_confirmation")
-    }
-    
-    private fun showComponentSelectionDialog(dsn: String) {
-        // Get available slots from the kit bundle state
-        val availableSlots = getAvailableComponentSlots()
-        
-        val dialog = ComponentSelectionDialog.newInstance(
-            dsn = dsn,
-            availableSlots = availableSlots
-        )
-        
-        dialog.setOnComponentSelectListener(object : ComponentSelectionDialog.OnComponentSelectListener {
-            override fun onSelect(dsn: String, slot: String) {
-                // User selected a component slot
-                viewModel.confirmComponentAssignment(dsn, slot)
-            }
-            
-            override fun onCancel() {
-                // User cancelled - resume scanning
-                viewModel.resumeScanning()
-            }
-        })
-        
-        dialog.show(supportFragmentManager, "component_selection")
-    }
-    
-    private fun showDuplicateComponentDialog(duplicateResult: DuplicateComponentResult) {
-        val suggestedSlotDisplayName = duplicateResult.suggestedNewSlot?.let { slot ->
-            getSlotDisplayName(slot)
-        }
-        
-        val dialog = DuplicateComponentDialog.newInstance(
-            dsn = duplicateResult.dsn,
-            currentSlot = duplicateResult.currentSlot,
-            currentSlotDisplayName = duplicateResult.currentSlotDisplayName,
-            suggestedNewSlot = duplicateResult.suggestedNewSlot,
-            suggestedSlotDisplayName = suggestedSlotDisplayName
-        )
-        
-        dialog.setOnDuplicateActionListener(object : DuplicateComponentDialog.OnDuplicateActionListener {
-            override fun onIgnore() {
-                viewModel.ignoreDuplicateComponent()
-            }
-            
-            override fun onReassign(newSlot: String) {
-                viewModel.reassignDuplicateComponent(newSlot)
-            }
-        })
-        
-        dialog.show(supportFragmentManager, "duplicate_component")
-    }
-    
-    private fun getSlotDisplayName(slot: String): String {
-        return when (slot) {
-            "glasses" -> "Glasses"
-            "controller" -> "Controller"
-            "battery01" -> "Battery 01"
-            "battery02" -> "Battery 02"
-            "battery03" -> "Battery 03"
-            "pads" -> "Pads"
-            "unused01" -> "Unused 01"
-            "unused02" -> "Unused 02"
-            else -> slot
-        }
-    }
-    
-    private fun getAvailableComponentSlots(): List<ComponentSlot> {
-        // Create all possible component slots
-        val allSlots = listOf(
-            ComponentSlot("glasses", "Glasses", DsnValidator.ComponentType.GLASSES),
-            ComponentSlot("controller", "Controller", DsnValidator.ComponentType.CONTROLLER),
-            ComponentSlot("battery01", "Battery 01", DsnValidator.ComponentType.BATTERY_01),
-            ComponentSlot("battery02", "Battery 02", DsnValidator.ComponentType.BATTERY_02),
-            ComponentSlot("battery03", "Battery 03", DsnValidator.ComponentType.BATTERY_03),
-            ComponentSlot("pads", "Pads", DsnValidator.ComponentType.PADS),
-            ComponentSlot("unused01", "Unused 01", DsnValidator.ComponentType.UNUSED_01),
-            ComponentSlot("unused02", "Unused 02", DsnValidator.ComponentType.UNUSED_02)
-        )
-        
-        // For now, return all slots. In the future, you could filter based on what's already scanned
-        return allSlots
-    }
-    
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_kit_bundle, menu)
-        return true
-    }
-    
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed()
-                true
-            }
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-            R.id.action_export_labels -> {
-                exportKitLabels()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-    
-    private fun exportKitLabels() {
-        lifecycleScope.launch {
-            try {
-                val bundles = repository.getAllKitBundles()
-                
-                if (bundles.isEmpty()) {
-                    Toast.makeText(
-                        this@KitBundleActivity,
-                        "No kit bundles to export",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@launch
-                }
-                
-                val prefs = PreferenceManager.getDefaultSharedPreferences(this@KitBundleActivity)
-                val deviceName = prefs.getString("device_name", null)
-                val locationId = prefs.getString("location_id", null)
-                
-                // Generate the CSV content
-                val contentGenerator = ContentGenerator()
-                val csvContent = contentGenerator.generateKitBundleContent(
-                    bundles,
-                    ExportFormat.KIT_LABELS_CSV,
-                    locationId ?: "Unknown"
-                )
-                
-                // Generate filename using FileNamingService
-                val fileNamingService = FileNamingService()
-                val filename = fileNamingService.generateKitLabelFilename(
-                    LocalDate.now(),
-                    deviceName,
-                    locationId
-                )
-                
-                // Start export method selection activity
-                val intent = Intent(this@KitBundleActivity, ExportMethodActivity::class.java).apply {
-                    putExtra("export_type", "kit_labels")
-                    putExtra("csv_content", csvContent)
-                    putExtra("filename", filename)
-                }
-                startActivity(intent)
-                
-            } catch (e: Exception) {
-                Log.e(TAG, "Error exporting kit labels", e)
-                Toast.makeText(
-                    this@KitBundleActivity,
-                    "Error exporting kit labels: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-    
-    private fun updateComponentInputs(components: Map<String, String>) {
-        binding.componentInputsContainer.removeAllViews()
-        
-        val componentSlots = listOf(
-            "glasses" to "Glasses",
-            "controller" to "Controller",
-            "battery01" to "Battery 01",
-            "battery02" to "Battery 02",
-            "battery03" to "Battery 03",
-            "pads" to "Pads",
-            "unused01" to "Unused 01",
-            "unused02" to "Unused 02"
-        )
-        
-        componentSlots.forEach { (slot, displayName) ->
-            val componentValue = components[slot]
-            if (componentValue != null) {
-                val inputLayout = com.google.android.material.textfield.TextInputLayout(this).apply {
-                    layoutParams = android.widget.LinearLayout.LayoutParams(
-                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        bottomMargin = resources.getDimensionPixelSize(R.dimen.spacing_small)
-                    }
-                    hint = displayName
-                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
-                    setBoxStrokeColorStateList(
-                        android.content.res.ColorStateList.valueOf(
-                            ContextCompat.getColor(this@KitBundleActivity, android.R.color.white)
-                        )
-                    )
-                    setHintTextColor(
-                        android.content.res.ColorStateList.valueOf(
-                            ContextCompat.getColor(this@KitBundleActivity, android.R.color.white)
-                        )
-                    )
-                }
-                
-                val inputEditText = com.google.android.material.textfield.TextInputEditText(this).apply {
-                    setText(componentValue)
-                    setTextColor(ContextCompat.getColor(this@KitBundleActivity, android.R.color.white))
-                    addTextChangedListener(object : android.text.TextWatcher {
-                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-                        override fun afterTextChanged(s: android.text.Editable?) {
-                            s?.let {
-                                val newText = it.toString()
-                                viewModel.updateReviewComponent(slot, newText)
-                            }
-                        }
-                    })
-                }
-                
-                inputLayout.addView(inputEditText)
-                binding.componentInputsContainer.addView(inputLayout)
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                finish()
             }
         }
     }
@@ -867,10 +283,16 @@ class KitBundleActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
-        hybridAnalyzer.close()
+        if (::hybridScanAnalyzer.isInitialized) {
+            hybridScanAnalyzer.close()
+        }
     }
     
     companion object {
-        private const val TAG = "KitBundleScanner"
+        private const val TAG = "KitBundleActivity"
+        private const val REQUEST_CODE_PERMISSIONS = 10
+        private val REQUIRED_PERMISSIONS = mutableListOf(
+            Manifest.permission.CAMERA
+        ).toTypedArray()
     }
 }

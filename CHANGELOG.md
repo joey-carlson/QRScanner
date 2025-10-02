@@ -5,6 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2025-10-02
+
+### Enhanced
+- **OCR Performance Optimization for Low-Contrast Text**
+  - Implemented image preprocessing pipeline for better text recognition
+  - Added contrast enhancement (2.5x factor) for low-contrast DSN codes
+  - Added brightness adjustment (-20) to improve background separation
+  - Implemented gamma correction (0.8) for mid-tone visibility
+  - YUV to RGB conversion for camera image processing
+  
+### Improved
+- **Character Confusion Correction**
+  - Enhanced OCR mistake correction with comprehensive character mappings
+  - Added Levenshtein distance algorithm for fuzzy text matching
+  - 85% similarity threshold for improved text recognition accuracy
+  - Pattern-specific corrections for known DSN formats
+  
+### Added
+- **Multi-Frame Averaging**
+  - Collects OCR results across 5 frames (~1.5 seconds)
+  - Reduces single-frame misread errors
+  - Improved analysis interval from 500ms to 300ms for better responsiveness
+  
+### Technical
+- New `ImagePreprocessor` class for image enhancement operations
+- Enhanced `DsnValidator` with static helper methods for OCR correction
+- New `OcrDataClasses.kt` with centralized data models
+- Fixed duplicate method declarations in DsnValidator
+- Improved data architecture for better maintainability
+
+### Fixed
+- Resolved compilation errors from duplicate `correctOcrMistakes` method
+- Fixed missing `highConfidenceThreshold` property in OcrConfidenceConfig
+- Resolved Float/Double type mismatches in gamma correction
+- Fixed Image vs ImageProxy type conflicts with overloaded methods
+
+## [2.6.0] - 2025-09-29
+
+### Added
+- **Inventory Management Feature**
+  - New "Inventory Management" mode for bulk device scanning (up to 500 devices)
+  - Component type selection: Glasses, Controller, or Battery
+  - Dual scanning modes: Barcode and OCR text recognition
+  - Session-based scanning with all devices of the same type
+  - Duplicate device detection within sessions
+  - Real-time scan count and status display
+  - Clear inventory option to reset current session
+  - Export integration with JSON format only
+  - Filename pattern: `device_inventory_MM-dd-yy_LocationID.json`
+  - Full integration with existing export system (Local, Share, S3)
+- **New Data Models**
+  - `ComponentType` enum for device types
+  - `InventoryRecord` data class with serialization
+  - `InventoryRepository` for managing inventory data and JSON export
+  - `InventoryViewModel` with LiveData for UI state management
+  - `InventoryViewModelFactory` for dependency injection
+- **UI Components**
+  - New `InventoryManagementActivity` with camera integration
+  - Component type selection chips (Material Design)
+  - Scan mode toggle buttons (Barcode/OCR)
+  - Status display and item counter
+  - Export floating action button
+
+### Changed
+- **Home Screen Updates**
+  - Added "Inventory Management" button to home screen
+  - Updated navigation to support 5 feature modes
+  - Button positioned below "Kit Bundle" option
+- **Export System Extensions**
+  - `FileNamingService` extended with inventory-specific methods
+  - `ContentGenerator` updated to handle inventory JSON export
+  - Added `EXPORT_TYPE_INVENTORY` constant to AppConfig
+
+### Technical
+- New inventory package structure:
+  - `com.joeycarlson.qrscanner.inventory.*`
+- Integration with existing scanning infrastructure:
+  - Reuses `HybridScanAnalyzer` for barcode/OCR functionality
+  - Leverages existing export strategies
+- Version bumped to 2.6.0 (Build 33) for major feature addition
+
 ## [2.5.2] - 2025-09-16
 
 ### Changed

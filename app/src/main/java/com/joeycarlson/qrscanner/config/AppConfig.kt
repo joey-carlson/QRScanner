@@ -93,6 +93,10 @@ object AppConfig {
     const val INTENT_EXTRA_START_DATE = "start_date"
     const val INTENT_EXTRA_END_DATE = "end_date"
     
+    // Export Types
+    const val EXPORT_TYPE_KEY = "export_type"
+    const val EXPORT_TYPE_INVENTORY = "inventory"
+    
     // Build-specific configurations
     object Build {
         val IS_DEBUG: Boolean = DEBUG

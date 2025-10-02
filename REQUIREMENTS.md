@@ -2,8 +2,8 @@
 
 ## Document Control
 
-**Document Version:** 1.6  
-**Last Updated:** 2025-09-15  
+**Document Version:** 1.7  
+**Last Updated:** 2025-09-29  
 **Author:** joecrls + Cline  
 **Status:** Active  
 
@@ -11,6 +11,7 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.7 | 2025-09-29 | joecrls + Cline | Added Inventory Management feature requirements for bulk device scanning |
 | 1.6 | 2025-09-15 | joecrls + Cline | Added sophisticated OCR confidence tuning system with multi-factor scoring, environmental adaptation, and component-specific thresholds |
 | 1.5 | 2025-09-05 | joecrls + Cline | Added Kit Bundle advanced features (smart detection, review panel, labels export), expanded export requirements, added architectural requirements |
 | 1.4 | 2025-09-02 | joecrls + Cline | Updated UI labels for clarity (Kit Check Out/In), added User Check In placeholder |
@@ -35,7 +36,7 @@ The QR Scanner application is designed to streamline the process of tracking equ
 #### Project Scope
 - Android mobile application for QR/barcode/OCR scanning
 - Local JSON data storage with export capabilities
-- Four primary features: Kit Check Out, Kit Check In, Kit Bundle management, and User Check In (placeholder)
+- Five primary features: Kit Check Out, Kit Check In, Kit Bundle management, Inventory Management, and User Check In (placeholder)
 - Advanced export functionality to multiple formats and destinations including AWS S3
 - Smart component detection with confidence-based verification
 - Comprehensive architectural patterns for maintainability
@@ -204,10 +205,32 @@ Enable scanning of printed Device Serial Numbers (DSN) and other text identifier
 - **FR-EX-014**: System shall implement automatic retry for failed S3 uploads
 - **FR-EX-015**: System shall support S3 metadata tagging
 
-### 2.7 Navigation & User Interface
+### 2.7 Inventory Management (NEW v1.7)
+
+#### Purpose
+Enable users to perform bulk device inventory scanning for creating master lists of available devices.
 
 #### Requirements
-- **FR-UI-001**: System shall provide home screen with feature selection (Kit Check Out / Kit Check In / User Check In / Kit Bundle)
+- **FR-IM-001**: System shall support bulk scanning of up to 500 devices per session
+- **FR-IM-002**: System shall support three device types: Glasses, Controller, Battery
+- **FR-IM-003**: System shall allow device type selection before scanning begins
+- **FR-IM-004**: All devices in a session shall be of the same type
+- **FR-IM-005**: System shall support both barcode and OCR scanning modes
+- **FR-IM-006**: System shall prevent duplicate device IDs within the same session
+- **FR-IM-007**: System shall display running count of scanned devices
+- **FR-IM-008**: System shall provide clear inventory option to reset session
+- **FR-IM-009**: System shall export inventory data in JSON format only
+- **FR-IM-010**: Filename pattern shall be: `device_inventory_MM-dd-yy_LocationID.json`
+- **FR-IM-011**: Export action shall implicitly end the current session
+- **FR-IM-012**: System shall integrate with existing export system
+- **FR-IM-013**: System shall provide real-time status messages for scan results
+- **FR-IM-014**: Component type selection shall persist until changed or exported
+- **FR-IM-015**: System shall not bundle components together (inventory list only)
+
+### 2.8 Navigation & User Interface
+
+#### Requirements
+- **FR-UI-001**: System shall provide home screen with feature selection (Kit Check Out / Kit Check In / User Check In / Kit Bundle / Inventory Management)
 - **FR-UI-002**: System shall provide navigation back to home from any feature
 - **FR-UI-003**: System shall provide settings screen for configuration
 - **FR-UI-004**: System shall display current app version and build number
@@ -323,6 +346,40 @@ Enable scanning of printed Device Serial Numbers (DSN) and other text identifier
 }
 ```
 
+#### Inventory Record (NEW v1.7)
+```json
+{
+  "location": "LocationID",
+  "date": "2025-09-29",
+  "totalDevices": 3,
+  "devicesByType": {
+    "glasses": 1,
+    "controller": 1,
+    "battery": 1
+  },
+  "devices": [
+    {
+      "deviceId": "GL123",
+      "componentType": "glasses",
+      "scanMode": "BARCODE",
+      "timestamp": "2025-09-29T10:30:00Z"
+    },
+    {
+      "deviceId": "CTRL456",
+      "componentType": "controller",
+      "scanMode": "OCR",
+      "timestamp": "2025-09-29T10:31:00Z"
+    },
+    {
+      "deviceId": "BAT789",
+      "componentType": "battery",
+      "scanMode": "BARCODE",
+      "timestamp": "2025-09-29T10:32:00Z"
+    }
+  ]
+}
+```
+
 #### Implementation Decisions (v1.1)
 - **KitBundle Data Class**: Implemented with Gson serialization annotations
 - **Validation**: `isValid()` method requires at least one non-null component
@@ -351,9 +408,10 @@ Enable scanning of printed Device Serial Numbers (DSN) and other text identifier
 - **DR-001**: Checkout files: `qr_checkouts_MM-dd-yy_LocationID.json`
 - **DR-002**: Kit bundle files: `qr_kits_MM-dd-yy_LocationID.json`
 - **DR-003**: Check-in files: `qr_checkins_MM-dd-yy_LocationID.json`
-- **DR-004**: Location ID required for all file operations
-- **DR-005**: Date format: MM-dd-yy (month-day-year)
-- **DR-006**: Kit labels files: `kit_labels_MM-DD_DeviceName_LocationID.csv` (NEW v1.5)
+- **DR-004**: Inventory files: `device_inventory_MM-dd-yy_LocationID.json` (NEW v1.7)
+- **DR-005**: Location ID required for all file operations
+- **DR-006**: Date format: MM-dd-yy (month-day-year)
+- **DR-007**: Kit labels files: `kit_labels_MM-DD_DeviceName_LocationID.csv` (NEW v1.5)
 
 ### 4.3 Data Persistence
 - **DR-007**: Checkout data organized by date
@@ -448,20 +506,29 @@ Enable scanning of printed Device Serial Numbers (DSN) and other text identifier
 - **BR-007**: No duplicate DSN within same kit session (NEW v1.5)
 - **BR-008**: Unused component slots excluded from exports (NEW v1.5)
 
-### 6.2 Checkout Rules
+### 6.2 Inventory Rules (NEW v1.7)
+- **BR-INV-001**: All devices in a session must be of the same type
+- **BR-INV-002**: Maximum 500 devices per inventory session
+- **BR-INV-003**: No duplicate device IDs within same session
+- **BR-INV-004**: Export implicitly ends current session
+- **BR-INV-005**: Component type selection persists until changed or exported
+- **BR-INV-006**: Inventory files exported in JSON format only
+- **BR-INV-007**: Inventory data includes location, date, and device count summary
+
+### 6.3 Checkout Rules
 - **BR-009**: One user can check out multiple kits
 - **BR-010**: One kit can be checked out by multiple users (on different occasions)
 - **BR-011**: Checkout records are immutable except for undo operation
 - **BR-012**: Undo available for 30 seconds after checkout
 
-### 6.3 Data Validation
+### 6.4 Data Validation
 - **BR-013**: User codes must start with "U" or "USER"
 - **BR-014**: All scanned values sanitized for JSON compatibility
 - **BR-015**: Maximum scan value length: 200 characters
 - **BR-016**: DSN patterns validated against known formats (NEW v1.5)
 - **BR-017**: Component type inference from DSN patterns (NEW v1.5)
 
-### 6.4 Export Rules (NEW v1.5)
+### 6.5 Export Rules (NEW v1.5)
 - **BR-018**: Location ID required for all exports
 - **BR-019**: Maximum 31 days per export operation
 - **BR-020**: Kit labels use simplified component naming

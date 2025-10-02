@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder
 import com.joeycarlson.qrscanner.data.CheckInRecord
 import com.joeycarlson.qrscanner.data.CheckoutRecord
 import com.joeycarlson.qrscanner.data.KitBundle
+import com.joeycarlson.qrscanner.inventory.InventoryRecord
 
 /**
  * Generates export content in various formats (JSON, CSV, XML, TXT).
@@ -338,6 +339,24 @@ class ContentGenerator {
         }
         
         return stringBuilder.toString()
+    }
+    
+    /**
+     * Generates content for inventory data (JSON only)
+     * The inventory data is already provided as a JSON string from InventoryRepository
+     */
+    fun generateInventoryContent(
+        inventoryJsonData: String,
+        format: ExportFormat,
+        locationId: String
+    ): String {
+        return when (format) {
+            ExportFormat.JSON -> inventoryJsonData
+            ExportFormat.CSV -> throw IllegalArgumentException("CSV format is not supported for inventory exports")
+            ExportFormat.XML -> throw IllegalArgumentException("XML format is not supported for inventory exports")
+            ExportFormat.TXT -> throw IllegalArgumentException("TXT format is not supported for inventory exports")
+            ExportFormat.KIT_LABELS_CSV -> throw IllegalArgumentException("KIT_LABELS_CSV format is only for kit bundles")
+        }
     }
     
     /**
