@@ -5,6 +5,45 @@ import java.io.File
 import java.time.LocalDate
 
 /**
+ * Export format enum
+ */
+enum class ExportFormat {
+    JSON,
+    CSV,
+    TXT,
+    XML,
+    KIT_LABELS_CSV;
+    
+    val extension: String
+        get() = when (this) {
+            JSON -> "json"
+            CSV -> "csv"
+            TXT -> "txt"
+            XML -> "xml"
+            KIT_LABELS_CSV -> "csv"
+        }
+    
+    val mimeType: String
+        get() = when (this) {
+            JSON -> "application/json"
+            CSV, KIT_LABELS_CSV -> "text/csv"
+            TXT -> "text/plain"
+            XML -> "application/xml"
+        }
+}
+
+/**
+ * Export method data class
+ */
+data class ExportMethod(
+    val name: String,
+    val description: String,
+    val icon: String,
+    val isAvailable: Boolean,
+    val format: ExportFormat? = null
+)
+
+/**
  * Data class for email export information
  */
 data class EmailExportData(

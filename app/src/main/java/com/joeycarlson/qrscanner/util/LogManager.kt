@@ -184,7 +184,13 @@ class LogManager private constructor(private val context: Context) {
     private fun getAppVersion(): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${packageInfo.versionName} (${packageInfo.versionCode})"
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+            "${packageInfo.versionName} ($versionCode)"
         } catch (e: Exception) {
             "Unknown"
         }

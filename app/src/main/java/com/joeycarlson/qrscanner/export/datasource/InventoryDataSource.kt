@@ -18,7 +18,7 @@ class InventoryDataSource(
     private val context: Context
 ) : ExportDataSource {
     
-    private val repository = InventoryRepository(context)
+    private val repository = InventoryRepository(context, com.joeycarlson.qrscanner.util.FileManager(context))
     private val gson = Gson()
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     
@@ -34,7 +34,7 @@ class InventoryDataSource(
     ): Map<LocalDate, String> {
         // For inventory, we export the current session as a single file
         // The date range is ignored, but we'll use today's date as the key
-        val inventoryData = repository.getInventoryDataForExport()
+        val inventoryData = repository.exportInventoryData() ?: ""
         return if (inventoryData.isNotEmpty()) {
             mapOf(LocalDate.now() to inventoryData)
         } else {
@@ -44,7 +44,7 @@ class InventoryDataSource(
     
     override suspend fun getAllData(): String {
         // Return the current inventory session data
-        return repository.getInventoryDataForExport()
+        return repository.exportInventoryData() ?: ""
     }
     
     override fun getFilenamePrefix(date: LocalDate?): String {
@@ -64,18 +64,18 @@ class InventoryDataSource(
     }
     
     override suspend fun hasData(): Boolean {
-        return repository.getInventoryRecords().isNotEmpty()
+        return repository.getAllRecords().isNotEmpty()
     }
     
     override suspend fun getRecordCount(startDate: LocalDate?, endDate: LocalDate?): Int {
-        return repository.getInventoryRecords().size
+        return repository.getAllRecords().size
     }
     
     /**
      * Get a summary of the current inventory session
      */
     suspend fun getInventorySummary(): InventorySummary {
-        val records = repository.getInventoryRecords()
+        val records = repository.getAllRecords()
         val devicesByType = records.groupBy { it.componentType }
         
         return InventorySummary(

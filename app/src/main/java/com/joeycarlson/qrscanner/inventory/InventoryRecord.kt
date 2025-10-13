@@ -36,7 +36,6 @@ data class InventoryRecord(
                 scanMode = when (scanMode) {
                     ScanMode.BARCODE_ONLY -> "BARCODE"
                     ScanMode.OCR_ONLY -> "OCR"
-                    else -> "UNKNOWN"
                 }
             )
         }

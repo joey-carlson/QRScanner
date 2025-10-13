@@ -284,10 +284,10 @@ class LogsDataSource(private val context: Context) : ExportDataSource {
     }
     
     override suspend fun hasData(): Boolean {
-        return logManager.hasLogs()
+        return logManager.exportLogs().isNotEmpty()
     }
     
     override suspend fun getRecordCount(startDate: java.time.LocalDate?, endDate: java.time.LocalDate?): Int {
-        return if (logManager.hasLogs()) 1 else 0
+        return if (logManager.exportLogs().isNotEmpty()) 1 else 0
     }
 }

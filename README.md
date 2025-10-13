@@ -1,6 +1,6 @@
-# QR Scanner - Advanced Kit Management System v2.7.0
+# QR Scanner - Advanced Kit Management System v2.7.5
 
-An Android application for scanning QR codes and barcodes to track kit movements, manage kit component bundles, and perform bulk device inventory. The app supports enhanced OCR text recognition with advanced performance optimizations, multiple scanning modes, and comprehensive export capabilities including AWS S3 integration.
+An Android application for scanning QR codes and barcodes to track kit movements, manage kit component bundles, and perform bulk device inventory. The app supports enhanced OCR text recognition with advanced performance optimizations, multiple scanning modes, comprehensive unit testing, and export capabilities including AWS S3 integration.
 
 ## Key Features
 

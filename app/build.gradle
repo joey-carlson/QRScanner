@@ -12,8 +12,8 @@ android {
         applicationId "com.joeycarlson.qrscanner"
         minSdk 24
         targetSdk 35
-        versionCode 34
-        versionName "2.6.1"
+        versionCode 35
+        versionName "2.7.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
@@ -43,17 +43,16 @@ android {
     packagingOptions {
         jniLibs {
             useLegacyPackaging = false
-            // Force 16KB page alignment for all native libraries
-            keepDebugSymbols += "**/*.so"
+            keepDebugSymbols += ['**/*.so']
+            pickFirsts += ['**/*.so']
+// Force 16KB page alignment for all native libraries
         }
         // Ensure proper alignment for 16KB page sizes
         resources {
             excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
         // Force extraction and alignment of native libraries
-        doNotStrip "**/*.so"
         // Handle duplicate native libraries
-        pickFirst "**/*.so"
     }
     
     // Force proper alignment for 16KB page sizes
@@ -217,8 +216,19 @@ dependencies {
     // Java 8+ API desugaring (for java.time APIs on older Android)
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     
-    // Testing
+    // Testing - Unit Tests
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.1.0'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
+    testImplementation 'androidx.arch.core:core-testing:2.2.0'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+    
+    // Testing - Android Instrumented Tests
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'org.mockito:mockito-android:5.5.0'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation 'androidx.arch.core:core-testing:2.2.0'
 }

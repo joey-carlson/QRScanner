@@ -214,16 +214,20 @@ class UnifiedExportHandler(private val context: Context) {
      */
     private fun generateCsvContent(records: List<Any>, exportType: String, locationId: String): String {
         return when (exportType) {
-            "checkout" -> contentGenerator.generateCsvContent(
+            "checkout" -> contentGenerator.generateContent(
                 records as List<com.joeycarlson.qrscanner.data.CheckoutRecord>,
+                ExportFormat.CSV,
                 locationId
             )
-            "checkin" -> contentGenerator.generateCheckInCsvContent(
+            "checkin" -> contentGenerator.generateCheckInContent(
                 records as List<com.joeycarlson.qrscanner.data.CheckInRecord>,
+                ExportFormat.CSV,
                 locationId
             )
-            "kit_bundle" -> contentGenerator.generateKitBundleCsvContent(
-                records as List<com.joeycarlson.qrscanner.data.KitBundle>
+            "kit_bundle" -> contentGenerator.generateKitBundleContent(
+                records as List<com.joeycarlson.qrscanner.data.KitBundle>,
+                ExportFormat.CSV,
+                locationId
             )
             else -> ""
         }
@@ -234,12 +238,14 @@ class UnifiedExportHandler(private val context: Context) {
      */
     private fun generateTxtContent(records: List<Any>, exportType: String, locationId: String): String {
         return when (exportType) {
-            "checkout" -> contentGenerator.generateTxtContent(
+            "checkout" -> contentGenerator.generateContent(
                 records as List<com.joeycarlson.qrscanner.data.CheckoutRecord>,
+                ExportFormat.TXT,
                 locationId
             )
-            "checkin" -> contentGenerator.generateCheckInTxtContent(
+            "checkin" -> contentGenerator.generateCheckInContent(
                 records as List<com.joeycarlson.qrscanner.data.CheckInRecord>,
+                ExportFormat.TXT,
                 locationId
             )
             else -> ""
@@ -250,8 +256,9 @@ class UnifiedExportHandler(private val context: Context) {
      * Generate XML content
      */
     private fun generateXmlContent(records: List<Any>, exportType: String, locationId: String): String {
-        return contentGenerator.generateXmlContent(
+        return contentGenerator.generateContent(
             records as List<com.joeycarlson.qrscanner.data.CheckoutRecord>,
+            ExportFormat.XML,
             locationId
         )
     }
@@ -260,8 +267,10 @@ class UnifiedExportHandler(private val context: Context) {
      * Generate kit labels CSV content
      */
     private fun generateKitLabelsCsvContent(records: List<Any>): String {
-        return contentGenerator.generateKitLabelsCsvContent(
-            records as List<com.joeycarlson.qrscanner.data.KitBundle>
+        return contentGenerator.generateKitBundleContent(
+            records as List<com.joeycarlson.qrscanner.data.KitBundle>,
+            ExportFormat.KIT_LABELS_CSV,
+            "" // locationId not needed for kit labels
         )
     }
     

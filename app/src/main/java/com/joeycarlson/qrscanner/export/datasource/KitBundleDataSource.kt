@@ -33,7 +33,7 @@ class KitBundleDataSource(
         var currentDate = startDate
         
         while (!currentDate.isAfter(endDate)) {
-            val records = repository.getKitsForDate(currentDate)
+            val records = repository.getBundlesForDate(currentDate)
             if (records.isNotEmpty()) {
                 dataMap[currentDate] = gson.toJson(records)
             }
@@ -51,7 +51,7 @@ class KitBundleDataSource(
         
         var currentDate = startDate
         while (!currentDate.isAfter(endDate)) {
-            allRecords.addAll(repository.getKitsForDate(currentDate))
+            allRecords.addAll(repository.getBundlesForDate(currentDate))
             currentDate = currentDate.plusDays(1)
         }
         
@@ -92,7 +92,7 @@ class KitBundleDataSource(
         var currentDate = startDate
         
         while (!currentDate.isAfter(endDate)) {
-            if (repository.getKitsForDate(currentDate).isNotEmpty()) {
+            if (repository.getBundlesForDate(currentDate).isNotEmpty()) {
                 return true
             }
             currentDate = currentDate.plusDays(1)
@@ -109,7 +109,7 @@ class KitBundleDataSource(
         var currentDate = actualStartDate
         
         while (!currentDate.isAfter(actualEndDate)) {
-            count += repository.getKitsForDate(currentDate).size
+            count += repository.getBundlesForDate(currentDate).size
             currentDate = currentDate.plusDays(1)
         }
         
@@ -124,7 +124,7 @@ class KitBundleDataSource(
         var currentDate = startDate
         
         while (!currentDate.isAfter(endDate)) {
-            allKits.addAll(repository.getKitsForDate(currentDate))
+            allKits.addAll(repository.getBundlesForDate(currentDate))
             currentDate = currentDate.plusDays(1)
         }
         

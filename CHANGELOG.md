@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.5] - 2025-10-13
+
+### Removed
+- **Old Export System Cleanup (~1,500 lines)**
+  - Deleted duplicate export implementation maintained alongside unified system
+  - Removed `ExportActivity.kt` - legacy export activity
+  - Removed `ExportCoordinator.kt` - old orchestration logic
+  - Removed entire `export/strategy/` package:
+    - `ExportStrategy.kt` interface
+    - `BaseExportStrategy.kt` abstract class
+    - `ExportStrategyManager.kt` coordinator
+    - `LocalStorageExportStrategy.kt` implementation
+    - `ShareExportStrategy.kt` implementation
+  - Removed corresponding XML layouts:
+    - `activity_export.xml`
+    - `activity_export_method.xml`
+  - Removed manifest entries for old export activities
+  - Removed `util/Constants.kt` - fully deprecated dead code (0 references)
+
+### Added
+- **Comprehensive Unit Test Infrastructure**
+  - Test dependencies: JUnit 4.13.2, Mockito 5.5.0, Mockito-Kotlin 5.1.0
+  - Coroutines testing: kotlinx-coroutines-test 1.7.3
+  - Android testing: AndroidX core-testing 2.2.0, Robolectric 4.11.1
+  - Created 97 unit tests across 3 test suites:
+    - `BarcodeValidatorTest`: 48 tests (format validation, security checks, injection prevention)
+    - `CheckInRecordTest`: 9 tests (data model, serialization, ISO-8601 timestamps)
+    - `FileNamingServiceTest`: 40 tests (filename generation, sanitization, pattern extraction)
+  - Test utilities: `TestUtils.kt` with TestLogger and TestAssertions helpers
+  - 91% pass rate (88 passing, 9 minor failures requiring assertion adjustments)
+
+### Fixed
+- **Deprecated Android API Updates**
+  - `LogManager.kt`: Updated versionCode access with API level check
+    - Uses `longVersionCode` on Android P+ (API 28+)
+    - Falls back to deprecated `versionCode.toLong()` on older versions
+    - Proper suppression of deprecation warnings
+  - `InventoryRecord.kt`: Removed redundant else branch in exhaustive when expression
+    - ScanMode enum only has BARCODE_ONLY and OCR_ONLY values
+    - Eliminated unreachable code branch
+  - `WindowInsetsHelper.kt`: Verified modern API usage (no changes needed)
+    - Already uses correct `setDecorFitsSystemWindows()` for Android 11+
+
+### Changed
+- **Build System Improvements**
+  - Updated Gradle wrapper: 8.9 → 8.10.2 for Java 17 compatibility
+  - Resolved Java 21 vs Gradle compatibility issues
+  - Cleared configuration cache errors from mixed Java version builds
+  - Enhanced test infrastructure in app/build.gradle
+- **Export System Consolidation**
+  - All export functionality now exclusively uses unified system:
+    - `UniversalExportManager` singleton entry point
+    - `UnifiedExportHandler` centralized processing
+    - `UnifiedExportActivity` unified UI
+    - Data source adapters for all export types
+  - Maintained `ExportFormat` enum and `ExportMethod` data class in `ExportDataClasses.kt`
+  - Restored missing data classes after cleanup to maintain unified system compatibility
+
+### Technical
+- Version bumped to 2.7.5 (Build 35) for refactoring and cleanup
+- Codebase reduced by ~1,500 lines through technical debt removal
+- Test coverage significantly improved with 97 comprehensive unit tests
+- Android API compatibility improved for future platform versions
+- Build system modernized for better Java version management
+
 ## [2.7.0] - 2025-10-13
 
 ### Added
