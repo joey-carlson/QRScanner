@@ -29,7 +29,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.joeycarlson.qrscanner.data.CheckoutRepository
 import com.joeycarlson.qrscanner.databinding.ActivityMainBinding
-import com.joeycarlson.qrscanner.export.ExportActivity
+import com.joeycarlson.qrscanner.export.UniversalExportManager
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.ui.ScanState
@@ -342,24 +342,9 @@ class MainActivity : AppCompatActivity() {
         }
         
         binding.exportButton.setOnClickListener {
-            // Check if location ID is configured
-            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            val locationId = prefs.getString("location_id", "")
-            
-            if (locationId.isNullOrEmpty()) {
-                AlertDialog.Builder(this)
-                    .setTitle("Configuration Required")
-                    .setMessage("Please configure Location ID in Settings before exporting.")
-                    .setPositiveButton("Go to Settings") { _, _ ->
-                        val intent = Intent(this, SettingsActivity::class.java)
-                        startActivity(intent)
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-            } else {
-                val intent = Intent(this, ExportActivity::class.java)
-                startActivity(intent)
-            }
+            // Use the unified export manager for checkout exports
+            UniversalExportManager.getInstance(this)
+                .startExport(AppConfig.EXPORT_TYPE_CHECKOUT, this)
         }
         
         // Review panel button click listeners

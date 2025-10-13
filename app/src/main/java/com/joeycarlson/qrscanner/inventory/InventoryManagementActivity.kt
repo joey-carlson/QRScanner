@@ -17,7 +17,7 @@ import com.google.android.material.chip.Chip
 import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.data.InventoryRepository
 import com.joeycarlson.qrscanner.databinding.ActivityInventoryManagementBinding
-import com.joeycarlson.qrscanner.export.UnifiedExportActivity
+import com.joeycarlson.qrscanner.export.UniversalExportManager
 import com.joeycarlson.qrscanner.ocr.HybridScanAnalyzer
 import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
@@ -170,7 +170,9 @@ class InventoryManagementActivity : AppCompatActivity() {
         // Export button
         binding.exportFab.setOnClickListener {
             viewModel.exportInventory()
-            navigateToExport()
+            // Use the unified export manager for inventory exports
+            UniversalExportManager.getInstance(this)
+                .startExport(AppConfig.EXPORT_TYPE_INVENTORY, this)
         }
         
         // Clear button
@@ -255,12 +257,6 @@ class InventoryManagementActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
     
-    private fun navigateToExport() {
-        val intent = Intent(this, UnifiedExportActivity::class.java).apply {
-            putExtra(AppConfig.EXPORT_TYPE_KEY, AppConfig.EXPORT_TYPE_INVENTORY)
-        }
-        startActivity(intent)
-    }
     
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(

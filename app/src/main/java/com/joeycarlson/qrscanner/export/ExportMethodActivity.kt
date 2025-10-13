@@ -594,5 +594,6 @@ data class ExportMethod(
     val name: String,
     val description: String,
     val icon: String,
-    val isAvailable: Boolean
+    val isAvailable: Boolean,
+    val format: ExportFormat? = null
 )

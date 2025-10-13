@@ -1,4 +1,4 @@
-# QR Scanner - Advanced Kit Management System v2.6.1
+# QR Scanner - Advanced Kit Management System v2.7.0
 
 An Android application for scanning QR codes and barcodes to track kit movements, manage kit component bundles, and perform bulk device inventory. The app supports enhanced OCR text recognition with advanced performance optimizations, multiple scanning modes, and comprehensive export capabilities including AWS S3 integration.
 
@@ -404,6 +404,11 @@ The app stores records in separate JSON files based on the operation type:
 ### Key Components
 - **Centralized Configuration**: AppConfig and PreferenceKeys objects
 - **File Management**: Unified FileManager with Android version compatibility
+- **Unified Export System** (v2.7.0): 
+  - **UniversalExportManager**: Singleton entry point for all export operations
+  - **ExportDataSource Interface**: Abstraction for different data types (Checkout, CheckIn, KitBundle, Inventory)
+  - **UnifiedExportHandler**: Centralized processing for consistent export workflow
+  - **Consistent User Experience**: All features use the same export interface
 - **Export Strategy Pattern**: Extensible architecture for multiple export methods
 - **Haptic Feedback**: HapticManager for consistent vibration feedback
 - **Validation System**: Comprehensive barcode and DSN validation
@@ -448,7 +453,17 @@ app/
 │   │   │   ├── KitBundle.kt
 │   │   │   └── KitRepository.kt
 │   │   ├── export/
+│   │   │   ├── datasource/
+│   │   │   │   ├── ExportDataSource.kt
+│   │   │   │   ├── CheckoutDataSource.kt
+│   │   │   │   ├── CheckInDataSource.kt
+│   │   │   │   ├── KitBundleDataSource.kt
+│   │   │   │   └── InventoryDataSource.kt
 │   │   │   ├── strategy/
+│   │   │   ├── UniversalExportManager.kt
+│   │   │   ├── UnifiedExportHandler.kt
+│   │   │   ├── UnifiedExportActivity.kt
+│   │   │   ├── ExportMethodActivity.kt
 │   │   │   ├── ExportCoordinator.kt
 │   │   │   ├── ContentGenerator.kt
 │   │   │   ├── FileNamingService.kt

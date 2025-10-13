@@ -19,8 +19,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
+import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.databinding.ActivityKitBundleBinding
-import com.joeycarlson.qrscanner.export.ExportCoordinator
+import com.joeycarlson.qrscanner.export.UniversalExportManager
 import com.joeycarlson.qrscanner.ocr.HybridScanAnalyzer
 import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
@@ -38,7 +39,6 @@ class KitBundleActivity : AppCompatActivity() {
     private lateinit var hybridScanAnalyzer: HybridScanAnalyzer
     private lateinit var viewModel: KitBundleViewModel
     private lateinit var hapticManager: HapticManager
-    private lateinit var exportCoordinator: ExportCoordinator
     private var currentScanMode = ScanMode.BARCODE_ONLY
     
     // Component slots adapter removed - using different UI approach
@@ -58,7 +58,6 @@ class KitBundleActivity : AppCompatActivity() {
         WindowInsetsHelper.setupWindowInsets(this)
         WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
-        exportCoordinator = ExportCoordinator(this)
         
         setupViews()
         setupObservers()
@@ -96,6 +95,9 @@ class KitBundleActivity : AppCompatActivity() {
         
         binding.exportButton.setOnClickListener {
             viewModel.saveKitBundle()
+            // Use the unified export manager for kit bundle exports
+            UniversalExportManager.getInstance(this)
+                .startExport(AppConfig.EXPORT_TYPE_KIT_BUNDLE, this)
         }
         
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

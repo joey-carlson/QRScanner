@@ -27,9 +27,12 @@ class UnifiedExportActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityUnifiedExportBinding
     private lateinit var logManager: LogManager
+    private lateinit var exportHandler: UnifiedExportHandler
     
     // Export parameters
     private var exportType: String? = null
+    private var exportDisplayName: String? = null
+    private var supportsDateRange: Boolean = true
     private var csvContent: String? = null
     private var filename: String? = null
     private var startDate: LocalDate = LocalDate.now()
@@ -45,45 +48,37 @@ class UnifiedExportActivity : AppCompatActivity() {
         WindowInsetsHelper.setupWindowInsets(this)
         WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
         
-        // Initialize log manager
+        // Initialize managers
         logManager = LogManager.getInstance(this)
+        exportHandler = UnifiedExportHandler(this)
         
-        // Get export type from intent
+        // Get export parameters from intent
         exportType = intent.getStringExtra("export_type")
+        exportDisplayName = intent.getStringExtra("export_display_name") ?: when (exportType) {
+            "checkout" -> "Kit Checkouts"
+            "checkin" -> "Kit Check-ins"
+            "kit_bundle" -> "Kit Bundles"
+            "inventory" -> "Device Inventory"
+            "logs" -> "Diagnostic Logs"
+            else -> "Data"
+        }
+        supportsDateRange = intent.getBooleanExtra("supports_date_range", true)
         
         // Set up toolbar
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = when (exportType) {
-            "kit_bundle" -> "Export Kit Bundles"
-            "kit_labels" -> "Export Kit Labels"
-            else -> "Export Data"
+        supportActionBar?.title = "Export $exportDisplayName"
+        
+        // Handle date selection based on data source capabilities
+        if (supportsDateRange) {
+            binding.dateSelectionCard.visibility = View.VISIBLE
+            updateDateDisplays()
+            setupDatePickers()
+        } else {
+            binding.dateSelectionCard.visibility = View.GONE
         }
         
-        // Handle different export types
-        when (exportType) {
-            "kit_labels" -> {
-                // Kit labels export - hide date selection
-                csvContent = intent.getStringExtra("csv_content")
-                filename = intent.getStringExtra("filename")
-                binding.dateSelectionCard.visibility = View.GONE
-                setupExportMethods()
-            }
-            "kit_bundle" -> {
-                // Kit bundle export - show date selection
-                binding.dateSelectionCard.visibility = View.VISIBLE
-                updateDateDisplays()
-                setupDatePickers()
-                setupExportMethods()
-            }
-            else -> {
-                // Regular export - show date selection
-                binding.dateSelectionCard.visibility = View.VISIBLE
-                updateDateDisplays()
-                setupDatePickers()
-                setupExportMethods()
-            }
-        }
+        setupExportMethods()
         
         logManager.log("UnifiedExportActivity", "Export activity opened - Type: $exportType")
     }
@@ -228,26 +223,140 @@ class UnifiedExportActivity : AppCompatActivity() {
     }
     
     private fun handleExportMethodClick(method: ExportMethod) {
-        when (method.name) {
-            "Export Logs" -> {
-                exportLogs()
-            }
-            else -> {
-                // Pass to the existing export method activity for now
-                // In a future update, we can handle all exports directly here
-                if (startDate.isAfter(endDate)) {
-                    Toast.makeText(this, "Start date must be before or equal to end date", Toast.LENGTH_SHORT).show()
-                    return
+        // Validate date range if applicable
+        if (supportsDateRange && startDate.isAfter(endDate)) {
+            Toast.makeText(this, "Start date must be before or equal to end date", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Handle export logs separately
+        if (method.name == "Export Logs") {
+            exportLogs()
+            return
+        }
+        
+        lifecycleScope.launch {
+            val progressDialog = DialogUtils.createProgressDialog(
+                this@UnifiedExportActivity,
+                "Exporting",
+                "Preparing your export..."
+            )
+            progressDialog.show()
+            
+            try {
+                val dataSource = exportHandler.createDataSource(exportType ?: "checkout")
+                val format = method.format ?: ExportFormat.JSON
+                
+                val result = when {
+                    method.name.startsWith("Save") -> {
+                        exportHandler.exportToDownloads(dataSource, startDate, endDate, format)
+                    }
+                    method.name.startsWith("Share") -> {
+                        exportHandler.exportViaShare(dataSource, startDate, endDate, format)
+                    }
+                    method.name == "Email" -> {
+                        exportHandler.exportViaShare(dataSource, startDate, endDate, format)
+                    }
+                    method.name == "SMS/Text" -> {
+                        exportHandler.exportViaShare(dataSource, startDate, endDate, format)
+                    }
+                    method.name.startsWith("S3") -> {
+                        exportHandler.exportToS3(dataSource, startDate, endDate, format)
+                    }
+                    else -> ExportResult.Error("Unknown export method")
                 }
                 
-                val intent = Intent(this, ExportMethodActivity::class.java).apply {
-                    putExtra("export_type", exportType)
-                    putExtra("start_date", startDate.toString())
-                    putExtra("end_date", endDate.toString())
-                    csvContent?.let { putExtra("csv_content", it) }
-                    filename?.let { putExtra("filename", it) }
+                progressDialog.dismiss()
+                handleExportResult(result, method)
+                
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                DialogUtils.showErrorDialog(
+                    this@UnifiedExportActivity,
+                    "Export Failed",
+                    "Error: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun handleExportResult(result: ExportResult, method: ExportMethod) {
+        when (result) {
+            is ExportResult.Success -> {
+                DialogUtils.showSuccessDialog(
+                    this,
+                    "Export Complete",
+                    "Successfully exported ${result.fileUris.size} file(s)"
+                ) {
+                    finish()
                 }
-                startActivity(intent)
+            }
+            is ExportResult.ShareReady -> {
+                // Create share intent
+                val shareIntent = if (result.fileUris.size == 1) {
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = result.mimeType
+                        putExtra(Intent.EXTRA_STREAM, result.fileUris.first())
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                } else {
+                    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                        type = result.mimeType
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(result.fileUris))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                }
+                
+                // Handle specific intents
+                when (method.name) {
+                    "Email" -> {
+                        shareIntent.type = "message/rfc822"
+                        shareIntent.putExtra(Intent.EXTRA_SUBJECT, "QR Scanner Export - $exportDisplayName")
+                    }
+                    "SMS/Text" -> {
+                        shareIntent.action = Intent.ACTION_SENDTO
+                        shareIntent.data = android.net.Uri.parse("smsto:")
+                    }
+                }
+                
+                val chooser = Intent.createChooser(shareIntent, "Share Export")
+                startActivity(chooser)
+                
+                // Clean up temp files after a delay
+                lifecycleScope.launch {
+                    kotlinx.coroutines.delay(5000)
+                    result.tempFiles.forEach { it.delete() }
+                }
+                
+                finish()
+            }
+            is ExportResult.S3Success -> {
+                DialogUtils.showSuccessDialog(
+                    this,
+                    "S3 Upload Complete",
+                    "Successfully uploaded ${result.uploadedFiles.size} file(s) to S3"
+                ) {
+                    finish()
+                }
+            }
+            is ExportResult.NoData -> {
+                DialogUtils.showWarningDialog(
+                    this,
+                    "No Data",
+                    "No data found for the selected date range"
+                ) {
+                    // Don't finish, let user adjust dates
+                }
+            }
+            is ExportResult.Error -> {
+                DialogUtils.showErrorDialog(
+                    this,
+                    "Export Failed",
+                    result.message
+                )
+            }
+            else -> {
+                // Handle any other result types
                 finish()
             }
         }

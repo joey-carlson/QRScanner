@@ -8,8 +8,8 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    const val VERSION_NAME = "2.4.0"
-    const val VERSION_CODE = 24
+    const val VERSION_NAME = "2.7.0"
+    const val VERSION_CODE = 34
     const val APPLICATION_ID = "com.joeycarlson.qrscanner"
     
     // Build configuration - will be set dynamically when BuildConfig is available
@@ -95,7 +95,11 @@ object AppConfig {
     
     // Export Types
     const val EXPORT_TYPE_KEY = "export_type"
+    const val EXPORT_TYPE_CHECKOUT = "checkout"
+    const val EXPORT_TYPE_CHECKIN = "checkin"
+    const val EXPORT_TYPE_KIT_BUNDLE = "kit_bundle"
     const val EXPORT_TYPE_INVENTORY = "inventory"
+    const val EXPORT_TYPE_LOGS = "logs"
     
     // Build-specific configurations
     object Build {

@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-10-13
+
+### Added
+- **Unified Export System**
+  - New `UniversalExportManager` singleton for centralized export management
+  - `ExportDataSource` interface for data source abstraction
+  - Data source adapters for all data types:
+    - `CheckoutDataSource` for kit checkout records
+    - `CheckInDataSource` for kit check-in records
+    - `KitBundleDataSource` for kit bundle records
+    - `InventoryDataSource` for device inventory records
+    - `LogsDataSource` for diagnostic logs
+  - `UnifiedExportHandler` for centralized export processing
+  - Support for all export formats (JSON, CSV, XML, TXT) across all data sources
+  - Consistent export experience across all app features
+
+### Changed
+- **Export Architecture Refactoring**
+  - All activities now use `UniversalExportManager.startExport()` for exports
+  - `UnifiedExportActivity` enhanced to handle all export scenarios
+  - Export logic centralized in `UnifiedExportHandler`
+  - Data source abstraction allows any feature to use the same export infrastructure
+  - Removed dependency on specific repository types in export logic
+- **Updated Export Entry Points**
+  - `MainActivity` now uses `UniversalExportManager` for checkout exports
+  - `CheckInActivity` now uses `UniversalExportManager` for check-in exports
+  - `InventoryManagementActivity` now uses `UniversalExportManager` for inventory exports
+  - `KitBundleActivity` now uses `UniversalExportManager` for kit bundle exports
+
+### Technical
+- New package structure: `com.joeycarlson.qrscanner.export.datasource.*`
+- Data-source agnostic export processing
+- Improved separation of concerns with dedicated handlers and managers
+- Export method data class enhanced with format parameter
+- Consistent error handling and user feedback across all export operations
+- Version bumped to 2.7.0 (Build 34) for unified export system
+
+### Fixed
+- Export functionality now consistent across all features
+- Eliminated duplicate export code across activities
+- Improved maintainability with centralized export logic
+
 ## [2.6.1] - 2025-10-02
 
 ### Enhanced
@@ -620,71 +662,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failure event tracking in ScanViewModel
 
 ### Fixed
-- Settings screen text contrast issues
-  - Helper text now uses theme-aware colors
-  - Input field outlines have better visibility
-  - All text properly adapts to light/dark modes
-
-## [1.5.1] - 2025-08-27
-### Added
-- Email export with professional formatting
-  - Pre-filled subject and body content
-  - Multiple file attachment support
-- SMS/MMS export functionality
-  - File attachments via MMS when supported
-  - Warning dialog about carrier compatibility
-
-## [1.5.0] - 2025-08-26
-### Added
-- Comprehensive export system (Phase 2)
-  - Date range selection for exports
-  - Save to Downloads folder
-  - Share via Android Intent
-  - JSON format with location-aware filenames
-- Export Activity with Material Design date picker
-- Export Method selection screen
-- FileProvider configuration for secure file sharing
-
-### Fixed
-- Theme color issues in export and settings screens
-
-## [1.4.0] - 2025-08-25
-### Added
-- Settings screen with device configuration
-  - Location ID (required for exports)
-  - Device Name (optional)
-- Preference storage using SharedPreferences
-- Location ID validation before exports
-
-## [1.3.0] - 2025-08-24
-### Added
-- Support for "OTHER" barcode types
-- Improved barcode type detection logic
-
-## [1.2.0] - 2025-08-23
-### Added
-- Support for 1D barcode formats
-  - Code 128, Code 39, Code 93
-  - UPC-A, UPC-E
-  - EAN-13, EAN-8
-- Enhanced ML Kit barcode scanner configuration
-
-## [1.1.0] - 2025-08-22
-### Added
-- Visual feedback system
-  - White flash animation on successful scan
-  - 600ms duration for better visibility
-- Improved status messages
-
-### Fixed
-- Camera permission handling for Android 10+
-
-## [1.0.0] - 2025-08-21
-### Initial Release
-- QR code scanning for user and kit checkouts
-- Dual scanning support (user/kit in any order)
-- Real-time camera preview with scan overlay
-- Automatic checkout processing
-- Local JSON storage in app-specific directory
-- MVVM architecture with Kotlin
-- Material Design UI components
+- Settings
