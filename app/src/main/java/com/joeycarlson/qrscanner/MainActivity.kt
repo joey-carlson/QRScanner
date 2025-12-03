@@ -1,16 +1,11 @@
 package com.joeycarlson.qrscanner
 
-import android.Manifest
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -37,6 +32,7 @@ import com.joeycarlson.qrscanner.ui.ScanViewModel
 import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
+import com.joeycarlson.qrscanner.util.PermissionManager
 import com.joeycarlson.qrscanner.data.ScanHistoryItem
 import com.joeycarlson.qrscanner.data.ScanHistoryManager
 import com.joeycarlson.qrscanner.ui.ScanHistoryAdapter
