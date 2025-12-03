@@ -14,6 +14,10 @@ import androidx.core.content.ContextCompat
  */
 class PermissionManager(private val activity: Activity) {
     
+    // Callback functions for permission results
+    private var onPermissionsGrantedCallback: (() -> Unit)? = null
+    private var onPermissionsDeniedCallback: ((List<String>) -> Unit)? = null
+    
     companion object {
         const val REQUEST_CODE_PERMISSIONS = 10
         const val REQUEST_CODE_STORAGE_PERMISSION = 1001
@@ -26,6 +30,19 @@ class PermissionManager(private val activity: Activity) {
             Manifest.permission.CAMERA,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
+        
+        /**
+         * Get required permissions based on Android version
+         */
+        fun getRequiredPermissions(): Array<String> {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ only needs camera permission
+                CAMERA_PERMISSIONS
+            } else {
+                // Android 9 and below needs both camera and storage permissions
+                REQUIRED_PERMISSIONS
+            }
+        }
     }
     
     /**
@@ -153,6 +170,39 @@ class PermissionManager(private val activity: Activity) {
             Manifest.permission.CAMERA -> "Camera access is required to scan QR codes"
             Manifest.permission.WRITE_EXTERNAL_STORAGE -> "Storage access is required to save files"
             else -> "This permission is required for the app to function properly"
+        }
+    }
+    
+    /**
+     * Set callback functions for permission results
+     */
+    fun setPermissionCallbacks(
+        onPermissionsGranted: () -> Unit,
+        onPermissionsDenied: (List<String>) -> Unit
+    ) {
+        onPermissionsGrantedCallback = onPermissionsGranted
+        onPermissionsDeniedCallback = onPermissionsDenied
+    }
+    
+    /**
+     * Handle permission result using callbacks
+     */
+    fun handlePermissionResult(
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        val deniedPermissions = mutableListOf<String>()
+        
+        for (i in permissions.indices) {
+            if (grantResults.getOrNull(i) != PackageManager.PERMISSION_GRANTED) {
+                deniedPermissions.add(permissions[i])
+            }
+        }
+        
+        if (deniedPermissions.isEmpty()) {
+            onPermissionsGrantedCallback?.invoke()
+        } else {
+            onPermissionsDeniedCallback?.invoke(deniedPermissions)
         }
     }
     
