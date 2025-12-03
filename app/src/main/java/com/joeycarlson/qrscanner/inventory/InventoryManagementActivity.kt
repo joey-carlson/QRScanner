@@ -23,6 +23,7 @@ import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.util.FileManager
+import com.joeycarlson.qrscanner.util.PermissionManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -32,6 +33,7 @@ class InventoryManagementActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInventoryManagementBinding
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var hapticManager: HapticManager
+    private lateinit var permissionManager: PermissionManager
     private var camera: Camera? = null
     private lateinit var hybridAnalyzer: HybridScanAnalyzer
     private var currentScanMode = ScanMode.BARCODE_ONLY
@@ -60,12 +62,29 @@ class InventoryManagementActivity : AppCompatActivity() {
         setupObservers()
         setupClickListeners()
         
-        if (allPermissionsGranted()) {
+        // Initialize permission manager
+        permissionManager = PermissionManager(this)
+        
+        // Set up permission callbacks
+        permissionManager.setPermissionCallbacks(
+            onPermissionsGranted = {
+                startCamera()
+            },
+            onPermissionsDenied = { deniedPermissions ->
+                Toast.makeText(
+                    this,
+                    "Permissions not granted by the user.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                finish()
+            }
+        )
+        
+        // Request permissions
+        if (permissionManager.areAllPermissionsGranted()) {
             startCamera()
         } else {
-            ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
-            )
+            permissionManager.requestAllRequiredPermissions()
         }
     }
     
@@ -260,31 +279,6 @@ class InventoryManagementActivity : AppCompatActivity() {
     }
     
     
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(
-            baseContext, it
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-    
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                Toast.makeText(
-                    this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT
-                ).show()
-                finish()
-            }
-        }
-    }
     
     override fun onDestroy() {
         super.onDestroy()
@@ -301,7 +295,5 @@ class InventoryManagementActivity : AppCompatActivity() {
     
     companion object {
         private const val TAG = "InventoryManagement"
-        private const val REQUEST_CODE_PERMISSIONS = 10
-        private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     }
 }
