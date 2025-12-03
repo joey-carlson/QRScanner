@@ -25,6 +25,7 @@ import com.joeycarlson.qrscanner.export.UniversalExportManager
 import com.joeycarlson.qrscanner.ocr.HybridScanAnalyzer
 import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
+import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.util.LogManager
 import com.joeycarlson.qrscanner.util.PermissionManager
@@ -164,7 +165,7 @@ class KitBundleActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.errorMessage.collect { errorMsg ->
                 errorMsg?.let {
-                    Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show()
+                    DialogUtils.showErrorSnackbar(binding.root, it)
                 }
             }
         }
@@ -175,7 +176,7 @@ class KitBundleActivity : AppCompatActivity() {
     private fun saveCurrentBundle() {
         viewModel.saveCurrentBundle()
         hapticManager.performSuccessHaptic()
-        Snackbar.make(binding.root, "Bundle saved", Snackbar.LENGTH_SHORT).show()
+        DialogUtils.showSuccessSnackbar(binding.root, "Bundle saved")
     }
     
     private fun skipToNext() {
