@@ -27,6 +27,7 @@ import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.util.LogManager
+import com.joeycarlson.qrscanner.util.PermissionManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
@@ -39,6 +40,7 @@ class KitBundleActivity : AppCompatActivity() {
     private lateinit var hybridScanAnalyzer: HybridScanAnalyzer
     private lateinit var viewModel: KitBundleViewModel
     private lateinit var hapticManager: HapticManager
+    private lateinit var permissionManager: PermissionManager
     private var currentScanMode = ScanMode.BARCODE_ONLY
     
     // Component slots adapter removed - using different UI approach
@@ -62,12 +64,24 @@ class KitBundleActivity : AppCompatActivity() {
         setupViews()
         setupObservers()
         
-        if (allPermissionsGranted()) {
+        // Initialize permission manager
+        permissionManager = PermissionManager(this)
+        
+        // Set up permission callbacks
+        permissionManager.setPermissionCallbacks(
+            onPermissionsGranted = {
+                startCamera()
+            },
+            onPermissionsDenied = { deniedPermissions ->
+                finish()
+            }
+        )
+        
+        // Request permissions
+        if (permissionManager.areAllPermissionsGranted()) {
             startCamera()
         } else {
-            ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
-            )
+            permissionManager.requestAllRequiredPermissions()
         }
     }
     
@@ -266,24 +280,6 @@ class KitBundleActivity : AppCompatActivity() {
         binding.ocrButton.alpha = if (mode == ScanMode.OCR_ONLY) 1.0f else 0.6f
     }
     
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(
-            baseContext, it
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-    
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                finish()
-            }
-        }
-    }
     
     override fun onDestroy() {
         super.onDestroy()
@@ -295,9 +291,5 @@ class KitBundleActivity : AppCompatActivity() {
     
     companion object {
         private const val TAG = "KitBundleActivity"
-        private const val REQUEST_CODE_PERMISSIONS = 10
-        private val REQUIRED_PERMISSIONS = mutableListOf(
-            Manifest.permission.CAMERA
-        ).toTypedArray()
     }
 }
