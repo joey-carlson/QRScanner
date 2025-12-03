@@ -33,6 +33,7 @@ import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.ui.CheckInViewModel
 import com.joeycarlson.qrscanner.ui.CheckInViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
+import com.joeycarlson.qrscanner.util.CameraManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import com.joeycarlson.qrscanner.util.PermissionManager
 import java.util.concurrent.ExecutorService
@@ -47,11 +48,10 @@ class CheckInActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCheckinBinding
     private lateinit var viewModel: CheckInViewModel
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var cameraManager: CameraManager
     private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var hapticManager: HapticManager
     private lateinit var permissionManager: PermissionManager
-    
-    private var imageAnalyzer: ImageAnalysis? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +74,7 @@ class CheckInActivity : AppCompatActivity() {
         val factory = CheckInViewModelFactory(application, repository)
         viewModel = ViewModelProvider(this, factory)[CheckInViewModel::class.java]
         cameraExecutor = Executors.newSingleThreadExecutor()
+        cameraManager = CameraManager(this, this, cameraExecutor)
         hapticManager = HapticManager(this)
         
         // Initialize ML Kit barcode scanner with support for QR codes and common 1D barcodes
@@ -290,34 +291,14 @@ class CheckInActivity : AppCompatActivity() {
     }
     
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-            
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(binding.previewView.surfaceProvider)
+        cameraManager.startCamera(
+            previewView = binding.previewView,
+            imageAnalyzer = BarcodeAnalyzer(),
+            onError = { exception ->
+                Log.e(TAG, "Camera initialization failed", exception)
+                DialogUtils.showErrorToast(this, "Camera initialization failed")
             }
-            
-            imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, BarcodeAnalyzer())
-                }
-            
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageAnalyzer
-                )
-            } catch (exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
-            }
-            
-        }, ContextCompat.getMainExecutor(this))
+        )
     }
     
     
