@@ -2,8 +2,8 @@
 <resources>
     <!-- Alert Dialog theme for proper dark mode support -->
     <style name="AlertDialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/purple_primary</item>
+        <item name="colorPrimaryVariant">@color/purple_primary_variant</item>
         <item name="colorOnPrimary">@android:color/white</item>
         <item name="colorSecondary">@color/teal_200</item>
         <item name="colorSecondaryVariant">@color/teal_700</item>
@@ -16,11 +16,35 @@
 
     <!-- Positive button style with proper contrast -->
     <style name="PositiveButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
-        <item name="android:textColor">@color/purple_500</item>
+        <item name="android:textColor">@color/purple_primary</item>
     </style>
 
     <!-- Negative button style with proper contrast -->
     <style name="NegativeButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
-        <item name="android:textColor">@color/purple_500</item>
+        <item name="android:textColor">@color/purple_primary</item>
+    </style>
+    
+    <!-- Outlined button variant (optional alternative to filled buttons) -->
+    <style name="Widget.QRScanner.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/purple_primary</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="android:textColor">@color/purple_primary</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    
+    <!-- Text button variant (for secondary actions) -->
+    <style name="Widget.QRScanner.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/purple_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    
+    <!-- Small FAB variant (if needed) -->
+    <style name="Widget.QRScanner.FloatingActionButton.Small" parent="Widget.Material3.FloatingActionButton.Small.Primary">
+        <item name="backgroundTint">@color/purple_primary</item>
+        <item name="tint">@color/white</item>
+        <item name="elevation">6dp</item>
     </style>
 </resources>

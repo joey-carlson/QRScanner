@@ -88,11 +88,14 @@ class KitBundleActivity : AppCompatActivity() {
             }
             updateUI(currentScanMode)
         }
-        
+
+        // Clear button removed from UI - functionality commented out
+        /*
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
         }
-        
+        */
+
         binding.exportButton.setOnClickListener {
             viewModel.saveKitBundle()
             // Use the unified export manager for kit bundle exports

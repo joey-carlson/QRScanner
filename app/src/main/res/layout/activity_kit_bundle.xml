@@ -289,40 +289,42 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:text="Barcode"
-                android:backgroundTint="@color/button_color"
+                android:backgroundTint="@color/purple_primary"
                 android:textColor="@android:color/white" />
 
             <Button
                 android:id="@+id/ocrButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:text="OCR"
-                android:backgroundTint="@color/button_color"
+                android:backgroundTint="@color/purple_primary"
                 android:textColor="@android:color/white" />
 
+            <!-- Clear button commented out - may be removed based on user testing
             <Button
                 android:id="@+id/clearButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="Clear"
-                android:backgroundTint="@color/button_color"
-                android:textColor="@android:color/white" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/exportButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                app:fabSize="mini"
-                app:backgroundTint="@color/primary"
-                android:src="@android:drawable/ic_menu_share"
-                app:tint="@android:color/white" />
+                android:text="Clear"
+                android:backgroundTint="@color/purple_primary"
+                android:textColor="@android:color/white" />
+            -->
 
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- Export FAB - positioned at bottom-right -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/exportButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="Export data"
+        app:srcCompat="@android:drawable/ic_menu_share"
+        app:layout_constraintBottom_toTopOf="@+id/statusContainer"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Bundle Confirmation Overlay -->
     <LinearLayout

@@ -325,4 +325,12 @@ class ScanViewModel(
         _reviewUserId.value = ""
         _reviewKitId.value = ""
     }
+    
+    fun pauseScanning() {
+        _isScanning.value = false
+    }
+    
+    fun resumeScanning() {
+        _isScanning.value = true
+    }
 }

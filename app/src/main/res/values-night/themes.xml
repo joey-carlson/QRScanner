@@ -1,0 +1,45 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark Mode Theme Overrides -->
+    <style name="Base.Theme.QRScanner" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color (stays purple in dark mode) -->
+        <item name="colorPrimary">@color/purple_primary</item>
+        <item name="colorPrimaryVariant">@color/purple_primary_variant</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+        
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+        
+        <!-- Surface colors - dark mode -->
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/text_primary_dark</item>
+        <item name="colorSurfaceVariant">@color/surface_variant_dark</item>
+        
+        <!-- Background colors - dark mode -->
+        <item name="android:colorBackground">@color/background_dark</item>
+        <item name="colorOnBackground">@color/text_primary_dark</item>
+        
+        <!-- Status bar - dark mode (no light status bar icons) -->
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        
+        <!-- Navigation bar - dark mode (no light navigation bar icons) -->
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        
+        <!-- Material button style -->
+        <item name="materialButtonStyle">@style/Widget.QRScanner.Button</item>
+        
+        <!-- FAB style -->
+        <item name="floatingActionButtonStyle">@style/Widget.QRScanner.FloatingActionButton</item>
+        
+        <!-- Window properties -->
+        <item name="android:windowFullscreen">false</item>
+    </style>
+    
+    <!-- Text appearance override for dark mode -->
+    <style name="TextAppearance.QRScanner.BodySecondary" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/text_secondary_dark</item>
+    </style>
+</resources>

@@ -4,14 +4,32 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     tools:context=".CheckInActivity">
+
+    <!-- Instruction Header -->
+    <TextView
+        android:id="@+id/instructionHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        android:text="Scan Kit ID to check in"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:padding="12dp"
+        android:elevation="4dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Camera Preview -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/instructionHeader"
         app:layout_constraintBottom_toTopOf="@+id/bottomContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -34,6 +52,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/white"
+        android:alpha="0"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -110,7 +129,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="?attr/colorSurface"
+        android:background="@android:color/black"
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -122,10 +141,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/ready_to_scan_kit"
-            android:textSize="18sp"
+            android:textSize="16sp"
+            android:textStyle="bold"
             android:textAlignment="center"
-            android:textColor="?attr/colorOnSurface"
-            android:minHeight="48dp"
+            android:textColor="@android:color/white"
             android:gravity="center" />
 
         <!-- Button Container -->
@@ -133,65 +152,45 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            android:gravity="center">
 
-            <!-- Clear Button -->
+            <!-- Settings button removed - only accessible from Home Screen -->
+
+            <!-- Clear button commented out - may be removed based on user testing
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/clearButton"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="8dp"
                 android:text="@string/clear"
-                app:backgroundTint="@color/button_color"
+                app:backgroundTint="@color/purple_primary"
                 android:textColor="@android:color/white" />
+            -->
 
             <!-- Undo Button -->
-            <com.google.android.material.button.MaterialButton
+            <Button
                 android:id="@+id/undoButton"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
                 android:text="Undo"
-                android:visibility="gone"
-                app:backgroundTint="@color/button_color"
-                android:textColor="@android:color/white" />
-
-            <!-- Settings Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/settingsButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:text="@string/settings"
-                app:backgroundTint="@color/button_color"
-                android:textColor="@android:color/white" />
-
-            <!-- Export Button -->
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp">
-                
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/exportButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    app:fabSize="mini"
-                    app:backgroundTint="@color/button_color"
-                    android:src="@android:drawable/ic_menu_share"
-                    app:tint="@android:color/white" />
-                    
-            </FrameLayout>
+                android:backgroundTint="#FFFF6B47"
+                android:textColor="@android:color/white"
+                android:visibility="gone" />
 
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- Export FAB - positioned at bottom-right -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/exportButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="Export data"
+        app:srcCompat="@android:drawable/ic_menu_share"
+        app:layout_constraintBottom_toTopOf="@+id/bottomContainer"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

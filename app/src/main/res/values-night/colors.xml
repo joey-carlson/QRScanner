@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode Color Overrides -->
+    <!-- Note: Brand colors (purple) stay the same for consistency -->
+    
+    <!-- Surface Colors - Dark Mode -->
+    <color name="surface_light">#FF1E1E1E</color>
+    <color name="surface_variant_light">#FF2C2C2C</color>
+    <color name="background_light">#FF121212</color>
+    
+    <!-- Text Colors - Dark Mode -->
+    <color name="text_primary_light">#FFFFFFFF</color>
+    <color name="text_secondary_light">#FFB3B3B3</color>
+    <color name="text_hint_light">#FF808080</color>
+    
+    <!-- Overlay Colors - Dark Mode -->
+    <color name="overlay_light">#80FFFFFF</color>
+    
+    <!-- Deprecated colors - overridden for dark mode -->
+    <color name="background">#FF121212</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FFB3B3B3</color>
+    <color name="text_hint">#FF808080</color>
+</resources>

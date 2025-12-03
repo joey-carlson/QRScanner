@@ -40,7 +40,7 @@ class KitBundleViewModel(
     private val _showSaveButton = MutableStateFlow(false)
     val showSaveButton: StateFlow<Boolean> = _showSaveButton.asStateFlow()
     
-    private val _showExportButton = MutableStateFlow(false)
+    private val _showExportButton = MutableStateFlow(true)
     val showExportButton: StateFlow<Boolean> = _showExportButton.asStateFlow()
     
     private val _showBundleConfirmation = MutableStateFlow(false)

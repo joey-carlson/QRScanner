@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/android:colorBackground"
     tools:context=".HomeActivity">
 
     <!-- App Title -->
@@ -15,7 +16,7 @@
         android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="?attr/colorPrimary"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -33,139 +34,93 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Feature Selection Container -->
-    <LinearLayout
-        android:id="@+id/featureContainer"
+    <!-- Scrollable Feature Selection Container -->
+    <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:gravity="center"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@+id/subtitle"
         app:layout_constraintBottom_toTopOf="@+id/bottomContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Check Out Button -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/checkoutCard"
+        <LinearLayout
+            android:id="@+id/featureContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="12dp">
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center">
 
+            <!-- Check Out Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/checkoutButton"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:text="@string/home_checkout_title"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.TonalButton"
+                android:textSize="18sp"
+                android:layout_marginBottom="12dp"
                 app:icon="@drawable/ic_launcher_foreground"
-                app:iconSize="48dp"
-                app:iconGravity="top"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp" />
+                app:iconSize="32dp"
+                app:iconGravity="start" />
 
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Check In Button -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/checkinCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="12dp">
-
+            <!-- Check In Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/checkinButton"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:text="@string/home_check_in_title"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.TonalButton"
+                android:textSize="18sp"
+                android:layout_marginBottom="12dp"
                 app:icon="@drawable/ic_launcher_foreground"
-                app:iconSize="48dp"
-                app:iconGravity="top"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp" />
+                app:iconSize="32dp"
+                app:iconGravity="start" />
 
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- User Check In Button -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/userCheckinCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="12dp">
-
+            <!-- User Check In Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/userCheckinButton"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:text="@string/home_user_check_in_title"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.TonalButton"
+                android:textSize="18sp"
+                android:layout_marginBottom="12dp"
                 app:icon="@drawable/ic_launcher_foreground"
-                app:iconSize="48dp"
-                app:iconGravity="top"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp" />
+                app:iconSize="32dp"
+                app:iconGravity="start" />
 
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Kit Bundle Button -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/kitBundleCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="12dp">
-
+            <!-- Kit Bundle Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/kitBundleButton"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:text="@string/home_kit_bundle_title"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.TonalButton"
+                android:textSize="18sp"
+                android:layout_marginBottom="12dp"
                 app:icon="@drawable/ic_launcher_foreground"
-                app:iconSize="48dp"
-                app:iconGravity="top"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp" />
+                app:iconSize="32dp"
+                app:iconGravity="start" />
 
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Inventory Management Button -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/inventoryManagementCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardElevation="4dp"
-            app:cardCornerRadius="12dp">
-
+            <!-- Inventory Management Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/inventoryManagementButton"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:text="@string/home_inventory_management_title"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.TonalButton"
+                android:textSize="18sp"
                 app:icon="@drawable/ic_launcher_foreground"
-                app:iconSize="48dp"
-                app:iconGravity="top"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp" />
+                app:iconSize="32dp"
+                app:iconGravity="start" />
 
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
-    </LinearLayout>
+    </ScrollView>
 
     <!-- Bottom Container -->
     <LinearLayout
@@ -185,7 +140,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/settings"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/Widget.QRScanner.Button.Text"
             app:icon="@android:drawable/ic_menu_preferences"
             android:layout_marginBottom="8dp" />
 

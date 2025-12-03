@@ -37,6 +37,11 @@ import com.joeycarlson.qrscanner.ui.ScanViewModel
 import com.joeycarlson.qrscanner.ui.ScanViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
+import com.joeycarlson.qrscanner.data.ScanHistoryItem
+import com.joeycarlson.qrscanner.data.ScanHistoryManager
+import com.joeycarlson.qrscanner.ui.ScanHistoryAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.tabs.TabLayout
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -47,8 +52,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var hapticManager: HapticManager
+    private lateinit var historyManager: ScanHistoryManager
+    private lateinit var historyAdapter: ScanHistoryAdapter
     
     private var imageAnalyzer: ImageAnalysis? = null
+    private var isHistoryTabActive = false
     
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -125,6 +133,11 @@ class MainActivity : AppCompatActivity() {
             .build()
         barcodeScanner = BarcodeScanning.getClient(options)
         
+        // Initialize history manager and adapter
+        historyManager = ScanHistoryManager.getInstance(this)
+        setupHistoryRecyclerView()
+        setupTabLayout()
+        
         setupObservers()
         setupClickListeners()
         
@@ -134,6 +147,97 @@ class MainActivity : AppCompatActivity() {
         } else {
             requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
+    }
+    
+    private fun setupHistoryRecyclerView() {
+        historyAdapter = ScanHistoryAdapter(
+            onItemEdit = { itemId, newValue ->
+                historyManager.updateHistoryItem(
+                    ScanHistoryItem.ActivityType.CHECKOUT,
+                    itemId,
+                    newValue
+                )
+            },
+            onItemDelete = { itemId ->
+                historyManager.deleteHistoryItem(
+                    ScanHistoryItem.ActivityType.CHECKOUT,
+                    itemId
+                )
+                loadHistory()
+            }
+        )
+        
+        binding.historyRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = historyAdapter
+        }
+    }
+    
+    private fun setupTabLayout() {
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> {
+                        // Scan tab selected
+                        showScanView()
+                    }
+                    1 -> {
+                        // History tab selected
+                        showHistoryView()
+                    }
+                }
+            }
+            
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+        
+        // Select the Scan tab by default
+        binding.tabLayout.selectTab(binding.tabLayout.getTabAt(0))
+    }
+    
+    private fun showScanView() {
+        isHistoryTabActive = false
+        binding.scanViewContainer.visibility = View.VISIBLE
+        binding.historyViewContainer.visibility = View.GONE
+        
+        // Resume scanning if not in review state
+        if (viewModel.scanState.value != ScanState.REVIEW_PENDING) {
+            viewModel.resumeScanning()
+        }
+    }
+    
+    private fun showHistoryView() {
+        isHistoryTabActive = true
+        binding.scanViewContainer.visibility = View.GONE
+        binding.historyViewContainer.visibility = View.VISIBLE
+        
+        // Pause scanning when viewing history
+        viewModel.pauseScanning()
+        
+        // Load and display history
+        loadHistory()
+    }
+    
+    private fun loadHistory() {
+        val history = historyManager.loadHistory(ScanHistoryItem.ActivityType.CHECKOUT)
+        historyAdapter.submitList(history)
+        
+        // Show empty state if no history
+        binding.emptyHistoryText.visibility = if (history.isEmpty()) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+    }
+    
+    private fun addScanToHistory(scannedValue: String, scanType: ScanHistoryItem.ScanType) {
+        val historyItem = ScanHistoryItem(
+            value = scannedValue,
+            scanType = scanType,
+            activityType = ScanHistoryItem.ActivityType.CHECKOUT
+        )
+        historyManager.addToHistory(historyItem)
     }
     
     
@@ -322,9 +426,12 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupClickListeners() {
+        // Clear button removed from UI - functionality commented out
+        /*
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
         }
+        */
         
         binding.undoButton.setOnClickListener {
             DialogUtils.showWarningDialog(
@@ -336,10 +443,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        // Settings button removed - only accessible from Home Screen
+        /*
         binding.settingsButton.setOnClickListener {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
+        */
         
         binding.exportButton.setOnClickListener {
             // Use the unified export manager for checkout exports
@@ -443,6 +553,10 @@ class MainActivity : AppCompatActivity() {
                     .addOnSuccessListener { barcodes ->
                         barcodes.firstOrNull()?.rawValue?.let { barcodeData ->
                             runOnUiThread {
+                                // Add to history before processing
+                                if (!isHistoryTabActive) {
+                                    addScanToHistory(barcodeData, ScanHistoryItem.ScanType.BARCODE)
+                                }
                                 viewModel.processBarcode(barcodeData)
                             }
                         }

@@ -1,12 +1,32 @@
 QR Scanner Build Information
 ==========================
 
-Version: 2.6.1
-Build: 34
-Date: October 2, 2025
+Version: 2.8.0
+Build: 36
+Date: December 3, 2025
 
 Recent Changes
 -------------
+
+### Material Design 3 Theme System (December 3, 2025)
+- Unified Material Design 3 theme system implementation
+- Comprehensive light/dark mode support across all screens
+- Proper Material3 color roles (colorPrimary, colorSurface, colorOnSurface, etc.)
+- Theme-aware colors that automatically adapt to system settings
+- Consistent purple buttons (#6200EE) with white text in both light and dark modes
+- Reusable button and FAB styles for consistent design
+- Proper status bar and navigation bar theming that adapts to mode
+- Instruction headers on scanning pages for better UX
+- Export FABs moved to bottom-right corner with consistent styling
+- Home screen improvements with proper constraint layout
+- Settings access simplified and centralized to Home Screen
+
+### Scan History System (December 3, 2025)
+- New ScanHistoryItem data model with scan types and activity tracking
+- ScanHistoryManager singleton with SharedPreferences persistence
+- Support for all activity types with 50-item history limit
+- ScanHistoryAdapter for RecyclerView UI display
+- Complete scan tracking infrastructure ready for integration
 
 ### OCR Performance Optimizations (October 2, 2025)
 - Added advanced image preprocessing pipeline:
@@ -26,9 +46,6 @@ Recent Changes
   - 30% faster OCR processing through optimized image pipeline
   - 50% reduction in manual verifications
   - Enhanced low-light performance
-- New files added:
-  - ImagePreprocessor.kt for preprocessing pipeline
-  - OcrDataClasses.kt for structured data handling
 
 ### Inventory Management Feature (September 29, 2025)
 - Added new Inventory Management mode for bulk device scanning
@@ -38,23 +55,21 @@ Recent Changes
 - Session-based duplicate detection prevents scanning same device twice
 - Export as JSON with format: device_inventory_MM-dd-yy_LocationID.json
 - Integration with existing export system (Local, Share, S3)
-- New data models:
-  - ComponentType enum for device categorization
-  - InventoryRecord data class with UUID, component type, value, timestamp
-  - InventoryRepository for session management
-  - InventoryViewModel with StateFlow for reactive UI
 - Material Design 3 purple-themed UI consistent with other features
-- Automatic session management with implicit export-based completion
-- Added WindowInsetsHelper support for proper system UI handling
+
+### Unified Export System (October 13, 2025)
+- New UniversalExportManager singleton for centralized export management
+- ExportDataSource interface for data source abstraction
+- Data source adapters for all data types (Checkout, CheckIn, KitBundle, Inventory)
+- UnifiedExportHandler for centralized export processing
+- Support for all export formats (JSON, CSV, XML, TXT) across all data sources
+- Consistent export experience across all app features
 
 ### Kit Bundle UI Standardization (September 16, 2025)
 - Standardized Kit Bundle screen to match Kit Check Out design
 - Replaced custom ScanModeSelector with discrete purple buttons
-- Added separate "Barcode" and "OCR" buttons using consistent purple theme
-- Fixed duplicate statusText ID issue (renamed to bottomStatusText)
 - All kit-related screens now have unified button design
 - Consistent purple buttons with white text across app
-- Improved visual consistency and user experience
 
 ### Sophisticated OCR Confidence Tuning System (September 15, 2025)
 - Added multi-factor confidence scoring system:
@@ -66,40 +81,13 @@ Recent Changes
   - Battery components: 90% base confidence (95% for manual verification)
   - Other components: 85% base confidence (90% for manual verification)
 - Three sensitivity modes: Conservative, Balanced (default), and Aggressive
-- Environmental adaptation using device sensors:
-  - Light sensor for optimal OCR conditions (100-1000 lux)
-  - Accelerometer-based stability detection
-- Real-time environmental factor analysis and motion detection
-- Configurable weights and thresholds per deployment
-
-### System UI Overlap Fixes (September 12, 2025)
-- Added WindowInsetsHelper utility class to handle edge-to-edge display
-- Fixed system UI overlaps in all activities:
-  - MainActivity
-  - KitBundleActivity  
-  - CheckInActivity
-  - UnifiedExportActivity
-  - ExportMethodActivity
-  - SettingsActivity
-  - ExportActivity
-- All screens now properly respect system bars (status bar, navigation bar)
-- Fixed issue where content was hidden behind system UI elements
-
-### WorkDocs Sync Completed (September 12, 2025)
-- Successfully synced version 2.4.6-29 to WorkDocs
-- Location: /Users/joecrls/Library/CloudStorage/WorkDocsDrive-Documents/Joey's Scripts/PilotScanner/v2.4.6-29_2025-09-12_09-44/
-- Included files:
-  - PilotScanner-debug-v2.4.6-29.apk
-  - CHANGELOG.md
-  - README.md
-  - REQUIREMENTS.md
-  - BUILD_INFO.txt
+- Environmental adaptation using device sensors
 
 ### Build Configuration
 - Min SDK: 24 (Android 7.0)
 - Target SDK: 35 (Android 15+)
 - Compile SDK: 35
-- Gradle: 8.5
+- Gradle: 8.10.2
 - Kotlin: 1.9.22
 - AndroidX Core: 1.12.0
 - Material Design: 1.10.0
@@ -107,28 +95,30 @@ Recent Changes
 - ML Kit Text Recognition: 16.0.1
 
 ### Key Features
-- QR code and barcode scanning
+- QR code and barcode scanning with multiple modes
 - OCR text recognition for DSN extraction with advanced performance optimizations
 - Kit bundle assembly with component verification
 - Duplicate component detection and handling
 - Inventory Management mode for bulk device scanning
-- CSV and JSON export functionality
-- S3 cloud storage integration
+- Multiple export formats (JSON, CSV, XML, TXT) with unified system
+- AWS S3 cloud storage integration
+- Material Design 3 theming with comprehensive light/dark mode support
 - 16KB page size compatibility for Android 15+
 - Environmental adaptation for optimal scanning conditions
 - Advanced image preprocessing for improved OCR accuracy
+- Scan history tracking system
 
 ### Known Issues
-- None currently reported
+- Clear/Clear All buttons commented out in UI (may cause user confusion)
+- Build configuration shows AGP downgrade from 8.13.0 to 8.7.0
+- Version discrepancies between different documentation files resolved
 
 ### Testing Notes
+- Material Design 3 theming tested in both light and dark modes
 - OCR performance optimizations tested with various lighting conditions
 - Image preprocessing significantly improves character recognition
-- Character confusion correction works effectively for common misreads
 - Multi-frame averaging reduces false positives
-- Environmental factors properly influence confidence scores
-- Component-specific thresholds working as designed
-- WindowInsetsHelper has been applied to all activities
-- Log export functionality is available in UnifiedExportActivity
-- All export methods should now be visible without system UI overlap
+- Unified export system tested across all data types
+- WindowInsetsHelper applied to all activities for proper system UI handling
 - Inventory Management feature ready for testing with up to 500 devices
+- Scan history infrastructure implemented but UI integration pending

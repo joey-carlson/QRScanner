@@ -278,9 +278,12 @@ class CheckInActivity : AppCompatActivity() {
     }
     
     private fun setupClickListeners() {
+        // Clear button removed from UI - functionality commented out
+        /*
         binding.clearButton.setOnClickListener {
             viewModel.clearState()
         }
+        */
         
         binding.undoButton.setOnClickListener {
             DialogUtils.showWarningDialog(
@@ -292,10 +295,13 @@ class CheckInActivity : AppCompatActivity() {
             }
         }
         
+        // Settings button removed - only accessible from Home Screen
+        /*
         binding.settingsButton.setOnClickListener {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
+        */
         
         binding.exportButton.setOnClickListener {
             // Use the unified export manager for check-in exports

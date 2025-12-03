@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-10-14
+
+### Added
+- **Unified Material Design 3 Theme System**
+  - Comprehensive light/dark mode support across all screens
+  - Proper Material3 color roles (colorPrimary, colorSurface, colorOnSurface, etc.)
+  - Theme-aware colors that automatically adapt to system settings
+  - Consistent purple buttons (#6200EE) with white text in both light and dark modes
+  - Reusable button and FAB styles for consistent design
+  - Proper status bar and navigation bar theming that adapts to mode
+  - Semantic color definitions for light and dark variants
+  
+- **Instruction Headers on Scanning Pages**
+  - Kit Check Out: "Scan User ID, then scan Kit ID to check out"
+  - Kit Check In: "Scan Kit ID to check in"
+  - Clear, centered instruction headers with elevated appearance
+  - Helps users understand scanning workflow at a glance
+
+- **Consistent Export FAB Placement**
+  - Export FABs moved to bottom-right corner on all feature pages
+  - Share icon used consistently across all export buttons
+  - Proper Material3 FAB styling with theme colors
+  - Consistent 16dp margins for uniform spacing
+
+### Changed
+- **Home Screen Improvements**
+  - Fixed title/button overlap issue with proper constraint layout
+  - Added ScrollView for better support on smaller screens
+  - Consistent button sizing (72dp min height) across all feature buttons
+  - Improved spacing and layout hierarchy
+  - Removed card wrappers for cleaner, more modern design
+  - Settings button styled with custom text button style
+
+- **Settings Access Simplified**
+  - Settings button removed from all feature pages
+  - Settings now only accessible from Home Screen
+  - Reduces UI clutter on scanning screens
+  - Centralizes app configuration access
+
+- **Clear/Clear All Button Functionality**
+  - Clear button commented out on Kit Check Out page
+  - Clear button commented out on Kit Check In page  
+  - Clear button commented out on Kit Bundle page
+  - Clear All button commented out on Inventory Management page
+  - Functionality preserved in code for potential future restoration based on user feedback
+  - Reduces accidental data loss from button misclicks
+
+### Technical
+- Created comprehensive theme system:
+  - `app/src/main/res/values/themes.xml` - Base Material3 theme with color roles
+  - `app/src/main/res/values-night/themes.xml` - Dark mode overrides
+  - `app/src/main/res/values/colors.xml` - Organized color palette with semantic naming
+  - `app/src/main/res/values-night/colors.xml` - Dark mode color overrides
+  - `app/src/main/res/values/styles.xml` - Reusable button and FAB styles
+- Updated all activity layouts with theme attributes instead of hardcoded colors
+- Commented out button references in Activity code files to match XML changes
+- Version bumped to 2.8.0 (Build 36) for major UI/UX improvements
+- Build verified successfully with no compilation errors
+
+### Fixed
+- Title overlap with buttons on Home Screen
+- Inconsistent button sizing across different pages
+- Hardcoded colors that didn't respect system theme
+- Export button placement inconsistencies
+- Status bar color not adapting to theme
+
 ## [2.7.5] - 2025-10-13
 
 ### Removed

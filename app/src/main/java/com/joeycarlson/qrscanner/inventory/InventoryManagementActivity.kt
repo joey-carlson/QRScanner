@@ -175,10 +175,12 @@ class InventoryManagementActivity : AppCompatActivity() {
                 .startExport(AppConfig.EXPORT_TYPE_INVENTORY, this)
         }
         
-        // Clear button
+        // Clear All button removed from UI - functionality commented out
+        /*
         binding.clearButton.setOnClickListener {
             viewModel.clearInventory()
         }
+        */
     }
     
     private fun updateComponentTypeSelection(type: ComponentType) {
