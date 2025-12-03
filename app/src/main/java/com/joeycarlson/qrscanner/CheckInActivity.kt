@@ -103,7 +103,7 @@ class CheckInActivity : AppCompatActivity() {
                 startCamera()
             },
             onPermissionsDenied = { deniedPermissions ->
-                Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_LONG).show()
+                DialogUtils.showErrorToast(this, getString(R.string.camera_permission_required))
                 finish()
             }
         )
