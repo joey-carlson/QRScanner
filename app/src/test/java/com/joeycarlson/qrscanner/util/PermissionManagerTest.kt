@@ -13,9 +13,9 @@ import org.mockito.Mockito.*
 import org.mockito.junit.MockitoJUnitRunner
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 
 /**
  * Unit tests for PermissionManager following ClineRules testing guidelines.
