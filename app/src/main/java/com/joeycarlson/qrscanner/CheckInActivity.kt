@@ -34,6 +34,7 @@ import com.joeycarlson.qrscanner.ui.CheckInViewModel
 import com.joeycarlson.qrscanner.ui.CheckInViewModelFactory
 import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
+import com.joeycarlson.qrscanner.util.PermissionManager
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -48,45 +49,9 @@ class CheckInActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var hapticManager: HapticManager
+    private lateinit var permissionManager: PermissionManager
     
     private var imageAnalyzer: ImageAnalysis? = null
-    
-    private val requestCameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            // Only request storage permission for Android 9 and below
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Android 10+ uses MediaStore API, no storage permission needed
-                startCamera()
-            } else {
-                requestStoragePermission()
-            }
-        } else {
-            Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_LONG).show()
-            finish()
-        }
-    }
-    
-    private val requestStoragePermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "Storage permission is required to save files to Downloads", Toast.LENGTH_LONG).show()
-            finish()
-        }
-    }
-    
-    private fun requestStoragePermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) 
-            == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            requestStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,11 +94,25 @@ class CheckInActivity : AppCompatActivity() {
         setupObservers()
         setupClickListeners()
         
+        // Initialize permission manager
+        permissionManager = PermissionManager(this)
+        
+        // Set up permission callbacks
+        permissionManager.setPermissionCallbacks(
+            onPermissionsGranted = {
+                startCamera()
+            },
+            onPermissionsDenied = { deniedPermissions ->
+                Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_LONG).show()
+                finish()
+            }
+        )
+        
         // Request permissions
-        if (allPermissionsGranted()) {
+        if (permissionManager.areAllPermissionsGranted()) {
             startCamera()
         } else {
-            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            permissionManager.requestAllRequiredPermissions()
         }
     }
     
@@ -341,21 +320,6 @@ class CheckInActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
     
-    private fun allPermissionsGranted(): Boolean {
-        val cameraGranted = ContextCompat.checkSelfPermission(
-            baseContext, Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
-        
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10+ only needs camera permission
-            cameraGranted
-        } else {
-            // Android 9 and below needs both camera and storage permissions
-            cameraGranted && ContextCompat.checkSelfPermission(
-                baseContext, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
     
     private inner class BarcodeAnalyzer : ImageAnalysis.Analyzer {
         
