@@ -27,6 +27,7 @@ import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
+import com.joeycarlson.qrscanner.util.CameraManager
 import com.joeycarlson.qrscanner.util.LogManager
 import com.joeycarlson.qrscanner.util.PermissionManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
@@ -37,7 +38,7 @@ import java.util.concurrent.Executors
 class KitBundleActivity : AppCompatActivity() {
     private lateinit var binding: ActivityKitBundleBinding
     private lateinit var cameraExecutor: ExecutorService
-    private var camera: Camera? = null
+    private lateinit var cameraManager: CameraManager
     private lateinit var hybridScanAnalyzer: HybridScanAnalyzer
     private lateinit var viewModel: KitBundleViewModel
     private lateinit var hapticManager: HapticManager
@@ -57,6 +58,7 @@ class KitBundleActivity : AppCompatActivity() {
         
         hapticManager = HapticManager(this)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        cameraManager = CameraManager(this, this, cameraExecutor)
         
         WindowInsetsHelper.setupWindowInsets(this)
         WindowInsetsHelper.applySystemWindowInsetsPadding(binding.root)
@@ -185,80 +187,62 @@ class KitBundleActivity : AppCompatActivity() {
     
     private fun startCamera() {
         binding.previewView.visibility = View.VISIBLE
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-            
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(binding.previewView.surfaceProvider)
-                }
-            
-            hybridScanAnalyzer = HybridScanAnalyzer(
-                scanMode = currentScanMode,
-                context = this,
-                onScanResult = { scanResult ->
-                    runOnUiThread {
-                        when (scanResult) {
-                            is ScanResult.BarcodeResult -> {
-                                handleBarcodeScan(scanResult.rawValue)
-                            }
-                            is ScanResult.OcrResult -> {
-                                if (scanResult.requiresManualVerification) {
-                                    // Show confirmation dialog for low confidence OCR
-                                    val dialog = ComponentConfirmationDialog.newInstance(
-                                        dsn = scanResult.text,
-                                        componentType = null,
-                                        suggestedSlot = null
-                                    )
-                                    dialog.setOnComponentConfirmListener(object : ComponentConfirmationDialog.OnComponentConfirmListener {
-                                        override fun onConfirm(dsn: String, slot: String) {
-                                            handleOcrScan(dsn)
-                                        }
-                                        override fun onCancel() {
-                                            // Resume scanning if cancelled
-                                            viewModel.resumeScanning()
-                                        }
-                                    })
-                                    dialog.show(supportFragmentManager, "ComponentConfirmationDialog")
-                                } else {
-                                    handleOcrScan(scanResult.text)
-                                }
-                            }
-                            is ScanResult.ManualInputRequired -> {
-                                LogManager.getInstance(this).log("KitBundleActivity", "Manual input required: ${scanResult.reason}")
+        // Create HybridScanAnalyzer with callbacks
+        hybridScanAnalyzer = HybridScanAnalyzer(
+            scanMode = currentScanMode,
+            context = this,
+            onScanResult = { scanResult ->
+                runOnUiThread {
+                    when (scanResult) {
+                        is ScanResult.BarcodeResult -> {
+                            handleBarcodeScan(scanResult.rawValue)
+                        }
+                        is ScanResult.OcrResult -> {
+                            if (scanResult.requiresManualVerification) {
+                                // Show confirmation dialog for low confidence OCR
+                                val dialog = ComponentConfirmationDialog.newInstance(
+                                    dsn = scanResult.text,
+                                    componentType = null,
+                                    suggestedSlot = null
+                                )
+                                dialog.setOnComponentConfirmListener(object : ComponentConfirmationDialog.OnComponentConfirmListener {
+                                    override fun onConfirm(dsn: String, slot: String) {
+                                        handleOcrScan(dsn)
+                                    }
+                                    override fun onCancel() {
+                                        // Resume scanning if cancelled
+                                        viewModel.resumeScanning()
+                                    }
+                                })
+                                dialog.show(supportFragmentManager, "ComponentConfirmationDialog")
+                            } else {
+                                handleOcrScan(scanResult.text)
                             }
                         }
-                    }
-                },
-                onError = { error ->
-                    runOnUiThread {
-                        hapticManager.performFailureHaptic()
-                        viewModel.showError(error.message ?: "Scan error occurred")
+                        is ScanResult.ManualInputRequired -> {
+                            LogManager.getInstance(this).log("KitBundleActivity", "Manual input required: ${scanResult.reason}")
+                        }
                     }
                 }
-            )
-            
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, hybridScanAnalyzer)
+            },
+            onError = { error ->
+                runOnUiThread {
+                    hapticManager.performFailureHaptic()
+                    viewModel.showError(error.message ?: "Scan error occurred")
                 }
-            
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            
-            try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageAnalyzer
-                )
-            } catch (exc: Exception) {
-                LogManager.getInstance(this).logError("KitBundleActivity", "Camera binding failed", exc)
             }
-        }, ContextCompat.getMainExecutor(this))
+        )
+        
+        // Start camera using CameraManager
+        cameraManager.startCamera(
+            previewView = binding.previewView,
+            imageAnalyzer = hybridScanAnalyzer,
+            onError = { exception ->
+                LogManager.getInstance(this).logError("KitBundleActivity", "Camera initialization failed", exception)
+                DialogUtils.showErrorSnackbar(binding.root, "Camera initialization failed")
+            }
+        )
     }
     
     private fun handleBarcodeScan(barcode: String) {
