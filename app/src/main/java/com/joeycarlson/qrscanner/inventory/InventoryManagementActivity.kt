@@ -21,6 +21,7 @@ import com.joeycarlson.qrscanner.export.UniversalExportManager
 import com.joeycarlson.qrscanner.ocr.HybridScanAnalyzer
 import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
+import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
 import com.joeycarlson.qrscanner.util.FileManager
 import com.joeycarlson.qrscanner.util.PermissionManager
@@ -71,11 +72,7 @@ class InventoryManagementActivity : AppCompatActivity() {
                 startCamera()
             },
             onPermissionsDenied = { deniedPermissions ->
-                Toast.makeText(
-                    this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                DialogUtils.showErrorToast(this, "Permissions not granted by the user.")
                 finish()
             }
         )
@@ -269,11 +266,7 @@ class InventoryManagementActivity : AppCompatActivity() {
                 )
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
-                Toast.makeText(
-                    this,
-                    "Camera initialization failed",
-                    Toast.LENGTH_SHORT
-                ).show()
+                DialogUtils.showErrorToast(this, "Camera initialization failed")
             }
         }, ContextCompat.getMainExecutor(this))
     }
