@@ -23,6 +23,7 @@ import com.joeycarlson.qrscanner.ocr.ScanMode
 import com.joeycarlson.qrscanner.ocr.ScanResult
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.ui.HapticManager
+import com.joeycarlson.qrscanner.util.CameraManager
 import com.joeycarlson.qrscanner.util.FileManager
 import com.joeycarlson.qrscanner.util.PermissionManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
@@ -33,9 +34,9 @@ class InventoryManagementActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityInventoryManagementBinding
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var cameraManager: CameraManager
     private lateinit var hapticManager: HapticManager
     private lateinit var permissionManager: PermissionManager
-    private var camera: Camera? = null
     private lateinit var hybridAnalyzer: HybridScanAnalyzer
     private var currentScanMode = ScanMode.BARCODE_ONLY
     
@@ -59,6 +60,7 @@ class InventoryManagementActivity : AppCompatActivity() {
         
         hapticManager = HapticManager(this)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        cameraManager = CameraManager(this, this, cameraExecutor)
         
         setupObservers()
         setupClickListeners()
@@ -214,61 +216,42 @@ class InventoryManagementActivity : AppCompatActivity() {
     }
     
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-            
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
-                }
-            
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setTargetResolution(android.util.Size(1280, 720))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-            
-            hybridAnalyzer = HybridScanAnalyzer(
-                scanMode = currentScanMode,
-                context = this,
-                onScanResult = { scanResult ->
-                    runOnUiThread {
-                        when (scanResult) {
-                            is ScanResult.BarcodeResult -> {
-                                viewModel.processScan(scanResult.rawValue)
-                            }
-                            is ScanResult.OcrResult -> {
-                                viewModel.processScan(scanResult.text)
-                            }
-                            is ScanResult.ManualInputRequired -> {
-                                Log.w(TAG, "Manual input required: ${scanResult.reason}")
-                            }
+        // Create HybridScanAnalyzer with callbacks
+        hybridAnalyzer = HybridScanAnalyzer(
+            scanMode = currentScanMode,
+            context = this,
+            onScanResult = { scanResult ->
+                runOnUiThread {
+                    when (scanResult) {
+                        is ScanResult.BarcodeResult -> {
+                            viewModel.processScan(scanResult.rawValue)
+                        }
+                        is ScanResult.OcrResult -> {
+                            viewModel.processScan(scanResult.text)
+                        }
+                        is ScanResult.ManualInputRequired -> {
+                            Log.w(TAG, "Manual input required: ${scanResult.reason}")
                         }
                     }
-                },
-                onError = { error ->
-                    runOnUiThread {
-                        Log.e(TAG, "Scan error: $error")
-                    }
                 }
-            )
-            
-            imageAnalyzer.setAnalyzer(cameraExecutor, hybridAnalyzer)
-            
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            
-            try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageAnalyzer
-                )
-            } catch (exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
+            },
+            onError = { error ->
+                runOnUiThread {
+                    Log.e(TAG, "Scan error: $error")
+                }
+            }
+        )
+        
+        // Start camera with custom resolution using CameraManager
+        cameraManager.startCameraWithConfig(
+            previewView = binding.viewFinder,
+            imageAnalyzer = hybridAnalyzer,
+            targetResolution = android.util.Size(1280, 720),
+            onError = { exception ->
+                Log.e(TAG, "Camera initialization failed", exception)
                 DialogUtils.showErrorToast(this, "Camera initialization failed")
             }
-        }, ContextCompat.getMainExecutor(this))
+        )
     }
     
     
