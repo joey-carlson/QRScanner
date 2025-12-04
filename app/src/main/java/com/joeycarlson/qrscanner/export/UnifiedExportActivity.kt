@@ -11,6 +11,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.joeycarlson.qrscanner.R
 import com.joeycarlson.qrscanner.databinding.ActivityUnifiedExportBinding
+import com.joeycarlson.qrscanner.export.datasource.ExportDataSource
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.util.LogManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
@@ -261,7 +262,8 @@ class UnifiedExportActivity : AppCompatActivity() {
                         exportHandler.exportViaShare(dataSource, startDate, endDate, format)
                     }
                     method.name.startsWith("S3") -> {
-                        exportHandler.exportToS3(dataSource, startDate, endDate, format)
+                        // Use S3 upload manager directly with progress listener
+                        uploadToS3WithProgress(dataSource, startDate, endDate, format, progressDialog)
                     }
                     else -> ExportResult.Error("Unknown export method")
                 }
@@ -278,6 +280,63 @@ class UnifiedExportActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+    
+    /**
+     * Upload to S3 with progress updates
+     */
+    private suspend fun uploadToS3WithProgress(
+        dataSource: ExportDataSource,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        format: ExportFormat,
+        progressDialog: androidx.appcompat.app.AlertDialog
+    ): ExportResult {
+        val s3UploadManager = S3UploadManager(this)
+        
+        val progressListener = object : S3UploadManager.UploadProgressListener {
+            override fun onUploadStarted(totalFiles: Int) {
+                runOnUiThread {
+                    progressDialog.setMessage("Uploading ${totalFiles} file(s) to S3...")
+                }
+            }
+            
+            override fun onFileUploadStarted(filename: String, fileNumber: Int, totalFiles: Int) {
+                runOnUiThread {
+                    progressDialog.setMessage("Uploading file $fileNumber of $totalFiles:\n$filename")
+                }
+            }
+            
+            override fun onFileUploadProgress(filename: String, bytesUploaded: Long, totalBytes: Long) {
+                // Progress updates (simplified since AWS SDK doesn't provide detailed progress)
+            }
+            
+            override fun onFileUploadCompleted(filename: String, s3Key: String) {
+                runOnUiThread {
+                    logManager.log("UnifiedExportActivity", "Uploaded: $s3Key")
+                }
+            }
+            
+            override fun onFileUploadFailed(filename: String, error: String) {
+                runOnUiThread {
+                    logManager.log("UnifiedExportActivity", "Failed to upload $filename: $error")
+                }
+            }
+            
+            override fun onAllUploadsCompleted(uploadedFiles: List<String>) {
+                runOnUiThread {
+                    progressDialog.setMessage("Upload complete! ${uploadedFiles.size} file(s) uploaded.")
+                }
+            }
+            
+            override fun onUploadError(error: String) {
+                runOnUiThread {
+                    progressDialog.setMessage("Upload error: $error")
+                }
+            }
+        }
+        
+        return s3UploadManager.uploadToS3(dataSource, startDate, endDate, format, progressListener)
     }
     
     private fun handleExportResult(result: ExportResult, method: ExportMethod) {

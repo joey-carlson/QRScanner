@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2025-12-04
+
+### Added
+- **Universal S3 Upload Manager (Phase 1)**
+  - New `S3UploadManager` class that works with all ExportDataSource types
+  - Support for uploading checkout, check-in, kit bundle, and inventory data to S3
+  - Progress tracking with `UploadProgressListener` interface for real-time upload status
+  - Exponential backoff retry logic (3 attempts max, 1s-10s delays)
+  - Network connectivity checks before and during uploads
+  - Multi-file upload support with individual progress tracking
+  - Comprehensive error handling with detailed error messages
+  - AWS SDK integration with proper timeout configurations (30s connection, 30s socket)
+
+### Enhanced
+- **S3 Export Integration**
+  - UnifiedExportHandler now uses S3UploadManager for all S3 operations
+  - UnifiedExportActivity enhanced with real-time upload progress display
+  - Progress dialog shows: file count, current file being uploaded, completion status
+  - Support for all data types (checkout, check-in, kit bundles, inventory) in S3 exports
+  - Improved user feedback during long-running uploads
+
+### Technical
+- New `S3UploadManager.kt` with 400+ lines of upload orchestration logic
+- UploadProgressListener interface with 7 callback methods for granular progress tracking
+- Network availability checking using ConnectivityManager and NetworkCapabilities
+- Automatic file metadata generation (location-id, date, export-type)
+- S3 key generation with location-based folder structure
+- Enhanced logging for debugging upload issues
+- Maintains backward compatibility with existing S3Configuration
+- Version bumped to 2.9.0 (Build 38) for S3 upload system improvements
+
+### Fixed
+- S3 uploads now work consistently across all data types (not just checkout)
+- Improved error messages for S3 configuration and network issues
+- Better handling of large file uploads with progress indication
+
 ## [2.8.1] - 2025-12-04
 
 ### Fixed

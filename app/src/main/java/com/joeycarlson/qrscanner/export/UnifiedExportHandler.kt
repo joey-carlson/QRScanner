@@ -23,7 +23,7 @@ class UnifiedExportHandler(private val context: Context) {
     private val fileNamingService = FileNamingService()
     private val tempFileManager = TempFileManager(context)
     private val intentFactory = IntentFactory()
-    private val s3ExportManager = S3ExportManager(context)
+    private val s3UploadManager = S3UploadManager(context)
     private val gson = Gson()
     private val dateFormatter = DateTimeFormatter.ofPattern("MM-dd-yy")
     
@@ -162,7 +162,7 @@ class UnifiedExportHandler(private val context: Context) {
     }
     
     /**
-     * Export to S3
+     * Export to S3 using the universal S3UploadManager
      */
     suspend fun exportToS3(
         dataSource: ExportDataSource,
@@ -170,13 +170,8 @@ class UnifiedExportHandler(private val context: Context) {
         endDate: LocalDate,
         format: ExportFormat
     ): ExportResult {
-        // For now, delegate to the existing S3ExportManager
-        // This can be refactored later to use data sources directly
-        return if (format == ExportFormat.CSV) {
-            s3ExportManager.exportCsvToS3(startDate, endDate)
-        } else {
-            s3ExportManager.exportToS3(startDate, endDate)
-        }
+        // Use the new universal S3UploadManager that works with all data sources
+        return s3UploadManager.uploadToS3(dataSource, startDate, endDate, format)
     }
     
     /**
