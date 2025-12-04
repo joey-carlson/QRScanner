@@ -7,6 +7,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.joeycarlson.qrscanner.util.ErrorReporter
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
@@ -104,6 +105,11 @@ abstract class BaseRepository<T>(protected val context: Context) {
                 true
             }
         } catch (e: Exception) {
+            ErrorReporter.reportException(
+                tag = "REPOSITORY_SAVE",
+                exception = e,
+                context = "saveJsonContent: fileName=$fileName"
+            )
             e.printStackTrace()
             false
         }
@@ -156,6 +162,11 @@ abstract class BaseRepository<T>(protected val context: Context) {
             }
             true
         } catch (e: Exception) {
+            ErrorReporter.reportException(
+                tag = "REPOSITORY_MEDIASTORE",
+                exception = e,
+                context = "saveToMediaStore: fileName=$fileName"
+            )
             e.printStackTrace()
             false
         }
@@ -181,6 +192,11 @@ abstract class BaseRepository<T>(protected val context: Context) {
                 }
             }
         } catch (e: Exception) {
+            ErrorReporter.reportException(
+                tag = "REPOSITORY_LOAD",
+                exception = e,
+                context = "loadRecords: fileName=$fileName"
+            )
             e.printStackTrace()
             mutableListOf()
         }
@@ -222,6 +238,11 @@ abstract class BaseRepository<T>(protected val context: Context) {
                 }
             } ?: mutableListOf()
         } catch (e: Exception) {
+            ErrorReporter.reportException(
+                tag = "REPOSITORY_MEDIASTORE_LOAD",
+                exception = e,
+                context = "loadFromMediaStore: fileName=$fileName"
+            )
             e.printStackTrace()
             mutableListOf()
         }
