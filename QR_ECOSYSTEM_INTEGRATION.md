@@ -28,7 +28,7 @@ Complete integration documentation for the QRScanner Android app and QRGenerator
 ### **Phase 1: Label Generation (QRGenerator Repo)**
 
 #### Setup QRGenerator Environment
-```bash
+```zsh
 cd /Users/joecrls/Documents/Code/QRGenerator
 python3 -m venv .venv
 source .venv/bin/activate
@@ -36,7 +36,7 @@ pip install "qrcode[pil]" python-docx pillow
 ```
 
 #### Generate Test Data
-```bash
+```zsh
 # Create comprehensive test datasets
 python enhanced_qr_generator.py --generate-test --kits 10 --users 5 --export-config
 
@@ -49,7 +49,7 @@ python enhanced_qr_generator.py --generate-test --kits 10 --users 5 --export-con
 ```
 
 #### Create Type-Specific Labels
-```bash
+```zsh
 # User badges (blue theme, person icon)
 python enhanced_qr_generator.py test_datasets/generated_users.csv \
   --type USER --validate --out user_badges.docx
@@ -75,7 +75,7 @@ python enhanced_qr_generator.py test_datasets/generated_dsn.csv \
 ### **Phase 3: QRScanner App Testing**
 
 #### Launch App in Android Studio
-```bash
+```zsh
 cd /Users/joecrls/Documents/Code/QRScanner
 ./gradlew assembleDebug
 # Launch in Android Studio emulator
@@ -113,7 +113,7 @@ cd /Users/joecrls/Documents/Code/QRScanner
 ## 🎛️ Advanced Integration Features
 
 ### **Location-Aware Generation**
-```bash
+```zsh
 # Generate location-specific labels with matching file names
 python enhanced_qr_generator.py inventory.csv \
   --location "Building-A" \
@@ -142,7 +142,7 @@ python enhanced_qr_generator.py inventory.csv \
 
 ### **Error Reporting Integration**
 The QRScanner app automatically captures errors in JSON format:
-```bash
+```json
 # Error reports saved to:
 # /data/data/com.joeycarlson.qrscanner/files/qr_error_reports/
 
@@ -184,7 +184,7 @@ The QRScanner app automatically captures errors in JSON format:
 ## 📊 Quality Assurance Checklist
 
 ### **Pre-Production Validation**
-```bash
+```zsh
 # Always validate before printing
 python enhanced_qr_generator.py production_data.csv --validate --dry-run
 ```
