@@ -34,6 +34,7 @@ import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.util.CameraManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import com.joeycarlson.qrscanner.util.PermissionManager
+import com.joeycarlson.qrscanner.util.ErrorReporter
 import com.joeycarlson.qrscanner.data.ScanHistoryItem
 import com.joeycarlson.qrscanner.data.ScanHistoryManager
 import com.joeycarlson.qrscanner.ui.ScanHistoryAdapter
@@ -102,6 +103,13 @@ class MainActivity : AppCompatActivity() {
         
         setupObservers()
         setupClickListeners()
+        
+        // Log error report paths for easy access (especially useful in Android Studio)
+        android.util.Log.i("ErrorReporter", "=== ERROR REPORT LOCATIONS ===")
+        ErrorReporter.getErrorReportPaths().forEach { path ->
+            android.util.Log.i("ErrorReporter", path)
+        }
+        android.util.Log.i("ErrorReporter", "=== END ERROR REPORT LOCATIONS ===")
         
         // Initialize permission manager
         permissionManager = PermissionManager(this)

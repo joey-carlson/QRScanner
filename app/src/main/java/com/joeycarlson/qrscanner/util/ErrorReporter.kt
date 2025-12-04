@@ -160,10 +160,38 @@ object ErrorReporter {
     }
     
     /**
-     * Get error reports directory
+     * Get error reports directory - uses multiple locations for easy access
      */
     private fun getErrorReportsDirectory(): File {
+        // For Android Studio emulator, save to external files (easily accessible)
+        // For real devices, save to app-specific external directory
         return File(context.getExternalFilesDir(null), "qr_error_reports")
+    }
+    
+    /**
+     * Get all error report file paths for easy copy/paste access
+     */
+    fun getErrorReportPaths(): List<String> {
+        return try {
+            val reportsDir = getErrorReportsDirectory()
+            val paths = mutableListOf<String>()
+            
+            // Add directory path
+            paths.add("Error Reports Directory: ${reportsDir.absolutePath}")
+            
+            // Add individual file paths
+            if (reportsDir.exists()) {
+                reportsDir.listFiles()?.forEach { file ->
+                    if (file.isFile) {
+                        paths.add("File: ${file.absolutePath}")
+                    }
+                }
+            }
+            
+            paths
+        } catch (e: Exception) {
+            listOf("Error getting paths: ${e.message}")
+        }
     }
     
     /**
