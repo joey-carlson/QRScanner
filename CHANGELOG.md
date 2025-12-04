@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2025-12-04
+
+### Fixed
+- **Share Button Navigation Across All Features**
+  - Fixed critical bug where UnifiedExportActivity was missing from AndroidManifest.xml
+  - Share buttons now correctly navigate to the centralized export interface
+  - Affects all features: Kit Check Out, Kit Check In, Kit Bundle, Inventory Management
+  - Previously, clicking share button would return user to home screen instead of export screen
+
+### Added
+- **Comprehensive Export Navigation Testing**
+  - New UniversalExportManagerTest with 7 test cases
+  - Tests verify correct navigation from all feature activities
+  - Includes "gist test" for consistent behavior across all export types
+  - Tests singleton pattern and intent metadata validation
+
+### Technical
+- Added UnifiedExportActivity to AndroidManifest.xml with proper configuration
+- Activity registered with HomeActivity as parent for proper back navigation
+- Verified all activities use consistent UniversalExportManager.startExport() pattern
+- Version bumped to 2.8.1 (Build 37) for critical navigation fix
+
 ## [2.8.0] - 2025-12-03
 
 ### Added

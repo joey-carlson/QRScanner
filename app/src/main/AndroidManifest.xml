@@ -74,6 +74,14 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".HomeActivity" />
             
+        <!-- UnifiedExportActivity - Centralized export/share functionality -->
+        <activity
+            android:name=".export.UnifiedExportActivity"
+            android:exported="false"
+            android:label="Export Data"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".HomeActivity" />
+            
         <!-- Settings Activity -->
         <activity
             android:name=".SettingsActivity"
