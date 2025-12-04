@@ -25,10 +25,10 @@ class CheckoutRepository(context: Context) : BaseRepository<CheckoutRecord>(cont
             existingRecords.add(record)
             
             val jsonContent = gson.toJson(existingRecords)
-            saveJsonContent(jsonContent)
+            return@withContext saveJsonContent(jsonContent)
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            return@withContext false
         }
     }
     
@@ -47,10 +47,10 @@ class CheckoutRepository(context: Context) : BaseRepository<CheckoutRecord>(cont
             existingRecords.add(record)
             
             val jsonContent = gson.toJson(existingRecords)
-            saveJsonContent(jsonContent)
+            return@withContext saveJsonContent(jsonContent)
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            return@withContext false
         }
     }
     
@@ -86,13 +86,13 @@ class CheckoutRepository(context: Context) : BaseRepository<CheckoutRecord>(cont
             if (lastCheckout != null) {
                 records.remove(lastCheckout)
                 val jsonContent = gson.toJson(records)
-                saveJsonContent(jsonContent)
+                return@withContext saveJsonContent(jsonContent)
             } else {
-                false
+                return@withContext false
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            return@withContext false
         }
     }
 }

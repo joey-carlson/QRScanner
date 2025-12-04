@@ -29,10 +29,10 @@ class CheckInRepository(context: Context) : BaseRepository<CheckInRecord>(contex
             existingRecords.add(record)
             
             val jsonContent = gson.toJson(existingRecords)
-            saveJsonContent(jsonContent)
+            return@withContext saveJsonContent(jsonContent)
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            return@withContext false
         }
     }
     
@@ -68,13 +68,13 @@ class CheckInRepository(context: Context) : BaseRepository<CheckInRecord>(contex
             if (lastCheckIn != null) {
                 records.remove(lastCheckIn)
                 val jsonContent = gson.toJson(records)
-                saveJsonContent(jsonContent)
+                return@withContext saveJsonContent(jsonContent)
             } else {
-                false
+                return@withContext false
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            return@withContext false
         }
     }
 }

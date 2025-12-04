@@ -29,10 +29,10 @@ class KitRepository(context: Context) : BaseRepository<KitBundle>(context) {
             existingBundles.add(kitBundle)
             
             val jsonContent = gson.toJson(existingBundles)
-            saveJsonContent(jsonContent)
+            return@withContext saveJsonContent(jsonContent)
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            return@withContext false
         }
     }
     
