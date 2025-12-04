@@ -14,6 +14,7 @@ Keep changes small and discrete to avoid token throttling issues.
 We should start with a clear requirements doc and an architecture doc. Requirements doc should be more focused on user/business level reqs, which architecture doc should focus on design and technical architecture decisions.
 As we work through the lifecycle of the project, you need to also create and automatically maintain a readme/instructions doc and a changelog doc. 
 We will use standard x.y.z numbering schema. 
+Always use versioning like "x.y" or "x.y.z" rather than naming conventions like "enhanced", "new", "improved", etc.
 As updates come in they should be documented to the appropriate docs. Changes should be versioned and appended above existing content for a given doc and/or doc section, do not overwrite historical updates.
 Others may also be working on this project's git repository, so as we work you should also ensure that local and git repositories remain synced and are up to date with no lingering pending commits
 
