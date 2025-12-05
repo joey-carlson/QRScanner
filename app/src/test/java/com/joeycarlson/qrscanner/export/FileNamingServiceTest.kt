@@ -320,6 +320,8 @@ class FileNamingServiceTest {
         repeat(10) {
             val filename = service.generateTempFilename(testDate, testLocationId, ExportFormat.JSON)
             filenames.add(filename)
+            // Small delay to ensure different timestamps (currentTimeMillis precision is ~1ms)
+            Thread.sleep(2)
         }
         
         assertEquals("All temp filenames should be unique", 10, filenames.size)

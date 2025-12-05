@@ -8,10 +8,9 @@ import androidx.core.content.ContextCompat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.Mockito.*
-import org.mockito.junit.MockitoJUnitRunner
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,14 +24,12 @@ import org.junit.Assert.assertTrue
 @Config(sdk = [Build.VERSION_CODES.Q]) // Test with Android 10 (Q)
 class PermissionManagerTest {
     
-    @Mock
-    private lateinit var mockActivity: Activity
-    
+    private lateinit var activity: Activity
     private lateinit var permissionManager: PermissionManager
     
     @Before
     fun setup() {
-        mockActivity = mock(Activity::class.java)
+        activity = Robolectric.buildActivity(Activity::class.java).create().get()
     }
     
     /**
@@ -41,8 +38,8 @@ class PermissionManagerTest {
      */
     @Test
     fun gistTest_permissionManagerCoreFlow() {
-        // Arrange: Create PermissionManager with mock activity
-        permissionManager = PermissionManager(mockActivity)
+        // Arrange: Create PermissionManager with real activity
+        permissionManager = PermissionManager(activity)
         
         // Act & Assert: Verify required permissions list contains camera
         val requiredPermissions = PermissionManager.getRequiredPermissions()
@@ -81,9 +78,9 @@ class PermissionManagerTest {
     @Test
     fun areAllPermissionsGranted_allGranted_returnsTrue() {
         // Arrange
-        `when`(mockActivity.checkSelfPermission(Manifest.permission.CAMERA))
-            .thenReturn(PackageManager.PERMISSION_GRANTED)
-        permissionManager = PermissionManager(mockActivity)
+        val shadowApp = shadowOf(activity.application)
+        shadowApp.grantPermissions(Manifest.permission.CAMERA)
+        permissionManager = PermissionManager(activity)
         
         // Act
         val result = permissionManager.areAllPermissionsGranted()
@@ -95,9 +92,9 @@ class PermissionManagerTest {
     @Test
     fun areAllPermissionsGranted_cameraDenied_returnsFalse() {
         // Arrange
-        `when`(mockActivity.checkSelfPermission(Manifest.permission.CAMERA))
-            .thenReturn(PackageManager.PERMISSION_DENIED)
-        permissionManager = PermissionManager(mockActivity)
+        val shadowApp = shadowOf(activity.application)
+        shadowApp.denyPermissions(Manifest.permission.CAMERA)
+        permissionManager = PermissionManager(activity)
         
         // Act
         val result = permissionManager.areAllPermissionsGranted()
@@ -110,11 +107,10 @@ class PermissionManagerTest {
     @Config(sdk = [Build.VERSION_CODES.P]) // Android 9
     fun areAllPermissionsGranted_android9_checksStoragePermission() {
         // Arrange
-        `when`(mockActivity.checkSelfPermission(Manifest.permission.CAMERA))
-            .thenReturn(PackageManager.PERMISSION_GRANTED)
-        `when`(mockActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE))
-            .thenReturn(PackageManager.PERMISSION_DENIED)
-        permissionManager = PermissionManager(mockActivity)
+        val shadowApp = shadowOf(activity.application)
+        shadowApp.grantPermissions(Manifest.permission.CAMERA)
+        shadowApp.denyPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        permissionManager = PermissionManager(activity)
         
         // Act
         val result = permissionManager.areAllPermissionsGranted()
@@ -127,7 +123,7 @@ class PermissionManagerTest {
     fun setPermissionCallbacks_onGranted_invokesCallback() {
         // Arrange
         var callbackInvoked = false
-        permissionManager = PermissionManager(mockActivity)
+        permissionManager = PermissionManager(activity)
         permissionManager.setPermissionCallbacks(
             onPermissionsGranted = { callbackInvoked = true },
             onPermissionsDenied = { }
@@ -147,7 +143,7 @@ class PermissionManagerTest {
     fun setPermissionCallbacks_onDenied_invokesCallbackWithDeniedList() {
         // Arrange
         var deniedPermissions: List<String>? = null
-        permissionManager = PermissionManager(mockActivity)
+        permissionManager = PermissionManager(activity)
         permissionManager.setPermissionCallbacks(
             onPermissionsGranted = { },
             onPermissionsDenied = { denied -> deniedPermissions = denied }

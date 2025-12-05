@@ -28,6 +28,11 @@ class UniversalExportManagerTest {
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
+        
+        // Configure location ID in SharedPreferences (required for exports)
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        prefs.edit().putString(com.joeycarlson.qrscanner.config.PreferenceKeys.LOCATION_ID, "TEST_LOC").apply()
+        
         exportManager = UniversalExportManager.getInstance(context)
         testActivity = Robolectric.buildActivity(Activity::class.java).create().get()
     }

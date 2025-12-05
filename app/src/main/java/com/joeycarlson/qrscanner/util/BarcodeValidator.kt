@@ -92,9 +92,14 @@ object BarcodeValidator {
     
     /**
      * Detect barcode format based on content patterns
+     * Order matters: check QR code patterns first before other formats
      */
     private fun detectBarcodeFormat(data: String): BarcodeFormat {
         return when {
+            // QR Code: Check first for URLs and long content before other patterns
+            data.contains("http") || data.contains("://") || data.contains("mailto:") || 
+            data.contains("ftp:") || data.length > 50 -> BarcodeFormat.QR_CODE
+            
             // UPC-A: 12 digits
             data.matches(Regex("^\\d{12}$")) -> BarcodeFormat.UPC_A
             
@@ -107,14 +112,11 @@ object BarcodeValidator {
             // EAN-8: 8 digits (but not UPC-E pattern)
             data.matches(Regex("^\\d{8}$")) && !data.startsWith("0") -> BarcodeFormat.EAN_8
             
-            // Code 39: Alphanumeric with specific symbols
-            data.matches(Regex("^[A-Z0-9\\-. $/+%]+$")) -> BarcodeFormat.CODE_39
-            
-            // Code 93: Similar to Code 39 but more restrictive
+            // Code 93: Check before Code 39 (more restrictive, length <= 47)
             data.matches(Regex("^[A-Z0-9\\-. $/+%]+$")) && data.length <= 47 -> BarcodeFormat.CODE_93
             
-            // QR Code: More complex data patterns
-            data.contains("http") || data.contains("://") || data.length > 50 -> BarcodeFormat.QR_CODE
+            // Code 39: Alphanumeric with specific symbols
+            data.matches(Regex("^[A-Z0-9\\-. $/+%]+$")) -> BarcodeFormat.CODE_39
             
             // Code 128: Default for other alphanumeric patterns
             data.matches(Regex("^[A-Za-z0-9._-]+$")) -> BarcodeFormat.CODE_128
