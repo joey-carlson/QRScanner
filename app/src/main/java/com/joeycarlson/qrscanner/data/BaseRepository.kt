@@ -7,6 +7,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.joeycarlson.qrscanner.config.AppConstants
 import com.joeycarlson.qrscanner.util.ErrorReporter
 import java.io.File
 import java.io.FileReader
@@ -27,7 +28,7 @@ abstract class BaseRepository<T>(protected val context: Context) {
     
     protected val gson = Gson()
     protected val prefs = context.getSharedPreferences(
-        "com.joeycarlson.qrscanner_preferences", 
+        AppConstants.Storage.PREFERENCES_NAME, 
         Context.MODE_PRIVATE
     )
     
@@ -49,12 +50,12 @@ abstract class BaseRepository<T>(protected val context: Context) {
      */
     protected fun getTodaysFileName(): String {
         val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("MM-dd-yy")
-        val locationId = prefs.getString("location_id", "unknown")
+        val formatter = DateTimeFormatter.ofPattern(AppConstants.Storage.DATE_FORMAT_PATTERN)
+        val locationId = prefs.getString(AppConstants.Location.LOCATION_ID_KEY, AppConstants.Location.LOCATION_ID_UNKNOWN)
         
         val prefix = getFileNamePrefix()
         
-        return if (!locationId.isNullOrEmpty() && locationId != "unknown") {
+        return if (!locationId.isNullOrEmpty() && locationId != AppConstants.Location.LOCATION_ID_UNKNOWN) {
             "${prefix}_${today.format(formatter)}_${locationId}.json"
         } else {
             "${prefix}_${today.format(formatter)}.json"
@@ -65,12 +66,12 @@ abstract class BaseRepository<T>(protected val context: Context) {
      * Generates filename for a specific date.
      */
     protected fun getFileNameForDate(date: LocalDate): String {
-        val formatter = DateTimeFormatter.ofPattern("MM-dd-yy")
-        val locationId = prefs.getString("location_id", "unknown")
+        val formatter = DateTimeFormatter.ofPattern(AppConstants.Storage.DATE_FORMAT_PATTERN)
+        val locationId = prefs.getString(AppConstants.Location.LOCATION_ID_KEY, AppConstants.Location.LOCATION_ID_UNKNOWN)
         
         val prefix = getFileNamePrefix()
         
-        return if (!locationId.isNullOrEmpty() && locationId != "unknown") {
+        return if (!locationId.isNullOrEmpty() && locationId != AppConstants.Location.LOCATION_ID_UNKNOWN) {
             "${prefix}_${date.format(formatter)}_${locationId}.json"
         } else {
             "${prefix}_${date.format(formatter)}.json"
@@ -253,9 +254,9 @@ abstract class BaseRepository<T>(protected val context: Context) {
      */
     protected fun sanitizeInput(input: String): String {
         return input
-            .replace(Regex("[\"'`\\\\<>{}\\[\\];:,]"), "") // Remove potentially dangerous chars
-            .replace(Regex("\\s+"), " ") // Normalize whitespace
+            .replace(Regex(AppConstants.Validation.DANGEROUS_CHARS_REGEX), "") // Remove potentially dangerous chars
+            .replace(Regex(AppConstants.Validation.WHITESPACE_NORMALIZE_REGEX), " ") // Normalize whitespace
             .trim()
-            .take(200) // Enforce length limit
+            .take(AppConstants.Storage.MAX_INPUT_LENGTH) // Enforce length limit
     }
 }

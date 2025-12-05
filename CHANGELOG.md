@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **AppConstants Configuration System**
+  - Centralized all magic strings and numbers into `AppConstants.kt`
+  - Organized constants into logical groups: Storage, Export, Scanning, Validation, Performance, UI, ErrorReporting, Location, S3Config, IntentExtras, ComponentTypes
+  - Improved code maintainability by eliminating magic values throughout codebase
+  - Single source of truth for configuration values
+
+- **Test Coverage Improvements**
+  - Added `CheckoutRepositoryTest` with 9 comprehensive unit tests
+  - Tests cover CRUD operations, input sanitization, validation, and file naming
+  - Follows AAA pattern (Arrange, Act, Assert) from ClineRules
+  - Includes gist test for core functionality verification
+
+### Changed
+- **BaseRepository Refactoring**
+  - Replaced all magic strings/numbers with `AppConstants` references
+  - Improved code readability and maintainability
+  - Consistent date format patterns across all repositories
+  - Standardized validation regex patterns
+
+- **ErrorReporter Thread Safety Enhancement**
+  - Added `ReentrantReadWriteLock` for thread-safe operations
+  - All public methods now use read/write locks appropriately
+  - Prevents race conditions in multi-threaded error reporting scenarios
+  - Improved initialization safety with lock-protected init()
+  - Better error handling for uninitialized state
+
+### Technical
+- Created new `config/AppConstants.kt` for centralized configuration
+- Enhanced error reporting reliability with proper synchronization
+- Improved test infrastructure with additional repository tests
+- Version bumped to 2.9.1 (Build 39) for refactoring and improvements
+
 ## [2.9.0] - 2025-12-04
 
 ### Added
