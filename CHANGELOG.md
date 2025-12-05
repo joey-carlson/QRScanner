@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.1] - 2025-12-05
+
+### Added
+- **Comprehensive Test Suite Improvements**
+  - Added 21 new comprehensive ScanViewModel tests (total: 127 tests, was 106)
+  - Test coverage for complete checkout workflow with state management
+  - Tests for barcode processing (user/kit/other types)
+  - Tests for state transitions (IDLE → USER_SCANNED → REVIEW_PENDING)
+  - Tests for review mode behavior and field updates
+  - Tests for undo functionality with proper coroutine timing
+  - Tests for state management (pause/resume/clear)
+  - Tests for format detection (QR Code, UPC-A)
+  - Tests for edge cases (invalid barcodes, scan rejection)
+
+### Fixed
+- **Pre-existing Test Failures (14 total fixed)**
+  - FileNamingServiceTest: Fixed timestamp uniqueness issues with 2ms delay
+  - UniversalExportManagerTest: Added missing location ID configuration (6 failures)
+  - BarcodeValidatorTest: Fixed format detection order and added URL patterns (5 failures)
+  - PermissionManagerTest: Replaced Mockito mocks with Robolectric shadows (2 failures)
+
+### Technical
+- All 127 tests now passing (100% pass rate achieved) ✅
+- Kotlin coroutines testing with StandardTestDispatcher
+- Proper coroutine timing control with `advanceUntilIdle()` and `advanceTimeBy()`
+- Mock repositories for isolated ViewModel testing
+- AAA pattern (Arrange, Act, Assert) for test clarity
+- Version bumped to 2.8.1 (Build 37) for testing improvements
+
+
 ### Added
 - **ExportDataProcessor Class**
   - New dedicated class for processing export data

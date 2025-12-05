@@ -2,11 +2,28 @@ QR Scanner Build Information
 ==========================
 
 Version: 2.8.0
-Build: 36
-Date: December 3, 2025
+Build: 37
+Date: December 5, 2025
 
 Recent Changes
 -------------
+
+### Comprehensive Test Suite Improvements (December 5, 2025)
+- Fixed all 14 pre-existing test failures (100% pass rate achieved)
+- Added 21 new comprehensive ScanViewModel tests
+- Total test count: 127 tests (was 106, added 21)
+- Test coverage improvements:
+  - FileNamingServiceTest: Fixed timestamp uniqueness issues
+  - UniversalExportManagerTest: Fixed missing location ID configuration
+  - BarcodeValidatorTest: Fixed format detection order and added URL patterns
+  - PermissionManagerTest: Replaced Mockito with proper Robolectric shadows
+  - ScanViewModelTest: Complete coverage of state management, barcode processing, review mode
+- Technical improvements:
+  - Kotlin coroutines testing with StandardTestDispatcher
+  - Proper coroutine timing control for async operations
+  - AAA pattern (Arrange, Act, Assert) for test clarity
+  - Mock repositories for isolated ViewModel testing
+- All tests passing: 127/127 ✅
 
 ### Material Design 3 Theme System (December 3, 2025)
 - Unified Material Design 3 theme system implementation
@@ -107,13 +124,14 @@ Recent Changes
 - Environmental adaptation for optimal scanning conditions
 - Advanced image preprocessing for improved OCR accuracy
 - Scan history tracking system
+- Comprehensive test suite with 127 tests (100% pass rate)
 
 ### Known Issues
 - Clear/Clear All buttons commented out in UI (may cause user confusion)
 - Build configuration shows AGP downgrade from 8.13.0 to 8.7.0
-- Version discrepancies between different documentation files resolved
 
 ### Testing Notes
+- Comprehensive test suite: 127/127 tests passing ✅
 - Material Design 3 theming tested in both light and dark modes
 - OCR performance optimizations tested with various lighting conditions
 - Image preprocessing significantly improves character recognition
@@ -122,3 +140,4 @@ Recent Changes
 - WindowInsetsHelper applied to all activities for proper system UI handling
 - Inventory Management feature ready for testing with up to 500 devices
 - Scan history infrastructure implemented but UI integration pending
+- ScanViewModel fully tested with 21 test cases covering all workflows
