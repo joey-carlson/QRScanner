@@ -20,12 +20,9 @@ class UnifiedExportHandler(private val context: Context) {
     
     private val fileManager = FileManager(context)
     private val contentGenerator = ContentGenerator()
-    private val fileNamingService = FileNamingService()
+    private val dataProcessor = ExportDataProcessor(contentGenerator)
     private val tempFileManager = TempFileManager(context)
-    private val intentFactory = IntentFactory()
     private val s3UploadManager = S3UploadManager(context)
-    private val gson = Gson()
-    private val dateFormatter = DateTimeFormatter.ofPattern("MM-dd-yy")
     
     /**
      * Create a data source based on the export type
@@ -56,46 +53,25 @@ class UnifiedExportHandler(private val context: Context) {
                 return@withContext ExportResult.Error("Location ID not configured")
             }
             
+            val processedExports = dataProcessor.processDataSource(
+                dataSource, startDate, endDate, format, locationId
+            )
+            
+            if (processedExports.isEmpty()) {
+                return@withContext ExportResult.NoData
+            }
+            
             val exportedFiles = mutableListOf<android.net.Uri>()
             
-            if (dataSource.supportsDateRange()) {
-                val dataByDate = dataSource.getDataForDateRange(startDate, endDate)
-                
-                for ((date, jsonData) in dataByDate) {
-                    val records = parseRecords(jsonData, dataSource.getExportType())
-                    val filename = generateFilename(dataSource, date, locationId, format)
-                    val content = generateContent(records, format, locationId, dataSource.getExportType())
-                    
-                    val result = fileManager.saveToDownloads(filename, content, format.mimeType)
-                    when (result) {
-                        is FileManager.FileResult.Success -> exportedFiles.add(result.data)
-                        is FileManager.FileResult.Error -> throw Exception(result.message)
-                    }
-                }
-            } else {
-                // For data sources that don't support date ranges (like inventory)
-                val jsonData = dataSource.getAllData()
-                if (jsonData.isNotEmpty()) {
-                    val filename = generateFilename(dataSource, LocalDate.now(), locationId, format)
-                    val content = when (dataSource.getExportType()) {
-                        "inventory" -> jsonData // Inventory already returns formatted JSON
-                        "logs" -> jsonData // Logs are plain text
-                        else -> generateContent(parseRecords(jsonData, dataSource.getExportType()), format, locationId, dataSource.getExportType())
-                    }
-                    
-                    val result = fileManager.saveToDownloads(filename, content, format.mimeType)
-                    when (result) {
-                        is FileManager.FileResult.Success -> exportedFiles.add(result.data)
-                        is FileManager.FileResult.Error -> throw Exception(result.message)
-                    }
+            for (export in processedExports) {
+                val result = fileManager.saveToDownloads(export.filename, export.content, format.mimeType)
+                when (result) {
+                    is FileManager.FileResult.Success -> exportedFiles.add(result.data)
+                    is FileManager.FileResult.Error -> throw Exception(result.message)
                 }
             }
             
-            if (exportedFiles.isEmpty()) {
-                ExportResult.NoData
-            } else {
-                ExportResult.Success(exportedFiles)
-            }
+            ExportResult.Success(exportedFiles)
         } catch (e: Exception) {
             ExportResult.Error(e.message ?: "Export failed")
         }
@@ -116,46 +92,26 @@ class UnifiedExportHandler(private val context: Context) {
                 return@withContext ExportResult.Error("Location ID not configured")
             }
             
+            val processedExports = dataProcessor.processDataSource(
+                dataSource, startDate, endDate, format, locationId
+            )
+            
+            if (processedExports.isEmpty()) {
+                return@withContext ExportResult.NoData
+            }
+            
             val tempFiles = mutableListOf<File>()
             val fileUris = mutableListOf<android.net.Uri>()
             
-            if (dataSource.supportsDateRange()) {
-                val dataByDate = dataSource.getDataForDateRange(startDate, endDate)
+            for (export in processedExports) {
+                val file = tempFileManager.createTempFile(export.filename, export.content)
+                tempFiles.add(file)
                 
-                for ((date, jsonData) in dataByDate) {
-                    val records = parseRecords(jsonData, dataSource.getExportType())
-                    val filename = generateFilename(dataSource, date, locationId, format)
-                    val content = generateContent(records, format, locationId, dataSource.getExportType())
-                    
-                    val file = tempFileManager.createTempFile(filename, content)
-                    tempFiles.add(file)
-                    
-                    val uri = tempFileManager.getUriForFile(file)
-                    fileUris.add(uri)
-                }
-            } else {
-                val jsonData = dataSource.getAllData()
-                if (jsonData.isNotEmpty()) {
-                    val filename = generateFilename(dataSource, LocalDate.now(), locationId, format)
-                    val content = when (dataSource.getExportType()) {
-                        "inventory" -> jsonData
-                        "logs" -> jsonData
-                        else -> generateContent(parseRecords(jsonData, dataSource.getExportType()), format, locationId, dataSource.getExportType())
-                    }
-                    
-                    val file = tempFileManager.createTempFile(filename, content)
-                    tempFiles.add(file)
-                    
-                    val uri = tempFileManager.getUriForFile(file)
-                    fileUris.add(uri)
-                }
+                val uri = tempFileManager.getUriForFile(file)
+                fileUris.add(uri)
             }
             
-            if (fileUris.isEmpty()) {
-                ExportResult.NoData
-            } else {
-                ExportResult.ShareReady(fileUris, tempFiles, format.mimeType)
-            }
+            ExportResult.ShareReady(fileUris, tempFiles, format.mimeType)
         } catch (e: Exception) {
             ExportResult.Error(e.message ?: "Export failed")
         }
@@ -172,115 +128,6 @@ class UnifiedExportHandler(private val context: Context) {
     ): ExportResult {
         // Use the new universal S3UploadManager that works with all data sources
         return s3UploadManager.uploadToS3(dataSource, startDate, endDate, format)
-    }
-    
-    /**
-     * Parse JSON records based on export type
-     */
-    private fun parseRecords(jsonData: String, exportType: String): List<Any> {
-        return when (exportType) {
-            "checkout" -> gson.fromJson(jsonData, Array<com.joeycarlson.qrscanner.data.CheckoutRecord>::class.java).toList()
-            "checkin" -> gson.fromJson(jsonData, Array<com.joeycarlson.qrscanner.data.CheckInRecord>::class.java).toList()
-            "kit_bundle" -> gson.fromJson(jsonData, Array<com.joeycarlson.qrscanner.data.KitBundle>::class.java).toList()
-            else -> emptyList()
-        }
-    }
-    
-    /**
-     * Generate content in the specified format
-     */
-    private fun generateContent(
-        records: List<Any>,
-        format: ExportFormat,
-        locationId: String,
-        exportType: String
-    ): String {
-        return when (format) {
-            ExportFormat.JSON -> gson.toJson(records)
-            ExportFormat.CSV -> generateCsvContent(records, exportType, locationId)
-            ExportFormat.TXT -> generateTxtContent(records, exportType, locationId)
-            ExportFormat.XML -> generateXmlContent(records, exportType, locationId)
-            ExportFormat.KIT_LABELS_CSV -> generateKitLabelsCsvContent(records)
-        }
-    }
-    
-    /**
-     * Generate CSV content based on record type
-     */
-    private fun generateCsvContent(records: List<Any>, exportType: String, locationId: String): String {
-        return when (exportType) {
-            "checkout" -> contentGenerator.generateContent(
-                records as List<com.joeycarlson.qrscanner.data.CheckoutRecord>,
-                ExportFormat.CSV,
-                locationId
-            )
-            "checkin" -> contentGenerator.generateCheckInContent(
-                records as List<com.joeycarlson.qrscanner.data.CheckInRecord>,
-                ExportFormat.CSV,
-                locationId
-            )
-            "kit_bundle" -> contentGenerator.generateKitBundleContent(
-                records as List<com.joeycarlson.qrscanner.data.KitBundle>,
-                ExportFormat.CSV,
-                locationId
-            )
-            else -> ""
-        }
-    }
-    
-    /**
-     * Generate TXT content based on record type
-     */
-    private fun generateTxtContent(records: List<Any>, exportType: String, locationId: String): String {
-        return when (exportType) {
-            "checkout" -> contentGenerator.generateContent(
-                records as List<com.joeycarlson.qrscanner.data.CheckoutRecord>,
-                ExportFormat.TXT,
-                locationId
-            )
-            "checkin" -> contentGenerator.generateCheckInContent(
-                records as List<com.joeycarlson.qrscanner.data.CheckInRecord>,
-                ExportFormat.TXT,
-                locationId
-            )
-            else -> ""
-        }
-    }
-    
-    /**
-     * Generate XML content
-     */
-    private fun generateXmlContent(records: List<Any>, exportType: String, locationId: String): String {
-        return contentGenerator.generateContent(
-            records as List<com.joeycarlson.qrscanner.data.CheckoutRecord>,
-            ExportFormat.XML,
-            locationId
-        )
-    }
-    
-    /**
-     * Generate kit labels CSV content
-     */
-    private fun generateKitLabelsCsvContent(records: List<Any>): String {
-        return contentGenerator.generateKitBundleContent(
-            records as List<com.joeycarlson.qrscanner.data.KitBundle>,
-            ExportFormat.KIT_LABELS_CSV,
-            "" // locationId not needed for kit labels
-        )
-    }
-    
-    /**
-     * Generate filename for export
-     */
-    private fun generateFilename(
-        dataSource: ExportDataSource,
-        date: LocalDate,
-        locationId: String,
-        format: ExportFormat
-    ): String {
-        val prefix = dataSource.getFilenamePrefix(date)
-        val dateStr = date.format(dateFormatter)
-        return "${prefix}_${dateStr}_${locationId}.${format.extension}"
     }
     
     /**

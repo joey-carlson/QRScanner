@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **ExportDataProcessor Class**
+  - New dedicated class for processing export data
+  - Handles data collection, parsing, and content generation
+  - Single responsibility: data processing only
+  - Reduces code duplication by ~150 lines
+
 - **AppConstants Configuration System**
   - Centralized all magic strings and numbers into `AppConstants.kt`
   - Organized constants into logical groups: Storage, Export, Scanning, Validation, Performance, UI, ErrorReporting, Location, S3Config, IntentExtras, ComponentTypes
@@ -26,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved code readability and maintainability
   - Consistent date format patterns across all repositories
   - Standardized validation regex patterns
+
+- **UnifiedExportHandler Refactoring**
+  - Extracted data processing logic into separate ExportDataProcessor class
+  - Reduced UnifiedExportHandler from ~300 lines to ~100 lines
+  - Eliminated duplicate code between exportToDownloads and exportViaShare methods
+  - Better separation of concerns following Single Responsibility Principle
+  - Improved maintainability and testability
 
 - **ErrorReporter Thread Safety Enhancement**
   - Added `ReentrantReadWriteLock` for thread-safe operations
