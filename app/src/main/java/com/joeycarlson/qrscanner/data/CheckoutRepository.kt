@@ -6,7 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
-class CheckoutRepository(context: Context) : BaseRepository<CheckoutRecord>(context) {
+open class CheckoutRepository(context: Context) : BaseRepository<CheckoutRecord>(context) {
     
     override fun getFileNamePrefix(): String = "qr_checkouts"
     
