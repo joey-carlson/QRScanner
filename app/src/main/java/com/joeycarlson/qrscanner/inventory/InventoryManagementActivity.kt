@@ -1,19 +1,11 @@
 package com.joeycarlson.qrscanner.inventory
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.material.chip.Chip
 import com.joeycarlson.qrscanner.config.AppConfig
 import com.joeycarlson.qrscanner.data.InventoryRepository
 import com.joeycarlson.qrscanner.databinding.ActivityInventoryManagementBinding
