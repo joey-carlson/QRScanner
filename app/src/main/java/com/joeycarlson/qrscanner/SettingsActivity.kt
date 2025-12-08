@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -122,7 +121,7 @@ class SettingsActivity : AppCompatActivity() {
             apply()
         }
         
-        Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
+        DialogUtils.showSuccessToast(this, "Settings saved")
         finish()
     }
     
@@ -288,7 +287,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         
         if (!binding.s3EnabledSwitch.isChecked) {
-            Toast.makeText(this, "Please enable S3 export first", Toast.LENGTH_SHORT).show()
+            DialogUtils.showToast(this, "Please enable S3 export first")
             return
         }
         

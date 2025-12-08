@@ -4,7 +4,6 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -226,7 +225,7 @@ class UnifiedExportActivity : AppCompatActivity() {
     private fun handleExportMethodClick(method: ExportMethod) {
         // Validate date range if applicable
         if (supportsDateRange && startDate.isAfter(endDate)) {
-            Toast.makeText(this, "Start date must be before or equal to end date", Toast.LENGTH_SHORT).show()
+            DialogUtils.showToast(this, "Start date must be before or equal to end date")
             return
         }
         
