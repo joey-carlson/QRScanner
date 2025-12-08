@@ -277,13 +277,23 @@ This document tracks future feature ideas, enhancements, and updates for conside
 
 ## 🧹 Code Cleanup & Maintenance
 
-### Minor Issues (Next Update)
-- **Unused Variable Warning**: Fix unused `locationId` variable in MainActivity.kt:176
-  - Type: Code cleanup (no functional impact)
-  - Impact: Eliminates compiler warning
-  - Effort: Minimal
-
 ### Completed Fixes
+- ✅ **Unused Variable Warning Fixed**: Fixed unused parameter warning in CheckInActivity (commit 3969137)
+  - Type: Code cleanup (no functional impact)
+  - Impact: Eliminated compiler warning
+  - Status: Completed
+  
+- ✅ **Unused Imports Removed**: Cleaned up unused imports across activities (commit 2b44c5f)
+  - CheckInActivity: Removed 7 unused imports
+  - InventoryManagementActivity: Removed 8 unused imports  
+  - KitBundleActivity: Removed 10 unused imports
+  - Impact: Cleaner code, slightly faster compilation
+
+- ✅ **Toast Calls Centralized**: Replaced direct Toast.makeText() with DialogUtils (commit 8593362)
+  - SettingsActivity: 2 replacements
+  - UnifiedExportActivity: 1 replacement
+  - Impact: Consistent user messaging, follows SOLID principles
+
 - ✅ **Theming Issues Fixed**: 
   - Fixed hardcoded colors in export dialog (black text invisible in dark mode)
   - Fixed hardcoded colors in settings screen (gray text hard to read on white)
