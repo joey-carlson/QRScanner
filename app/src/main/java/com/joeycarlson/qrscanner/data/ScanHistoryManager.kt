@@ -70,7 +70,6 @@ class ScanHistoryManager private constructor(context: Context) {
      * Automatically enforces MAX_HISTORY_SIZE limit
      */
     fun addToHistory(item: ScanHistoryItem) {
-        val key = getKeyForActivityType(item.activityType)
         val currentHistory = loadHistory(item.activityType).toMutableList()
         
         // Add new item at the beginning (most recent)

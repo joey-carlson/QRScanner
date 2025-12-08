@@ -275,7 +275,6 @@ class S3UploadManager(private val context: Context) {
         progressListener: UploadProgressListener?
     ): String? {
         var attempt = 0
-        var lastException: Exception? = null
         
         while (attempt < MAX_RETRY_ATTEMPTS) {
             try {
@@ -287,7 +286,6 @@ class S3UploadManager(private val context: Context) {
                 return uploadFile(s3Client, fileData, progressListener)
                 
             } catch (e: Exception) {
-                lastException = e
                 attempt++
                 
                 if (attempt < MAX_RETRY_ATTEMPTS) {
