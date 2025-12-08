@@ -348,7 +348,7 @@ class ContentGenerator {
     fun generateInventoryContent(
         inventoryJsonData: String,
         format: ExportFormat,
-        locationId: String
+        _locationId: String
     ): String {
         return when (format) {
             ExportFormat.JSON -> inventoryJsonData

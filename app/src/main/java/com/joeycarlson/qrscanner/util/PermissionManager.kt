@@ -188,14 +188,14 @@ class PermissionManager(private val activity: Activity) {
      * Handle permission result using callbacks
      */
     fun handlePermissionResult(
-        permissions: Array<String>,
+        _permissions: Array<String>,
         grantResults: IntArray
     ) {
         val deniedPermissions = mutableListOf<String>()
         
-        for (i in permissions.indices) {
+        for (i in _permissions.indices) {
             if (grantResults.getOrNull(i) != PackageManager.PERMISSION_GRANTED) {
-                deniedPermissions.add(permissions[i])
+                deniedPermissions.add(_permissions[i])
             }
         }
         
