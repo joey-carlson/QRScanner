@@ -62,7 +62,7 @@ class KitBundleActivity : AppCompatActivity() {
             onPermissionsGranted = {
                 startCamera()
             },
-            onPermissionsDenied = { deniedPermissions ->
+            onPermissionsDenied = { _ ->
                 finish()
             }
         )
@@ -128,7 +128,7 @@ class KitBundleActivity : AppCompatActivity() {
         }
         
         lifecycleScope.launch {
-            viewModel.isScanning.collect { isScanning ->
+            viewModel.isScanning.collect { _ ->
                 // Scanning is controlled by camera binding, no need to enable/disable analyzer
             }
         }
@@ -243,10 +243,6 @@ class KitBundleActivity : AppCompatActivity() {
     }
     
     private fun updateUI(mode: ScanMode) {
-        val modeText = when (mode) {
-            ScanMode.BARCODE_ONLY -> "Scanning for barcodes"
-            ScanMode.OCR_ONLY -> "Scanning for OCR text"
-        }
         // Update button states
         binding.barcodeButton.alpha = if (mode == ScanMode.BARCODE_ONLY) 1.0f else 0.6f
         binding.ocrButton.alpha = if (mode == ScanMode.OCR_ONLY) 1.0f else 0.6f

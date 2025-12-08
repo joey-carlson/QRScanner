@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             onPermissionsGranted = {
                 startCamera()
             },
-            onPermissionsDenied = { deniedPermissions ->
+            onPermissionsDenied = { _ ->
                 DialogUtils.showErrorToast(this, getString(R.string.camera_permission_required))
                 finish()
             }

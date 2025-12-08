@@ -65,7 +65,7 @@ class InventoryManagementActivity : AppCompatActivity() {
             onPermissionsGranted = {
                 startCamera()
             },
-            onPermissionsDenied = { deniedPermissions ->
+            onPermissionsDenied = { _ ->
                 DialogUtils.showErrorToast(this, "Permissions not granted by the user.")
                 finish()
             }
@@ -140,7 +140,7 @@ class InventoryManagementActivity : AppCompatActivity() {
         }
         
         // Observe is scanning state
-        viewModel.isScanning.observe(this) { isScanning ->
+        viewModel.isScanning.observe(this) { _ ->
             // The analyzer automatically processes frames when camera is active
             // No manual start/stop needed
         }
