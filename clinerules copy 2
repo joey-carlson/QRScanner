@@ -1,0 +1,208 @@
+# QRScanner Project - Cline Rules
+
+## 00-general
+Follow all general best practices from the global ClineRules01.txt.
+As you're working periodically re-read this ClineRules doc so that you are aware of any updates/changes to these rules.
+You are an expert code developer who follows general best practices for software development.
+Before proposing a solution, consider alternatives. Is there a better solution?
+Design code for readibility. Don't be overly complex nor overly simple.
+Be concise but complete with documentation and commentary. Don't include the same documentation in more than one place.
+When asked to create a feature, consider if there are better options and recommend them.
+Follow the design cycle: design --> implement --> test --> evaluate
+Optimize for maintainability and configurability from the start. 
+Keep changes small and discrete to avoid token throttling issues.
+We should start with a clear requirements doc and an architecture doc. Requirements doc should be more focused on user/business level reqs, which architecture doc should focus on design and technical architecture decisions.
+As we work through the lifecycle of the project, you need to also create and automatically maintain a readme/instructions doc and a changelog doc. 
+We will use standard x.y.z numbering schema. 
+Always use versioning like "x.y" or "x.y.z" rather than naming conventions like "enhanced", "improved", "new", "advanced", "better", "upgraded", "modified", etc.
+For generated/exported files (data exports, reports, build artifacts, etc.), use descriptive purpose-based names without implied versioning. Avoid names like "legacy", "old", "improved", "enhanced", "new", "better", "upgraded", "modified", etc. Use functional descriptors instead (e.g., "qr_checkouts_12-04-25_LocationID.json" not "qr_checkouts_legacy.json").
+As updates come in they should be documented to the appropriate docs. Changes should be versioned and appended above existing content for a given doc and/or doc section, do not overwrite historical updates.
+Others may also be working on this project's git repository, so as we work you should also ensure that local and git repositories remain synced and are up to date with no lingering pending commits
+
+## Unit Testing Strategy
+Try to produce "3 line" tests. These are very short, readable, and easy to modify.
+Arrange
+Act
+Assert
+Arrange - set up the scene. Use supporting helper functions to construct objects in a manner needed for the test. This should strive for "one line" but may be a few lines. Complicated logic should be delegated to helper construction methods, fixtures etc. This is the arrangement and construction of the "unit under test".
+Act - perform one action on the "unit under test". This is typically a function call.
+Assert - Check output, side effects
+
+## The Gist Test
+Typically a single test, gist testing tests as much of the primary functionality as possible in a single test. They are fast to write, and both showcase and test the fundamental functionality of the system. These can encorporate multiple components from the system. Or can be gists for one individual component within the system. The intention is to cover the critical code, quickly and simply, ensuring fundamentally correct functionality with minimal code.
+This is a different strategy the the formal Unit Test "AAA" strategy, and can use any number of lines of code.
+Ensure correct functionality using soft assert (like googletest "EXPECT" macros) and hard asserts (like googletest "ASSERT" macros) as needed.
+Where applicable all testing should incorporate fuzz testing best practices.
+
+## 01-platform-android
+This is an Android application targeting API 24+ (Android 7.0) with current target of API 35 (Android 15+).
+Use Kotlin as the primary programming language following Kotlin coding conventions.
+Follow Android Architecture Components patterns (MVVM, ViewModels, LiveData, etc.).
+Use Material Design 3 principles for UI/UX consistency.
+Target both light and dark themes with proper theme-aware colors.
+Ensure compatibility with 16KB page sizes for future Android versions.
+Handle system UI overlaps properly using WindowInsetsHelper.
+
+## 02-solid-android
+Follow SOLID design principles for Android development, focusing primarily on:
+Single Responsibility: Each Activity/Fragment has one clear purpose
+Open/Closed: Use interfaces and abstract classes for extensibility  
+Interface Segregation: Create focused interfaces (Repository, Manager, etc.)
+Dependency Inversion: Use dependency injection patterns
+Prefer composition (with interface segregation) over inheritance.
+Don't repeat code. If a code is not relevant to the class, it should be in a utility or helper function or class.
+
+## 03-kotlin
+Follow Kotlin coding conventions and best practices.
+Use type hints where possible for better code clarity.
+Leverage Kotlin's null safety features properly.
+Use data classes for model objects.
+Prefer immutable data structures when possible.
+Use extension functions for utility methods.
+Follow Android KTX patterns for concise code.
+
+## 04-junit-android
+When testing features, write permanent tests with JUnit and Android testing framework.
+Do not write ephemeral tests to validate changes. Write something that can be used long-term to validate the functionality.
+Tests do not need to be elaborate or exhaustive, but should be complete and concise if possible.
+Use parameterized tests where possible.
+Use Mockito for mocking dependencies.
+Use Robolectric for unit tests that need Android context.
+Use Espresso for UI integration tests.
+
+## 05-qrscanner-domain
+This project is a comprehensive QR/barcode scanning system for kit management and inventory tracking.
+Key requirements to always consider:
+- Multiple scanning modes: Kit Check Out, Kit Check In, Kit Bundle, Inventory Management
+- OCR capabilities with ML Kit for printed serial numbers
+- Export functionality to multiple formats (JSON, CSV, XML, TXT)
+- AWS S3 integration for cloud storage
+- Material Design 3 theming with light/dark mode support
+- Advanced image preprocessing for OCR optimization
+- Confidence-based component detection and verification
+Always use existing shared utilities from appropriate packages for consistent functionality.
+Use proper repository patterns for data persistence with JSON file storage.
+
+## 06-android-ui
+All UI components must:
+- Use Material Design 3 components and theming
+- Support both light and dark themes properly
+- Use theme-aware colors (?attr/colorSurface, ?attr/colorOnSurface, etc.)
+- Handle system UI overlaps with proper WindowInsets
+- Provide consistent purple button theming (#6200EE)
+- Include proper accessibility support
+- Use ViewBinding for type-safe view references
+- Follow constraint layout best practices for responsive design
+- Include haptic feedback where appropriate
+
+## 07-data-management
+Data storage patterns:
+- JSON files: All persistent data (checkout, checkin, kit bundles, inventory)
+- SharedPreferences: App settings and scan history
+- Internal storage: Use app-private storage with MediaStore compatibility
+- File naming: Use location-aware naming with date patterns
+- Repository pattern: Centralized data access with proper error handling
+- Export system: Multiple formats with consistent file generation
+
+## 08-camera-scanning
+Camera and scanning requirements:
+- CameraX: Use for camera operations with proper lifecycle management
+- ML Kit: Barcode scanning and text recognition (OCR)
+- Image preprocessing: Enhance OCR accuracy with contrast/brightness/gamma correction
+- Scan modes: Barcode Only, OCR Only, Hybrid (automatic detection)
+- Confidence scoring: Multi-factor confidence with environmental adaptation
+- Visual feedback: Flash effects, haptic feedback, confirmation overlays
+- Error handling: Proper camera permission and capability checks
+
+## 09-export-system
+Export functionality patterns:
+- Universal Export Manager: Singleton entry point for all exports
+- Data Source abstraction: Interface for different data types
+- Multiple formats: JSON, CSV, XML, TXT with proper MIME types
+- Multiple destinations: Local storage, Android sharing, AWS S3
+- Progress tracking: User feedback for long operations
+- Error handling: Retry logic for network operations
+- File management: Temporary file cleanup and storage management
+
+## 10-version-management
+Version control and documentation:
+- Semantic versioning: x.y.z with proper version code increments
+- CHANGELOG.md: Keep a Changelog format with all changes documented
+- README.md: Comprehensive project documentation with current status
+- REQUIREMENTS.md: Detailed specifications versioned by release
+- BUILD_INFO.txt: Build metadata and recent changes
+- Git workflow: Regular commits with descriptive messages
+- WorkDocs sync: Copy builds and documentation to shared location
+
+## 11-workdocs-sync
+When completing major features or releases:
+1. Create new version folder in WorkDocs: `/Users/joecrls/Library/CloudStorage/WorkDocsDrive-Documents/Joey's Scripts/PilotScanner/vX.Y.Z-BUILD_YYYY-MM-DD_HH-MM`
+2. Copy project files to WorkDocs version folder:
+   - BUILD_INFO.txt (from project root)
+   - REQUIREMENTS.md (from project root)
+   - CHANGELOG.md (from project root)
+   - README.md (from project root)
+3. If debug build available, create debug/ subfolder and copy APK
+4. Update version folder name to match current version and timestamp
+5. Verify all files are synced to WorkDocs successfully
+
+## 12-git-workflow
+**Automated Git Sync to GitHub**
+
+After completing any work session or significant changes:
+1. **Commit changes locally** with descriptive commit messages following Conventional Commits format
+2. **Automatically push to GitHub** using `git push origin main`
+3. Ensure the remote repository at https://github.com/joey-carlson/QRScanner stays in sync
+
+**Commit Message Format:**
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:** feat, fix, docs, style, refactor, perf, test, chore, ci
+
+**When to Commit & Push:**
+- After completing a feature or bug fix
+- After updating documentation
+- Before marking a task as complete
+- At the end of each work session
+
+**Important:** Always push after committing to keep GitHub synchronized. Do not leave unpushed commits unless there's a specific reason.
+
+## 13-build-system
+Android build requirements:
+- Gradle: Use version-compatible Gradle and AGP versions
+- Dependencies: Keep ML Kit, CameraX, AWS SDK updated
+- Build variants: Debug and release with proper signing
+- APK naming: Include version and build number in filename
+- ProGuard: Minimize release builds while preserving functionality
+- Testing: Unit tests with JUnit, integration tests with Android framework
+- 16KB compatibility: Handle native library alignment for Android 15+
+
+## 14-performance-optimization
+Performance considerations:
+- OCR processing: Image preprocessing with adaptive enhancement
+- Camera operations: Proper frame throttling and analysis intervals
+- File operations: Background threads for large file exports
+- Memory management: Proper lifecycle management for camera resources
+- Battery optimization: Efficient scanning algorithms with minimal CPU usage
+- Storage optimization: JSON compression and file cleanup strategies
+
+## 15-security-considerations
+Security requirements for mobile app:
+- Input validation: All scanned values sanitized and validated
+- File permissions: Use app-private storage, avoid external storage when possible
+- Network operations: HTTPS for all AWS S3 communications
+- Credential management: Secure storage of AWS credentials when configured
+- Data integrity: Validate JSON structure on file operations
+- User privacy: No sensitive data logging or unencrypted transmission
+
+## Document History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-12-03 | joecrls + Cline | Initial Android-specific ClineRules aligned with Bet and SelfUpdatingCode projects |

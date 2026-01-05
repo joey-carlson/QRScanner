@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="Pilot Scanner">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-12-04T22:07:55.341557Z">
+        <DropdownSelection timestamp="2025-12-10T21:39:38.886385Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=ZD222TQWQ3" />
