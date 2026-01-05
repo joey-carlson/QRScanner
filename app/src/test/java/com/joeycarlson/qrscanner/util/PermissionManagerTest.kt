@@ -131,8 +131,8 @@ class PermissionManagerTest {
         
         // Act
         permissionManager.handlePermissionResult(
-            permissions = arrayOf(Manifest.permission.CAMERA),
-            grantResults = intArrayOf(PackageManager.PERMISSION_GRANTED)
+            arrayOf(Manifest.permission.CAMERA),
+            intArrayOf(PackageManager.PERMISSION_GRANTED)
         )
         
         // Assert
@@ -151,8 +151,8 @@ class PermissionManagerTest {
         
         // Act
         permissionManager.handlePermissionResult(
-            permissions = arrayOf(Manifest.permission.CAMERA),
-            grantResults = intArrayOf(PackageManager.PERMISSION_DENIED)
+            arrayOf(Manifest.permission.CAMERA),
+            intArrayOf(PackageManager.PERMISSION_DENIED)
         )
         
         // Assert
