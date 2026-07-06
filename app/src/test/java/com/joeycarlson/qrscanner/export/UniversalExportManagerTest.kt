@@ -47,7 +47,6 @@ class UniversalExportManagerTest {
         exportManager.startExport(AppConfig.EXPORT_TYPE_CHECKOUT, testActivity)
         
         // Assert
-        val expectedIntent = Intent(testActivity, UnifiedExportActivity::class.java)
         val actualIntent = shadowOf(testActivity).nextStartedActivity
         
         assert(actualIntent != null) { "No activity was started" }
