@@ -43,7 +43,21 @@ This document tracks future feature ideas, enhancements, and updates for conside
 
 ### Medium Priority Features
 
-#### 4. Bulk Scanning Mode
+#### 4. Live Scan Mode - Wi-Fi Companion Fallback
+**Type**: Contingency Feature (only if Bluetooth HID is incompatible with target devices)
+**Description**: If the primary Bluetooth HID approach for Live Scan is incompatible with
+the Moto G 5G 2024 or Galaxy A14 5G, this is the fallback. The Android app sends scanned
+values over Wi-Fi to a small helper app on the laptop, which uses OS-native keyboard
+simulation to type the value at the cursor position.
+**Status**: 🟠 **PARKED — only build if BT HID smoke test fails**
+**Architecture**:
+- Android app: sends scanned string to local WebSocket server (Wi-Fi)
+- Mac helper: tiny menu-bar app (Python + pynput, or Swift + CGEvent)
+- Windows helper: tray app (Python + pyautogui, or C# + SendKeys)
+**Trigger**: Build this if Phase 1 BT HID smoke test fails on both target devices
+**Reference**: See LIVE_SCAN_MODE_DESIGN.md for full BT HID approach and risk table
+
+#### 5. Bulk Scanning Mode
 **Type**: New Feature (Minor Version)
 **Description**: Enhanced rapid scanning interface for high-volume operations
 **Status**: 🟡 **READY FOR DEVELOPMENT**

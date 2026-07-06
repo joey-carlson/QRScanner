@@ -251,7 +251,7 @@
                 android:id="@+id/exportLogsButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="16dp"
                 android:text="Export Diagnostic Logs"
                 android:textAllCaps="false"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -259,6 +259,44 @@
                 android:textColor="?attr/colorPrimary"
                 app:icon="@android:drawable/ic_menu_share"
                 app:iconTint="?attr/colorPrimary" />
+
+            <!-- BT HID Smoke Test (DEV — hidden in future production release) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Live Scan / BT HID Smoke Test"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pair this phone as 'Pilot Scanner' in your Mac's Bluetooth settings first, then tap the button below. If BT HID works, text will type at the cursor."
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/hidSmokeTestButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="🔵 Send BT HID Test String"
+                android:textAllCaps="false"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="?attr/colorPrimary"
+                android:textColor="?attr/colorPrimary" />
+
+            <TextView
+                android:id="@+id/hidSmokeTestStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="24dp" />
 
         </LinearLayout>
 

@@ -1,10 +1,13 @@
 package com.joeycarlson.qrscanner
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.joeycarlson.qrscanner.databinding.ActivitySettingsBinding
@@ -12,10 +15,13 @@ import com.joeycarlson.qrscanner.export.S3Configuration
 import com.joeycarlson.qrscanner.export.S3ExportManager
 import com.joeycarlson.qrscanner.export.S3TestResult
 import com.joeycarlson.qrscanner.export.TempFileManager
+import com.joeycarlson.qrscanner.livescan.hid.HidConnectionState
+import com.joeycarlson.qrscanner.livescan.hid.HidKeyboardService
 import com.joeycarlson.qrscanner.ui.DialogUtils
 import com.joeycarlson.qrscanner.util.LogManager
 import com.joeycarlson.qrscanner.util.WindowInsetsHelper
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class SettingsActivity : AppCompatActivity() {
@@ -25,6 +31,9 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var s3Configuration: S3Configuration
     private lateinit var s3ExportManager: S3ExportManager
     private lateinit var logManager: LogManager
+
+    /** HID keyboard service used only for the Phase 1 smoke test. */
+    private var hidKeyboardService: HidKeyboardService? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +80,15 @@ class SettingsActivity : AppCompatActivity() {
         binding.exportLogsButton.setOnClickListener {
             exportLogs()
         }
+
+        // Set up BT HID smoke test button (Phase 1 dev tool)
+        setupHidSmokeTest()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        hidKeyboardService?.destroy()
+        hidKeyboardService = null
     }
     
     override fun onSupportNavigateUp(): Boolean {
@@ -378,5 +396,110 @@ class SettingsActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // BT HID Smoke Test (Phase 1 dev tool — remove or hide before production)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Wires up the BT HID smoke test button in the Diagnostic Tools section.
+     *
+     * Behaviour:
+     * 1. First tap: checks BLUETOOTH_CONNECT permission (Android 12+), then starts
+     *    [HidKeyboardService] which registers the app as a BT keyboard and advertises.
+     * 2. Status label updates with connection state in real-time.
+     * 3. Once connected, subsequent taps type "PilotScanner-test-123\n" at the cursor.
+     *
+     * How to test:
+     * - Build and install the app on the target phone.
+     * - Open Mac → System Settings → Bluetooth and look for "Pilot Scanner".
+     * - Pair it (confirm the passkey if prompted).
+     * - Open TextEdit or a spreadsheet cell on the Mac.
+     * - Tap the button — the test string should appear at the cursor.
+     */
+    @Suppress("DEPRECATION") // Legacy BT permission check for API < 31
+    private fun setupHidSmokeTest() {
+        updateSmokeTestStatus("○ Not started — tap button to begin")
+
+        binding.hidSmokeTestButton.setOnClickListener {
+            val service = hidKeyboardService
+
+            when {
+                // If already connected, type the test string
+                service?.connectionState?.value is HidConnectionState.Connected -> {
+                    val connected = service.connectionState.value as HidConnectionState.Connected
+                    updateSmokeTestStatus("⌨ Typing test string to ${connected.deviceName}...")
+                    service.typeStringAsync("PilotScanner-test-123")
+                    lifecycleScope.launch {
+                        delay(2000)
+                        updateSmokeTestStatus("✅ Sent! Check your Mac for typed text.")
+                    }
+                }
+
+                // If service exists but advertising, give feedback
+                service?.connectionState?.value is HidConnectionState.Advertising -> {
+                    updateSmokeTestStatus("○ Still waiting for Mac to connect — pair in Mac BT settings")
+                }
+
+                // No service yet or idle — check permissions and start
+                else -> {
+                    val btPermOk = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) ==
+                            PackageManager.PERMISSION_GRANTED
+                    } else {
+                        // API 28-30: legacy BLUETOOTH permission is granted via manifest
+                        true
+                    }
+
+                    if (!btPermOk) {
+                        updateSmokeTestStatus("⚠ Bluetooth permission not granted. Grant it in App Settings.")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            requestPermissions(
+                                arrayOf(
+                                    Manifest.permission.BLUETOOTH_CONNECT,
+                                    Manifest.permission.BLUETOOTH_ADVERTISE
+                                ),
+                                REQUEST_BT_PERMISSION
+                            )
+                        }
+                        return@setOnClickListener
+                    }
+
+                    startHidSmokeTest()
+                }
+            }
+        }
+    }
+
+    private fun startHidSmokeTest() {
+        updateSmokeTestStatus("◉ Starting BT HID service...")
+
+        val svc = HidKeyboardService(applicationContext)
+        hidKeyboardService = svc
+
+        // Observe state changes and update the status label
+        lifecycleScope.launch {
+            svc.connectionState.collectLatest { state ->
+                val label = when (state) {
+                    is HidConnectionState.Idle        -> "○ Idle"
+                    is HidConnectionState.Registering -> "◉ Registering as BT keyboard..."
+                    is HidConnectionState.Advertising -> "○ Waiting for Mac… pair 'Pilot Scanner' in Mac BT settings"
+                    is HidConnectionState.Connected   -> "● Connected to ${state.deviceName} — tap again to type test string"
+                    is HidConnectionState.Error       -> "⚠ ${state.message}"
+                }
+                runOnUiThread { updateSmokeTestStatus(label) }
+            }
+        }
+
+        svc.start()
+    }
+
+    private fun updateSmokeTestStatus(text: String) {
+        binding.hidSmokeTestStatus.text = text
+    }
+
+    companion object {
+        private const val REQUEST_BT_PERMISSION = 1001
     }
 }
