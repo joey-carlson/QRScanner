@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.9.1] - 2026-07-06
 
 ### Added
 - **ExportDataProcessor Class**
@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests cover CRUD operations, input sanitization, validation, and file naming
   - Follows AAA pattern (Arrange, Act, Assert) from ClineRules
   - Includes gist test for core functionality verification
+
+- **Bulk Scanning Mode Design Document**
+  - Comprehensive design doc for upcoming Bulk Kit Check Out feature
+  - Covers data models, ViewModel architecture, UI components, and 4-phase implementation plan
+  - Performance targets and success metrics defined
 
 ### Changed
 - **BaseRepository Refactoring**
@@ -51,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created new `config/AppConstants.kt` for centralized configuration
 - Enhanced error reporting reliability with proper synchronization
 - Improved test infrastructure with additional repository tests
+- Android Gradle Plugin bumped to 8.13.2
 - Version bumped to 2.9.1 (Build 39) for refactoring and improvements
 
 ## [2.9.0] - 2025-12-04
