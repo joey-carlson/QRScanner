@@ -1,6 +1,8 @@
 package com.joeycarlson.qrscanner
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.joeycarlson.qrscanner.databinding.ActivityHomeBinding
@@ -23,12 +25,21 @@ class HomeActivity : AppCompatActivity() {
     }
     
     private fun setupUI() {
-        // Set version info
-        binding.versionText.text = getString(
-            R.string.version_format,
-            com.joeycarlson.qrscanner.config.AppConfig.VERSION_NAME,
-            com.joeycarlson.qrscanner.config.AppConfig.VERSION_CODE
-        )
+        // Read version from the real APK manifest — never from hardcoded constants.
+        // This mirrors SettingsActivity so both screens always show the same version.
+        try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            val versionName = packageInfo.versionName
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+            binding.versionText.text = "Version $versionName (Build $versionCode)"
+        } catch (e: PackageManager.NameNotFoundException) {
+            binding.versionText.text = "Version unknown"
+        }
     }
     
     private fun setupClickListeners() {

@@ -8,9 +8,9 @@ object AppConfig {
     
     // Application Info
     const val APP_NAME = "PilotScanner"
-    const val VERSION_NAME = "2.7.0"
-    const val VERSION_CODE = 34
     const val APPLICATION_ID = "com.joeycarlson.qrscanner"
+    // Note: version name/code are read from PackageManager at runtime — never hardcode them here.
+    // See HomeActivity.setupUI() and SettingsActivity.displayVersionInfo() for the correct pattern.
     
     // Build configuration - will be set dynamically when BuildConfig is available
     val DEBUG: Boolean by lazy {
