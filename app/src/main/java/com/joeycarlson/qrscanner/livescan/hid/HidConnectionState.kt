@@ -39,6 +39,20 @@ sealed class HidConnectionState {
      */
     data class Error(val message: String) : HidConnectionState()
 
+    /**
+     * The device's Bluetooth stack does not support the HID Device profile.
+     * This is an OEM build-time limitation — no code fix is possible.
+     * Commonly seen on Motorola and some other budget Android devices.
+     *
+     * @param deviceInfo Optional device info string for diagnostics.
+     */
+    data class UnsupportedDevice(
+        val deviceInfo: String = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
+    ) : HidConnectionState()
+
     /** True only when a host is connected and ready to receive key reports. */
     val isReadyToType: Boolean get() = this is Connected
+
+    /** True if this state indicates the phone will never support BT HID (no retry needed). */
+    val isTerminal: Boolean get() = this is Error || this is UnsupportedDevice
 }

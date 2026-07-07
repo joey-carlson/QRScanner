@@ -47,6 +47,10 @@ class HidKeyboardService(private val context: Context) {
 
         // Delay between key-down and key-up reports (ms). Increase if characters drop.
         private const val DEFAULT_KEY_DELAY_MS = 8L
+
+        // How long to wait for the BT HID Device profile service to bind before declaring
+        // the device incompatible. 3 seconds is generous — compatible devices bind in <200ms.
+        private const val PROFILE_BIND_TIMEOUT_MS = 3000L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -125,6 +129,10 @@ class HidKeyboardService(private val context: Context) {
      * Must be called before [typeString].
      *
      * Transitions: Idle → Registering → Advertising (via [hidCallback.onAppStatusChanged])
+     *
+     * If the device's Bluetooth stack doesn't include the HID Device service (common on Motorola
+     * and other OEM builds), [onServiceConnected] will never fire. We detect this with a 3-second
+     * timeout and transition to [HidConnectionState.UnsupportedDevice] instead of hanging forever.
      */
     @SuppressLint("MissingPermission")
     fun start() {
@@ -142,9 +150,13 @@ class HidKeyboardService(private val context: Context) {
 
         val executor: Executor = Executor { command -> scope.launch { command.run() } }
 
+        // Track whether onServiceConnected fires within the timeout window.
+        var serviceConnected = false
+
         val profileListener = object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                 if (profile != BluetoothProfile.HID_DEVICE) return
+                serviceConnected = true
                 hidDevice = proxy as BluetoothHidDevice
 
                 val sdpSettings = BluetoothHidDeviceAppSdpSettings(
@@ -157,11 +169,8 @@ class HidKeyboardService(private val context: Context) {
 
                 val registered = hidDevice?.registerApp(sdpSettings, null, null, executor, hidCallback)
                 if (registered != true) {
-                    Log.e(TAG, "registerApp returned false — HID profile may be unsupported on this device")
-                    _connectionState.value = HidConnectionState.Error(
-                        "This device does not support Bluetooth keyboard mode. " +
-                        "Try the Wi-Fi connection method instead."
-                    )
+                    Log.e(TAG, "registerApp returned false — HID profile service present but rejected registration")
+                    _connectionState.value = HidConnectionState.UnsupportedDevice()
                 }
             }
 
@@ -177,10 +186,24 @@ class HidKeyboardService(private val context: Context) {
 
         val success = adapter.getProfileProxy(context, profileListener, BluetoothProfile.HID_DEVICE)
         if (!success) {
-            _connectionState.value = HidConnectionState.Error(
-                "Failed to access Bluetooth HID profile. " +
-                "This device may not support BT keyboard mode."
-            )
+            // getProfileProxy returned false immediately — profile definitely not available.
+            Log.e(TAG, "getProfileProxy returned false for HID_DEVICE — profile unavailable on this device")
+            _connectionState.value = HidConnectionState.UnsupportedDevice()
+            return
+        }
+
+        // Start a 3-second watchdog: if onServiceConnected hasn't fired, the OEM Bluetooth stack
+        // has the HID Device service missing (common on Motorola devices — logcat shows
+        // "getProfileProxy(),bluetooth service not start"). Transition to UnsupportedDevice
+        // instead of hanging on "Registering" indefinitely.
+        scope.launch {
+            delay(PROFILE_BIND_TIMEOUT_MS)
+            if (!serviceConnected && _connectionState.value is HidConnectionState.Registering) {
+                Log.w(TAG, "HID Device profile service did not bind within ${PROFILE_BIND_TIMEOUT_MS}ms " +
+                    "— OEM Bluetooth stack likely missing HID Device support " +
+                    "(${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL})")
+                _connectionState.value = HidConnectionState.UnsupportedDevice()
+            }
         }
     }
 

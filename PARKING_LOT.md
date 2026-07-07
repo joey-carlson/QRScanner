@@ -49,7 +49,14 @@ This document tracks future feature ideas, enhancements, and updates for conside
 the Moto G 5G 2024 or Galaxy A14 5G, this is the fallback. The Android app sends scanned
 values over Wi-Fi to a small helper app on the laptop, which uses OS-native keyboard
 simulation to type the value at the cursor position.
-**Status**: 🟠 **PARKED — only build if BT HID smoke test fails**
+**Status**: 🟠 **PARKED — pending Galaxy A14 5G test result**
+**BT HID Compatibility Findings (2026-07-07)**:
+- Moto G 5G 2024: ❌ FAILED — `BluetoothProfile.HID_DEVICE` service not present in OEM BT stack.
+  Fast-fail detection (3-second watchdog) added in `HidKeyboardService` — phone now shows a
+  clear error instead of hanging. See LIVE_SCAN_MODE_DESIGN.md for full diagnosis.
+- Galaxy A14 5G: ⏳ NOT YET TESTED (device currently on loan)
+**Trigger**: Build Wi-Fi fallback if Galaxy A14 5G also fails, OR if no compatible phone is
+available within the deployment fleet when Phase 2 is needed.
 **Architecture**:
 - Android app: sends scanned string to local WebSocket server (Wi-Fi)
 - Mac helper: tiny menu-bar app (Python + pynput, or Swift + CGEvent)

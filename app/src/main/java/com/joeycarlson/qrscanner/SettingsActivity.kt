@@ -483,10 +483,14 @@ class SettingsActivity : AppCompatActivity() {
             svc.connectionState.collectLatest { state ->
                 val label = when (state) {
                     is HidConnectionState.Idle        -> "○ Idle"
-                    is HidConnectionState.Registering -> "◉ Registering as BT keyboard..."
+                    is HidConnectionState.Registering -> "◉ Checking Bluetooth HID support..."
                     is HidConnectionState.Advertising -> "○ Waiting for Mac… pair 'Pilot Scanner' in Mac BT settings"
                     is HidConnectionState.Connected   -> "● Connected to ${state.deviceName} — tap again to type test string"
                     is HidConnectionState.Error       -> "⚠ ${state.message}"
+                    is HidConnectionState.UnsupportedDevice ->
+                        "⛔ ${state.deviceInfo} doesn't support Bluetooth keyboard mode " +
+                        "(OEM limitation — BT HID Device profile not included in this phone's build). " +
+                        "Live Scan requires a phone with BT HID support, such as Pixel devices."
                 }
                 runOnUiThread { updateSmokeTestStatus(label) }
             }

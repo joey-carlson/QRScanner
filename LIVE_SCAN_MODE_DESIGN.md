@@ -259,3 +259,35 @@ LiveScanActivity.onCreate()
 ---
 
 **Gate**: Phase 1 smoke test must pass on at least one target device before Phase 2 begins.
+
+## 🔬 Device Compatibility Findings (Updated 2026-07-07)
+
+### Moto G 5G 2024 — ❌ BT HID Device **NOT SUPPORTED**
+
+**Test result**: Stuck at "Registering as BT keyboard" — fast-fail detection triggers after 3 seconds.
+
+**Root cause** (from logcat):
+```
+BluetoothAdapter: getProfileProxy(), profile = 19
+BluetoothAdapter: getProfileProxy(), bluetooth service not start
+```
+Profile 19 = `BluetoothProfile.HID_DEVICE`. The Motorola OEM Bluetooth stack for this device
+does not include the HID Device service at all — it's disabled at build time. The API class
+`BluetoothHidDevice` is present in the Android framework (so the code compiles), but the
+underlying service cannot be bound.
+
+**Resolution**: `HidKeyboardService` now detects this within 3 seconds (3-second watchdog on
+`onServiceConnected`) and transitions to `HidConnectionState.UnsupportedDevice` with a clear
+error message instead of hanging indefinitely. Phase 2 is **on hold** until a compatible device
+is available for testing.
+
+**Compatible device types** (known to support BT HID Device):
+- Google Pixel series (4+)
+- Samsung Galaxy S series (tested cases: S21+)
+- OnePlus phones (most models)
+- Budget/OEM devices: **unpredictable** — check before building Phase 2 UI
+
+### Galaxy A14 5G — ⏳ **NOT YET TESTED** (device on loan)
+
+Will test when device is returned. Result will determine whether Phase 2 proceeds with BT HID
+or we pivot to the Wi-Fi fallback (see PARKING_LOT.md).
