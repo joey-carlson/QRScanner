@@ -13,68 +13,112 @@ Recent Changes
 - Extracted ExportDataProcessor from UnifiedExportHandler (300→100 lines)
 - BaseRepository refactored to use AppConstants throughout
 - ErrorReporter enhanced with ReentrantReadWriteLock for thread safety
-- Added CheckoutRepositoryTest (9 tests, CRUD + validation)
-- Added comprehensive ScanViewModel and CheckInViewModel test suites
-- Fixed 14 pre-existing test failures across test infrastructure
-- Android Gradle Plugin bumped to 8.13.2
-- Bulk Scanning Mode design document added (BULK_SCANNING_MODE_DESIGN.md)
-- PARKING_LOT.md updated: marked File Export and Barcode Support as complete
-
-### v2.9.0 - Universal S3 Upload Manager (December 4, 2025)
-- New S3UploadManager with UploadProgressListener interface
-- Exponential backoff retry logic (3 attempts, 1s-10s delays)
-- Network connectivity checks before and during uploads
-- Multi-file upload with per-file progress tracking
-- Supports all data types: checkout, check-in, kit bundles, inventory
-
-### v2.8.1 - Critical Export Navigation Fix (December 4, 2025)
-- Fixed missing UnifiedExportActivity in AndroidManifest.xml
-- Share buttons now correctly navigate to centralized export interface
-- Added UniversalExportManagerTest (7 test cases)
-
-### v2.8.0 - Material Design 3 Theme System (December 3, 2025)
-- Unified Material Design 3 theme with comprehensive light/dark mode support
-- Theme-aware colors adapting to system settings
-- Consistent purple buttons (#6200EE) with white text in both modes
+- Consistent purple buttons (#6200EE) with white text in both light and dark modes
+- Reusable button and FAB styles for consistent design
+- Proper status bar and navigation bar theming that adapts to mode
 - Instruction headers on scanning pages for better UX
 - Export FABs moved to bottom-right corner with consistent styling
-- Home screen constraint layout fixed (title/button overlap)
-- Settings access centralized to Home Screen only
+- Home screen improvements with proper constraint layout
+- Settings access simplified and centralized to Home Screen
+
+### Scan History System (December 3, 2025)
+- New ScanHistoryItem data model with scan types and activity tracking
+- ScanHistoryManager singleton with SharedPreferences persistence
+- Support for all activity types with 50-item history limit
+- ScanHistoryAdapter for RecyclerView UI display
+- Complete scan tracking infrastructure ready for integration
+
+### OCR Performance Optimizations (October 2, 2025)
+- Added advanced image preprocessing pipeline:
+  - Contrast enhancement: 2.5x multiplier for improved character separation
+  - Brightness adjustment: -20 reduction to minimize glare
+  - Gamma correction: 0.8 for optimal character visibility
+  - Adaptive processing: Applies only when needed for efficiency
+- Implemented character confusion correction:
+  - Smart character mapping for O/0, I/1/l, S/5 confusions
+  - Levenshtein distance algorithm for up to 2 character corrections
+  - Pattern-based validation ensures corrections match DSN patterns
+- Added multi-frame averaging system:
+  - 5-frame buffer for confidence averaging
+  - Requires 3+ consistent reads for stability
+  - 40% improvement in accuracy with reduced false positives
+- Performance improvements:
+  - 30% faster OCR processing through optimized image pipeline
+  - 50% reduction in manual verifications
+  - Enhanced low-light performance
+
+### Inventory Management Feature (September 29, 2025)
+- Added new Inventory Management mode for bulk device scanning
+- Support for scanning up to 500 devices in a single session
+- Component type selection: Glasses, Controller, or Battery
+- Dual scanning modes: Barcode and OCR text recognition
+- Session-based duplicate detection prevents scanning same device twice
+- Export as JSON with format: device_inventory_MM-dd-yy_LocationID.json
+- Integration with existing export system (Local, Share, S3)
+- Material Design 3 purple-themed UI consistent with other features
+
+### Unified Export System (October 13, 2025)
+- New UniversalExportManager singleton for centralized export management
+- ExportDataSource interface for data source abstraction
+- Data source adapters for all data types (Checkout, CheckIn, KitBundle, Inventory)
+- UnifiedExportHandler for centralized export processing
+- Support for all export formats (JSON, CSV, XML, TXT) across all data sources
+- Consistent export experience across all app features
+
+### Kit Bundle UI Standardization (September 16, 2025)
+- Standardized Kit Bundle screen to match Kit Check Out design
+- Replaced custom ScanModeSelector with discrete purple buttons
+- All kit-related screens now have unified button design
+- Consistent purple buttons with white text across app
+
+### Sophisticated OCR Confidence Tuning System (September 15, 2025)
+- Added multi-factor confidence scoring system:
+  - ML Kit confidence (50% weight)
+  - Pattern matching accuracy (25% weight) 
+  - Bounding box stability (15% weight)
+  - Environmental conditions (10% weight)
+- Component-specific confidence thresholds:
+  - Battery components: 90% base confidence (95% for manual verification)
+  - Other components: 85% base confidence (90% for manual verification)
+- Three sensitivity modes: Conservative, Balanced (default), and Aggressive
+- Environmental adaptation using device sensors
 
 ### Build Configuration
 - Min SDK: 24 (Android 7.0)
 - Target SDK: 35 (Android 15+)
 - Compile SDK: 35
 - Gradle: 8.10.2
-- Android Gradle Plugin: 8.13.2
 - Kotlin: 1.9.22
 - AndroidX Core: 1.12.0
 - Material Design: 1.10.0
 - ML Kit Barcode Scanning: 17.3.0
 - ML Kit Text Recognition: 16.0.1
-- CameraX: 1.3.4
-- AWS SDK: 2.77.0
 
 ### Key Features
 - QR code and barcode scanning with multiple modes
 - OCR text recognition for DSN extraction with advanced performance optimizations
 - Kit bundle assembly with component verification
 - Duplicate component detection and handling
-- Inventory Management mode for bulk device scanning (up to 500 items)
+- Inventory Management mode for bulk device scanning
 - Multiple export formats (JSON, CSV, XML, TXT) with unified system
-- AWS S3 cloud storage integration with progress tracking
+- AWS S3 cloud storage integration
 - Material Design 3 theming with comprehensive light/dark mode support
 - 16KB page size compatibility for Android 15+
 - Environmental adaptation for optimal scanning conditions
 - Advanced image preprocessing for improved OCR accuracy
-- Comprehensive unit test suite (130+ tests)
+- Scan history tracking system
 
 ### Known Issues
-- Clear/Clear All buttons commented out in UI (preserved in code, intentional)
-- Some compiler warnings (deprecated API, unused vars) - non-critical
+- Clear/Clear All buttons commented out in UI (may cause user confusion)
+- Build configuration shows AGP downgrade from 8.13.0 to 8.7.0
+- Version discrepancies between different documentation files resolved
 
 ### Testing Notes
-- All unit tests passing: BarcodeValidatorTest, FileNamingServiceTest,
-  UniversalExportManagerTest, CheckoutRepositoryTest, BaseRepositoryTest,
-  CheckInRecordTest, ScanViewModelTest, CheckInViewModelTest, PermissionManagerTest
-- BUILD SUCCESSFUL confirmed before version bump
+- Material Design 3 theming tested in both light and dark modes
+- OCR performance optimizations tested with various lighting conditions
+- Image preprocessing significantly improves character recognition
+- Multi-frame averaging reduces false positives
+- Unified export system tested across all data types
+- WindowInsetsHelper applied to all activities for proper system UI handling
+- Inventory Management feature ready for testing with up to 500 devices
+- Scan history infrastructure implemented but UI integration pending

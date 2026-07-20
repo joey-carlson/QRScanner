@@ -304,13 +304,50 @@ available within the deployment fleet when Phase 2 is needed.
   - Fixed hardcoded colors in settings screen (gray text hard to read on white)
   - Replaced with theme-aware colors (`?attr/colorOnSurface`, `?attr/colorOnSurfaceVariant`)
 
+## 🧰 Housekeeping Backlog
+
+### Git & File Cleanup
+| Item | Type | Notes |
+|------|------|-------|
+| Commit or unstage `BUILD_INFO.txt` and `.idea/deploymentTargetSelector.xml` | Git hygiene | Currently staged but uncommitted |
+| Delete `clinerules copy 2` (staged deletion) | Git hygiene | Already deleted locally, needs commit |
+| Decide on `clinerules_QRScanner.md` (untracked) | Git hygiene | Duplicate of `.clinerules` — pick one canonical location and remove the other |
+| Remove `.clinerules` if `clinerules_QRScanner.md` is kept (or vice versa) | Git hygiene | Two identical files with project rules |
+| Create project-level `CLAUDE.md` from `clinerules_QRScanner.md` content | Tooling | Migrate Cline-specific rules to Claude Code format for this project |
+
+### Documentation Discrepancies
+| Item | Type | Notes |
+|------|------|-------|
+| Fix minSdk documentation mismatch | Docs | README says "API Level 24+" but `build.gradle` has `minSdk 28` — update README to match |
+| BUILD_INFO.txt mentions AGP downgrade from 8.13.0 to 8.7.0 | Docs | Actual `build.gradle` doesn't show this; recent commits bumped to 8.13.2. Clarify or remove |
+| REQUIREMENTS.md still references "API Level 24" in TR-001 | Docs | Should be updated to match actual minSdk 28 |
+| Update PARKING_LOT "Last Updated" date | Docs | Currently says January 5, 2026 |
+
+### Code Quality
+| Item | Type | Notes |
+|------|------|-------|
+| Clear/Clear All buttons commented out in UI | Tech debt | Per v2.8.0 changelog — decide: restore or fully remove dead code |
+| `ScanModeSelector.kt` still exists but unused | Tech debt | Replaced by discrete buttons in v2.5.2 — confirm unused and remove |
+| 9 failing unit tests (per v2.7.5 notes) | Testing | 91% pass rate noted — fix remaining assertion adjustments |
+| No tests for OCR pipeline or Kit Bundle logic | Testing | Core business logic with zero coverage |
+| No tests for export data sources | Testing | `ExportDataSource` implementations untested |
+| `ScanHistoryManager` implemented but UI integration pending | Feature gap | Infrastructure built in Dec 2025, never wired to UI |
+| Live Scan BT HID — paused pending Galaxy A14 test | Feature gap | Phase 1 committed; blocked on device procurement |
+
+### Build System
+| Item | Type | Notes |
+|------|------|-------|
+| `copyApksToSharedLocation` task commented out | Build | Gradle compatibility issue — investigate if AGP 8.13.2 resolves it |
+| Gradle wrapper version (8.10.2) vs AGP 8.13.2 compatibility | Build | Verify these are aligned; AGP 8.13+ may need Gradle 8.11+ |
+
 ## 📅 Last Updated
-January 5, 2026 - Major features completion and reorganization:
+July 20, 2026 - Housekeeping backlog added, Live Scan paused pending device:
 - ✅ COMPLETED v1.5.0-2.9.0: Complete File Export System with AWS S3 Integration
 - ✅ COMPLETED v1.0+: Full Barcode Support (QR, Code 128, Code 39, UPC, EAN)
 - ✅ COMPLETED v2.6.0: Inventory Management Mode (bulk device scanning up to 500 items)
 - ✅ COMPLETED v2.1.0+: Advanced OCR with image preprocessing and confidence tuning
 - ✅ COMPLETED v2.8.0: Material Design 3 theming system
+- 🟡 PAUSED: Live Scan Mode (BT HID) — waiting on Galaxy A14 5G test
 - 🎯 NEXT PRIORITY: Bulk Scanning Mode for rapid kit checkout operations
 - 🎯 READY FOR DEVELOPMENT: User Authentication system
 - Long-term: Cross-Platform Development (iOS + tablet support)

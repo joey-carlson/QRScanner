@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="Pilot Scanner">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-12-10T21:39:38.886385Z">
+        <DropdownSelection timestamp="2026-07-06T20:54:55.394496Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=ZD222TQWQ3" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/joecrls/.android/avd/Pixel_8a.avd" />
             </handle>
           </Target>
         </DropdownSelection>
