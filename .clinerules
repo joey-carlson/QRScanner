@@ -35,7 +35,7 @@ Ensure correct functionality using soft assert (like googletest "EXPECT" macros)
 Where applicable all testing should incorporate fuzz testing best practices.
 
 ## 01-platform-android
-This is an Android application targeting API 24+ (Android 7.0) with current target of API 35 (Android 15+).
+This is an Android application targeting API 28+ (Android 9.0) with current target of API 35 (Android 15+).
 Use Kotlin as the primary programming language following Kotlin coding conventions.
 Follow Android Architecture Components patterns (MVVM, ViewModels, LiveData, etc.).
 Use Material Design 3 principles for UI/UX consistency.
