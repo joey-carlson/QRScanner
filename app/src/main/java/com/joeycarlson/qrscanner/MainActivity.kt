@@ -410,13 +410,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupClickListeners() {
-        // Clear button removed from UI - functionality commented out
-        /*
-        binding.clearButton.setOnClickListener {
-            viewModel.clearState()
-        }
-        */
-        
         binding.undoButton.setOnClickListener {
             DialogUtils.showWarningDialog(
                 this,
