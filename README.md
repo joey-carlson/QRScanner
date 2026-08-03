@@ -263,7 +263,7 @@ The app stores records in separate JSON files based on the operation type:
 
 ## Requirements
 
-- **Android Device**: API Level 24+ (Android 7.0)
+- **Android Device**: API Level 28+ (Android 9.0)
 - **Camera**: Rear-facing camera with autofocus
 - **Permissions**: 
   - Camera access (required)

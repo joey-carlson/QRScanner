@@ -84,10 +84,11 @@ Recent Changes
 - Environmental adaptation using device sensors
 
 ### Build Configuration
-- Min SDK: 24 (Android 7.0)
+- Min SDK: 28 (Android 9.0)
 - Target SDK: 35 (Android 15+)
 - Compile SDK: 35
-- Gradle: 8.10.2
+- Gradle: 8.14.5
+- AGP: 8.13.2
 - Kotlin: 1.9.22
 - AndroidX Core: 1.12.0
 - Material Design: 1.10.0
@@ -109,9 +110,7 @@ Recent Changes
 - Scan history tracking system
 
 ### Known Issues
-- Clear/Clear All buttons commented out in UI (may cause user confusion)
-- Build configuration shows AGP downgrade from 8.13.0 to 8.7.0
-- Version discrepancies between different documentation files resolved
+- Scan history UI integration pending final design review
 
 ### Testing Notes
 - Material Design 3 theming tested in both light and dark modes

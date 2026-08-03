@@ -248,8 +248,8 @@ Enable users to perform bulk device inventory scanning for creating master lists
 **Initial Version**
 
 ### 3.1 Platform Requirements
-- **TR-001**: Android 7.0 (API Level 24) minimum
-- **TR-002**: Target Android 14 (API Level 34)
+- **TR-001**: Android 9.0 (API Level 28) minimum
+- **TR-002**: Target Android 15 (API Level 35)
 - **TR-003**: Kotlin programming language
 - **TR-004**: Material Design 3 UI components
 
