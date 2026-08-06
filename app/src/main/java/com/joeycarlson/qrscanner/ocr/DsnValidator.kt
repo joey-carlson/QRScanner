@@ -157,7 +157,7 @@ class DsnValidator {
             
             // For serial numbers that should be all numeric after a prefix
             // If we have a known prefix followed by what should be numbers
-            if (corrected.matches(Regex("^G0G[A-Z0-9]{3}[O0Q-9ILSZGB]+$"))) {
+            if (corrected.matches(Regex("^G0G[A-Z0-9]{3}[O0Q0-9ILSZGB]+$"))) {
                 // Replace confusing characters with numbers in the numeric portion
                 val prefix = corrected.substring(0, 6)
                 var numericPart = corrected.substring(6)

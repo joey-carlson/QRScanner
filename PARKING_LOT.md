@@ -25,6 +25,19 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 **What's Left**: Add sync queue for cloud uploads when connectivity returns
 **Implementation**: Background sync service, queue management, automatic retry with exponential backoff
 
+#### Unit Test Coverage KPIs
+**Type**: Quality Initiative (tooling + ongoing)
+**Status**: READY FOR DEVELOPMENT — no coverage tooling wired yet
+**Description**: Define and enforce measurable unit-test coverage targets, then drive coverage up to meet them.
+**Plan**:
+1. **Define** — Wire up JaCoCo (Gradle) to produce per-module coverage reports. Agree on KPI targets, e.g.:
+   - Overall line coverage floor (suggest starting at current baseline, ratchet upward)
+   - Higher bar for core business logic packages (`ocr`, `kitbundle`, `export`, `data`) — suggest 80%+
+   - Optional CI gate: fail the build if coverage drops below the floor
+2. **Measure** — Capture the current baseline once JaCoCo is in place; record it here as the starting KPI.
+3. **Execute** — Close the highest-risk gaps first (see Code Quality backlog): `OcrConfidenceManager`, `ImagePreprocessor`, Kit Bundle logic, `ExportDataSource` implementations.
+**Notes**: `DsnValidator` coverage (v2.9.2) is the first increment — it surfaced a latent regex crash, validating the ROI of this initiative.
+
 ### Medium Priority
 
 #### Live Scan Mode — Wi-Fi Companion Fallback
@@ -77,8 +90,8 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 ### Code Quality
 | Item | Type | Notes |
 |------|------|-------|
-| 9 failing unit tests (per v2.7.5 notes) | Testing | 91% pass rate — fix remaining assertion adjustments |
-| No tests for OCR pipeline or Kit Bundle logic | Testing | Core business logic with zero coverage |
+| ~~9 failing unit tests (per v2.7.5 notes)~~ | Testing | RESOLVED — full suite green (338 tests, 0 failures) as of Aug 2026 |
+| No tests for OCR pipeline or Kit Bundle logic | Testing | Core business logic — partial: `DsnValidator` now covered (v2.9.2, 43 tests + regex crash fix). Remaining: `OcrConfidenceManager`, `ImagePreprocessor`, Kit Bundle logic |
 | No tests for export data sources | Testing | `ExportDataSource` implementations untested |
 | Verify AWS Cognito dependency usage | Deps | S3 uses Access Key auth — Cognito SDK may be unused dead weight (~3MB) |
 

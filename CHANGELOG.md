@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.2] - 2026-08-06
+
+### Fixed
+- **DSN correction crash on real-world serial numbers** (`DsnValidator.correctOcrMistakes`)
+  - A malformed regex character class (`[O0Q-9ILSZGB]`) contained the reversed range `Q-9`, which threw `PatternSyntaxException` at pattern-compile time
+  - Any DSN starting with the `G0G` prefix — the app's actual controller/battery/glasses serial format — crashed OCR mistake correction, cascading through `normalizeDsn`, `validateManualEntry`, and `findDsns`
+  - Corrected to `[O0Q0-9ILSZGB]` (a restored `0-9` digit range alongside OCR-confusable letters)
+
+### Added
+- **DsnValidator unit tests** (`DsnValidatorTest`)
+  - 43 tests covering pattern validation, component-type inference with confidence scoring, OCR mistake correction, normalization, similarity matching, manual-entry validation, and `findDsns` filtering/sorting
+  - Regression coverage for the `G0G`-prefix correction crash above
+  - Closes the "no tests for OCR pipeline" gap for `DsnValidator` (per PARKING_LOT housekeeping backlog)
+
 ## [2.9.1] - 2026-07-06
 
 ### Added
