@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.3] - 2026-08-10
+
+### Fixed
+- **OCR confidence could exceed 1.0 for unknown component types** (`OcrConfidenceManager.applyComponentSpecificAdjustments`)
+  - The `componentType == null` (and unknown-component) early returns passed the raw weighted score back without the `coerceIn(0f, 1f)` clamp every other path applies
+  - With non-normalized scoring weights (sum > 1.0), this leaked out-of-range confidence values downstream; now clamped on all paths
+- **JaCoCo coverage report ignored Robolectric-driven tests**
+  - Robolectric loads app classes via its sandbox classloader, which JaCoCo skips as "no location" by default — so all Robolectric tests (ViewModels, export manager, OCR confidence) contributed **zero** coverage
+  - Enabled `includeNoLocationClasses` (with a `jdk.internal.*` exclude to avoid JVM instrumentation crashes); recorded baseline corrected from 13.9% to **20.3%** overall line coverage
+
+### Added
+- **OcrConfidenceManager unit tests** (`OcrConfidenceManagerTest`)
+  - 17 tests covering multi-factor scoring, per-strictness pattern matching, fallback confidence, stability defaults, sensitivity modes, history tracking, and clamping (regression guard for the fix above)
+  - Raises `OcrConfidenceManager` line coverage from 0% to ~71%
+
+### Known Issues
+- **MEDIUM-strictness pattern bonus is unreachable for real DSNs** (`OcrConfidenceManager.calculatePatternMatchScore`)
+  - The bonus paths gate on `text.length in 10..12` and a leading-digits prefix (`^[0-9]{5,}`), but real-world DSNs are 15 chars and start with letters (`G0G…`), so a perfect controller DSN always falls through to 0.75 instead of 0.85/0.95
+  - Not yet fixed: correcting it shifts confidence scoring for every real scan (and thus manual-verification rates), a behavioral change deferred for deliberate tuning. Current behavior is pinned by test.
+
 ## [2.9.2] - 2026-08-06
 
 ### Fixed

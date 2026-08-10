@@ -13,8 +13,8 @@ android {
         applicationId "com.joeycarlson.qrscanner"
         minSdk 28
         targetSdk 35
-        versionCode 40
-        versionName "2.9.2"
+        versionCode 41
+        versionName "2.9.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
@@ -46,6 +46,14 @@ android {
     testOptions {
         unitTests.all {
             jvmArgs '--enable-native-access=ALL-UNNAMED'
+            // Robolectric loads app classes via its sandbox classloader, which
+            // JaCoCo tags as "no location" and skips by default — zeroing out
+            // coverage for Robolectric-driven tests. Include them so the report
+            // reflects those tests too.
+            jacoco {
+                includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']
+            }
         }
     }
     packagingOptions {

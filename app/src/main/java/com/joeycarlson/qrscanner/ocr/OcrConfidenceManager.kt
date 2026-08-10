@@ -226,9 +226,9 @@ class OcrConfidenceManager(
         baseScore: Float,
         componentType: DsnValidator.ComponentType?
     ): Float {
-        if (componentType == null) return baseScore
-        
-        val componentConfig = config.componentThresholds[componentType] ?: return baseScore
+        if (componentType == null) return baseScore.coerceIn(0f, 1f)
+
+        val componentConfig = config.componentThresholds[componentType] ?: return baseScore.coerceIn(0f, 1f)
         
         // Apply sensitivity mode adjustments
         val sensitivityMultiplier = when (config.sensitivityMode) {
