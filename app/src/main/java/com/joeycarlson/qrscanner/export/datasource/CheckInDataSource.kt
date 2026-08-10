@@ -13,10 +13,10 @@ import java.time.LocalDate
  * Bridges the CheckInRepository with the unified export system.
  */
 class CheckInDataSource(
-    private val context: Context
+    private val context: Context,
+    private val repository: CheckInRepository = CheckInRepository(context)
 ) : ExportDataSource {
-    
-    private val repository = CheckInRepository(context)
+
     private val gson = Gson()
     
     override fun getExportType(): String = AppConfig.EXPORT_TYPE_CHECKIN

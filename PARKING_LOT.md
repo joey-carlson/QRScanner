@@ -32,7 +32,7 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 **Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. Enforcement is **report-only** (no CI gate yet — add once comfortably above the floor).
 
-**Latest (v2.9.4, debug unit tests)**: **22.5% line · 18.2% branch** overall.
+**Latest (v2.9.5, debug unit tests)**: **25.9% line · 20.5% branch** overall.
 > ⚠️ The initial v2.9.2 baseline (13.9%) was **understated** — JaCoCo was silently dropping all Robolectric-driven tests (`includeNoLocationClasses` was off). Fixed in v2.9.3; numbers below are the corrected picture.
 
 Per-package line:
@@ -40,12 +40,12 @@ Per-package line:
 |---|---|---|
 | `inventory` | 0% | 0/78 |
 | `config` | 0% | 0/6 |
-| `export/datasource` | 11.8% | 29/246 |
 | `export` | 13.0% | 117/897 |
 | `data` | 13.7% | 44/322 |
 | `kitbundle` | 17.9% | 88/492 |
 | `util` | 19.3% | 123/638 |
 | `ocr` | 25.4% | 228/897 |
+| `export/datasource` | 52.2% | 131/251 |
 | `livescan/hid` | 51.5% | 104/202 |
 | `ui` | 66.1% | 181/274 |
 
@@ -56,9 +56,10 @@ Per-package line:
 - **Long-term (3–6 months)**: core business-logic packages (`ocr`, `kitbundle`, `export`, `data`) **85% line / 75% branch**; overall **75% line**; add CI gate at the floor.
 - **New code**: 80% on changed files (stops the gap from growing).
 
-**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → `ExportDataSource` implementations → `ImagePreprocessor`.
+**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → ~~`ExportDataSource` implementations~~ ✅ (v2.9.5) → `ImagePreprocessor` → `LogsDataSource` (5th data source, still 0%).
 **Notes**:
-- `DsnValidator` coverage (v2.9.2) surfaced a latent regex crash; `OcrConfidenceManager` (v2.9.3) surfaced an out-of-range confidence bug plus a pinned dead-branch known issue (see CHANGELOG). Kit Bundle logic (v2.9.4) was clean — no defects. Bugs cluster in the parsing/scoring code, not the model logic.
+- `DsnValidator` coverage (v2.9.2) surfaced a latent regex crash; `OcrConfidenceManager` (v2.9.3) surfaced an out-of-range confidence bug plus a pinned dead-branch known issue (see CHANGELOG). Kit Bundle logic (v2.9.4) and the export data sources (v2.9.5) were clean — no defects. Bugs cluster in the parsing/scoring code, not the model/mapping logic.
+- v2.9.5 added an injectable-repository seam to the four data sources (backward-compatible default) to make them unit-testable. `LogsDataSource` was not touched and remains uncovered.
 - **Follow-up (tuning, not coverage)**: decide whether to fix the MEDIUM-strictness length/prefix gate in `calculatePatternMatchScore` (see v2.9.3 Known Issues). Behavioral change — affects manual-verification rates.
 
 ### Medium Priority

@@ -13,10 +13,10 @@ import java.time.LocalDate
  * Bridges the KitRepository with the unified export system.
  */
 class KitBundleDataSource(
-    private val context: Context
+    private val context: Context,
+    private val repository: KitRepository = KitRepository(context)
 ) : ExportDataSource {
-    
-    private val repository = KitRepository(context)
+
     private val gson = Gson()
     
     override fun getExportType(): String = AppConfig.EXPORT_TYPE_KIT_BUNDLE

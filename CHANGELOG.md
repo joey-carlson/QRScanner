@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.5] - 2026-08-10
+
+### Changed
+- **Export data sources now accept an injectable repository** (`CheckoutDataSource`, `CheckInDataSource`, `KitBundleDataSource`, `InventoryDataSource`)
+  - Added a second constructor parameter that defaults to the previously-hardcoded repository, so all existing `DataSource(context)` call sites are unchanged
+  - Enables unit testing the adapter logic without file I/O; aligns with the project's manual-DI convention
+
+### Added
+- **Export data source unit tests** (`ExportDataSourceTest`)
+  - 13 tests covering export-type/format metadata, inclusive date-range iteration and record counting, has-data checks, kit-labels CSV generation (K-prefix stripping, per-type component naming, sequential battery numbering, unused-slot exclusion), and inventory summary grouping
+  - Raises the `export/datasource` package from 11.8% to ~52% line coverage; overall 22.5% → 25.9%
+  - No defects found — the record→export mapping logic is correct
+
 ## [2.9.4] - 2026-08-10
 
 ### Added

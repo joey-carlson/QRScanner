@@ -15,10 +15,11 @@ import java.time.format.DateTimeFormatter
  * Bridges the InventoryRepository with the unified export system.
  */
 class InventoryDataSource(
-    private val context: Context
+    private val context: Context,
+    private val repository: InventoryRepository =
+        InventoryRepository(context, com.joeycarlson.qrscanner.util.FileManager(context))
 ) : ExportDataSource {
-    
-    private val repository = InventoryRepository(context, com.joeycarlson.qrscanner.util.FileManager(context))
+
     private val gson = Gson()
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     

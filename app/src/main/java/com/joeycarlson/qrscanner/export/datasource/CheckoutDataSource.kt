@@ -13,10 +13,10 @@ import java.time.LocalDate
  * Bridges the CheckoutRepository with the unified export system.
  */
 class CheckoutDataSource(
-    private val context: Context
+    private val context: Context,
+    private val repository: CheckoutRepository = CheckoutRepository(context)
 ) : ExportDataSource {
-    
-    private val repository = CheckoutRepository(context)
+
     private val gson = Gson()
     
     override fun getExportType(): String = AppConfig.EXPORT_TYPE_CHECKOUT
