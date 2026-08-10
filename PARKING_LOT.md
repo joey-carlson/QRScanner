@@ -27,16 +27,31 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 #### Unit Test Coverage KPIs
 **Type**: Quality Initiative (tooling + ongoing)
-**Status**: READY FOR DEVELOPMENT — no coverage tooling wired yet
-**Description**: Define and enforce measurable unit-test coverage targets, then drive coverage up to meet them.
-**Plan**:
-1. **Define** — Wire up JaCoCo (Gradle) to produce per-module coverage reports. Agree on KPI targets, e.g.:
-   - Overall line coverage floor (suggest starting at current baseline, ratchet upward)
-   - Higher bar for core business logic packages (`ocr`, `kitbundle`, `export`, `data`) — suggest 80%+
-   - Optional CI gate: fail the build if coverage drops below the floor
-2. **Measure** — Capture the current baseline once JaCoCo is in place; record it here as the starting KPI.
-3. **Execute** — Close the highest-risk gaps first (see Code Quality backlog): `OcrConfidenceManager`, `ImagePreprocessor`, Kit Bundle logic, `ExportDataSource` implementations.
-**Notes**: `DsnValidator` coverage (v2.9.2) is the first increment — it surfaced a latent regex crash, validating the ROI of this initiative.
+**Status**: IN PROGRESS — JaCoCo wired (v2.9.2), baseline captured, executing against high-risk packages
+**Description**: Drive unit-test coverage up to measurable, risk-tiered targets. Coverage is a proxy — the rule is *test behavior, not lines*; framework-bound code (Activities, ViewBinding, factories) is excluded from the report so the % stays honest.
+
+**Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. Enforcement is **report-only** (no CI gate yet — add once comfortably above the floor).
+
+**Baseline (v2.9.2, debug unit tests)**: **13.9% line · 10.0% branch** overall. Per-package line:
+| Package | Line % | Lines |
+|---|---|---|
+| `export/datasource` | 0% | 0/246 |
+| `kitbundle` | 0% | 0/492 |
+| `inventory` | 0% | 0/78 |
+| `data` | 3.1% | 10/322 |
+| `export` | 10.3% | 92/897 |
+| `util` | 10.5% | 67/638 |
+| `ocr` | 12.4% | 111/897 |
+| `livescan/hid` | 51.5% | 104/202 |
+| `ui` | 66.1% | 181/274 |
+
+**KPI targets**:
+- **Short-term (next 1–2 versions)**: overall floor **14% (no regression)**; get the zero-coverage core packages off zero — `kitbundle` and `export/datasource` to ~50% (pure logic, high ROI). Roughly doubles overall coverage.
+- **Long-term (3–6 months)**: core business-logic packages (`ocr`, `kitbundle`, `export`, `data`) **85% line / 75% branch**; overall **75% line**; add CI gate at the floor.
+- **New code**: 80% on changed files (stops the gap from growing).
+
+**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → `OcrConfidenceManager` → Kit Bundle logic → `ExportDataSource` implementations → `ImagePreprocessor`.
+**Notes**: `DsnValidator` coverage (v2.9.2) was the first increment — it surfaced a latent regex crash, validating the ROI of this initiative.
 
 ### Medium Priority
 

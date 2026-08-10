@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-parcelize'
+    id 'jacoco'
 }
 
 android {
@@ -83,6 +84,42 @@ android {
             outputFileName = "PilotScanner-${buildType}-v${versionName}-${versionCode}.apk"
         }
     }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+// Unit-test coverage report (report-only; no CI gate yet).
+// Run: ./gradlew jacocoTestReport  ->  HTML at app/build/reports/jacoco/jacocoTestReport/html/index.html
+//
+// Excludes framework-bound code that is not meaningfully unit-testable
+// (Activities, generated ViewBinding, Android/Kotlin generated classes) so the
+// percentage reflects testable business logic rather than being diluted or gamed.
+task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
+    group = "Reporting"
+    description = "Generates JaCoCo coverage report for the debug unit tests."
+
+    reports {
+        html.required = true
+        xml.required = true   // machine-readable, for tracking the baseline number over time
+        csv.required = false
+    }
+
+    def coverageExclusions = [
+        '**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*',
+        '**/*Test*.*', 'android/**/*.*',
+        '**/*_ViewBinding*.*', '**/databinding/**', '**/*Binding.*',
+        '**/*Activity.*',                 // UI entry points — belong in instrumented tests
+        '**/*Factory.*',                  // trivial ViewModel factory boilerplate
+        '**/*$*.*'                        // synthetic/lambda/companion generated classes
+    ]
+
+    def kotlinClasses = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: coverageExclusions)
+    classDirectories.setFrom(files([kotlinClasses]))
+
+    sourceDirectories.setFrom(files(['src/main/java']))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec']))
 }
 
 // Task to copy APK folders and documentation to WorkDocs shared location
