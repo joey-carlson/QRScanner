@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.6] - 2026-08-10
+
+### Added
+- **ImagePreprocessor unit tests** (`ImagePreprocessorTest`)
+  - 11 Robolectric tests covering the two public methods with JVM-real logic: `analyzeImageQuality` (per-pixel luminance/contrast math and the too-dark/too-light/low-contrast flags, including the green-weighted luminance formula) and `getAdaptiveParameters` (all branches mapping quality metrics onto contrast/brightness/gamma/sharpening parameters)
+  - Raises `ImagePreprocessor` from 0% to 23.4% line coverage; overall 25.9% → 27.1%
+  - No defects found — the unit-testable surface is straightforward math/branch logic
+
+### Notes
+- The bitmap-transforming methods (`adjustContrastAndBrightness`, `sharpenImage`) route through `Canvas`/`ColorMatrixColorFilter`, which Robolectric does not actually render, so their output pixels cannot be asserted in a unit test. The YUV→Bitmap conversion (`imageProxyToBitmap`/`imageToBitmap`) and the private pixel-level passes (`applyGammaCorrection`, `reduceNoise`) are only reachable through `preprocessImage`, which requires a real camera frame — these account for the remaining uncovered lines and are the ceiling for pure unit testing here.
+
 ## [2.9.5] - 2026-08-10
 
 ### Changed
