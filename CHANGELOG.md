@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.7] - 2026-08-10
+
+### Changed
+- **`LogsDataSource` now accepts an injectable `LogManager`**
+  - Added a second constructor parameter that defaults to `LogManager.getInstance(context)`, so the existing `LogsDataSource(context)` call sites are unchanged
+  - Enables unit testing the adapter without the real log store; aligns with the export data-source injectable-repo seam added in v2.9.5
+
+### Added
+- **`LogsDataSource` unit tests** (`LogsDataSourceTest`)
+  - 11 tests covering export-type/display-name/format metadata, the fixed filename prefix, the collapse of any date range onto a single "today" entry, verbatim log passthrough, and the has-data / record-count thresholds
+  - Raises `LogsDataSource` from 0% to 94.4% line coverage (5th and final export data source off zero); overall 27.1% → 27.5%
+  - No defects found — the adapter cleanly delegates to `LogManager`
+
 ## [2.9.6] - 2026-08-10
 
 ### Added

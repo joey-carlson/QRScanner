@@ -250,10 +250,11 @@ data class ExportMethodInfo(
 /**
  * Special data source for exporting diagnostic logs
  */
-class LogsDataSource(private val context: Context) : ExportDataSource {
-    
-    private val logManager = LogManager.getInstance(context)
-    
+class LogsDataSource(
+    private val context: Context,
+    private val logManager: LogManager = LogManager.getInstance(context)
+) : ExportDataSource {
+
     override fun getExportType(): String = AppConfig.EXPORT_TYPE_LOGS
     
     override fun getDisplayName(): String = "Diagnostic Logs"

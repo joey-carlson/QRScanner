@@ -32,7 +32,7 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 **Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. Enforcement is **report-only** (no CI gate yet — add once comfortably above the floor).
 
-**Latest (v2.9.6, debug unit tests)**: **27.1% line** overall.
+**Latest (v2.9.7, debug unit tests)**: **27.5% line** overall.
 > ⚠️ The initial v2.9.2 baseline (13.9%) was **understated** — JaCoCo was silently dropping all Robolectric-driven tests (`includeNoLocationClasses` was off). Fixed in v2.9.3; numbers below are the corrected picture.
 
 Per-package line:
@@ -40,7 +40,7 @@ Per-package line:
 |---|---|---|
 | `inventory` | 0% | 0/78 |
 | `config` | 0% | 0/6 |
-| `export` | 13.0% | 117/897 |
+| `export` | 14.9% | 134/899 |
 | `data` | 13.7% | 44/322 |
 | `kitbundle` | 17.9% | 88/492 |
 | `util` | 19.3% | 123/638 |
@@ -56,11 +56,11 @@ Per-package line:
 - **Long-term (3–6 months)**: core business-logic packages (`ocr`, `kitbundle`, `export`, `data`) **85% line / 75% branch**; overall **75% line**; add CI gate at the floor.
 - **New code**: 80% on changed files (stops the gap from growing).
 
-**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → ~~`ExportDataSource` implementations~~ ✅ (v2.9.5) → ~~`ImagePreprocessor`~~ ✅ (v2.9.6) → `LogsDataSource` (5th data source, still 0%).
+**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → ~~`ExportDataSource` implementations~~ ✅ (v2.9.5) → ~~`ImagePreprocessor`~~ ✅ (v2.9.6) → ~~`LogsDataSource`~~ ✅ (v2.9.7). **All planned high-risk targets now covered** — pick the next tranche from the per-package table below (lowest-coverage core-logic packages first).
 **Notes**:
-- `DsnValidator` coverage (v2.9.2) surfaced a latent regex crash; `OcrConfidenceManager` (v2.9.3) surfaced an out-of-range confidence bug plus a pinned dead-branch known issue (see CHANGELOG). Kit Bundle logic (v2.9.4), the export data sources (v2.9.5), and `ImagePreprocessor` (v2.9.6) were clean — no defects. Bugs cluster in the parsing/scoring code, not the model/mapping/math logic.
+- `DsnValidator` coverage (v2.9.2) surfaced a latent regex crash; `OcrConfidenceManager` (v2.9.3) surfaced an out-of-range confidence bug plus a pinned dead-branch known issue (see CHANGELOG). Kit Bundle logic (v2.9.4), the export data sources (v2.9.5), `ImagePreprocessor` (v2.9.6), and `LogsDataSource` (v2.9.7) were clean — no defects. Bugs cluster in the parsing/scoring code, not the model/mapping/math logic.
 - `ImagePreprocessor` (v2.9.6) only reached 23.4% line coverage: its bitmap-transforming methods use `Canvas`/`ColorMatrixColorFilter` (no-op under Robolectric) and its YUV→Bitmap + private pixel passes need a real camera frame. Only the two pure-ish public methods (`analyzeImageQuality`, `getAdaptiveParameters`) are unit-testable — that is the ceiling here, not a coverage gap to close.
-- v2.9.5 added an injectable-repository seam to the four data sources (backward-compatible default) to make them unit-testable. `LogsDataSource` was not touched and remains uncovered.
+- v2.9.5 added an injectable-repository seam to the four data sources (backward-compatible default) to make them unit-testable. v2.9.7 extended the same seam to `LogsDataSource` (injectable `LogManager`), bringing it to 94.4% — all five export data sources are now covered.
 - **Follow-up (tuning, not coverage)**: decide whether to fix the MEDIUM-strictness length/prefix gate in `calculatePatternMatchScore` (see v2.9.3 Known Issues). Behavioral change — affects manual-verification rates.
 
 ### Medium Priority
