@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.8] - 2026-08-14
+
+### Fixed
+- **MEDIUM-strictness pattern scoring no longer dead-branches on real DSNs** (`OcrConfidenceManager.calculatePatternMatchScore`)
+  - The MEDIUM bonus paths gated on `text.length in 10..12` plus a leading-digit prefix (`^[0-9]{5,}`) — a DSN shape that does not exist. Real DSNs are 15 chars starting with letters (`G0G…`), so every valid real DSN fell through to 0.75 and could never reach 0.85/0.95. This was pinned and documented as a Known Issue in v2.9.3.
+  - Reworked to reuse the same `DsnValidator.inferComponentType` seam the STRICT path uses, tying the three existing score rungs to meaningful conditions: **0.95** when the DSN's structure infers the expected component, **0.85** when it infers some other known component, **0.75** for a value valid only against the generic fallback patterns.
+  - **Behavioral impact**: CONTROLLER and GLASSES components (the only MEDIUM-strictness slots) now score a perfect-match DSN at 0.95 instead of 0.75. This raises overall confidence for correct scans (e.g. a perfect controller scan: 0.9075 → 0.9575) and reduces spurious manual-verification prompts. No change for BATTERY (STRICT) or PADS/UNUSED (LOOSE) slots.
+  - Updated the three pinning tests to assert the corrected behavior across all three rungs.
+
 ## [2.9.7] - 2026-08-10
 
 ### Changed
@@ -69,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MEDIUM-strictness pattern bonus is unreachable for real DSNs** (`OcrConfidenceManager.calculatePatternMatchScore`)
   - The bonus paths gate on `text.length in 10..12` and a leading-digits prefix (`^[0-9]{5,}`), but real-world DSNs are 15 chars and start with letters (`G0G…`), so a perfect controller DSN always falls through to 0.75 instead of 0.85/0.95
   - Not yet fixed: correcting it shifts confidence scoring for every real scan (and thus manual-verification rates), a behavioral change deferred for deliberate tuning. Current behavior is pinned by test.
+  - **Resolved in v2.9.8.**
 
 ## [2.9.2] - 2026-08-06
 

@@ -139,15 +139,21 @@ class OcrConfidenceManager(
                 if (matchesPattern) 0.9f else 0.3f
             }
             OcrConfidenceConfig.PatternStrictness.MEDIUM -> {
-                // Check additional constraints
-                val hasCorrectLength = text.length in 10..12
-                val hasExpectedPrefix = text.matches(Regex("^[0-9]{5,}.*"))
-                
+                // A valid DSN earns extra confidence when its structure also
+                // identifies a component type: full marks when the inferred type
+                // matches the expected component (a real-world G0G… pattern),
+                // partial credit when some known component is inferred, and the
+                // base rung for a value that only satisfies the generic patterns.
+                //
+                // This previously gated on `length in 10..12` + a leading-digit
+                // prefix — a DSN shape that does not exist (real DSNs are 15
+                // chars starting with letters), so every real DSN fell through
+                // to 0.75. See CHANGELOG v2.9.3 Known Issue.
+                val inferredType = dsnValidator.inferComponentType(text)
                 when {
-                    matchesPattern && hasCorrectLength && hasExpectedPrefix -> 0.95f
-                    matchesPattern && hasCorrectLength -> 0.85f
-                    matchesPattern -> 0.75f
-                    else -> 0.3f
+                    inferredType != null && inferredType == componentType -> 0.95f
+                    inferredType != null -> 0.85f
+                    else -> 0.75f
                 }
             }
             OcrConfidenceConfig.PatternStrictness.STRICT -> {

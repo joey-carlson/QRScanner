@@ -83,28 +83,41 @@ class OcrConfidenceManagerTest {
     }
 
     /**
-     * DOCUMENTS A LIKELY DEFECT (not a crash): for MEDIUM strictness the bonus
-     * paths require `text.length in 10..12` and a leading-digits prefix
-     * (`^[0-9]{5,}`). Real-world DSNs are 15 chars and start with letters
-     * (G0G...), so a *perfect* controller DSN can never reach 0.95/0.85 and
-     * always falls through to 0.75. Pinning current behavior; see notes to user.
+     * MEDIUM strictness now awards full marks when the DSN's structure infers
+     * the expected component (fixed in v2.9.8). A real controller DSN infers
+     * CONTROLLER, matching the requested slot -> 0.95. Previously this fell
+     * through to 0.75 because the bonus gated on a non-existent DSN shape
+     * (`length in 10..12` + leading digits); see CHANGELOG v2.9.3 Known Issue.
      */
     @Test
-    fun `pattern score for real controller dsn falls through to 0_75 (length gate never met)`() {
+    fun `MEDIUM pattern score is 0_95 when inferred component matches the expected slot`() {
         val result = confidenceFor(0.9f, controllerDsn, ComponentType.CONTROLLER)
 
-        assertEquals(0.75f, result.factors.patternMatchScore, delta)
+        assertEquals(0.95f, result.factors.patternMatchScore, delta)
     }
 
     /**
-     * Proves the MEDIUM bonus branch CAN fire — just not for real DSNs.
-     * "12345ABCDE" is 10 chars, valid generic pattern, 5 leading digits.
+     * A valid DSN that infers *some* known component but not the requested slot
+     * earns partial credit (0.85). The controller DSN infers CONTROLLER, which
+     * mismatches the GLASSES slot.
      */
     @Test
-    fun `pattern score reaches 0_95 for synthetic value meeting length and prefix gates`() {
+    fun `MEDIUM pattern score is 0_85 when inferred component mismatches the expected slot`() {
+        val result = confidenceFor(0.9f, controllerDsn, ComponentType.GLASSES)
+
+        assertEquals(0.85f, result.factors.patternMatchScore, delta)
+    }
+
+    /**
+     * A value valid only against the generic fallback patterns (infers no
+     * component) gets the MEDIUM base rung of 0.75. "12345ABCDE" matches the
+     * generic `^[A-Z0-9]{8,}$` pattern but no component-specific pattern.
+     */
+    @Test
+    fun `MEDIUM pattern score is 0_75 for a generic valid dsn with no inferred component`() {
         val result = confidenceFor(0.9f, "12345ABCDE", ComponentType.CONTROLLER)
 
-        assertEquals(0.95f, result.factors.patternMatchScore, delta)
+        assertEquals(0.75f, result.factors.patternMatchScore, delta)
     }
 
     // ========== Fallback confidence (mlKitConfidence == null) ==========
@@ -151,11 +164,11 @@ class OcrConfidenceManagerTest {
 
     @Test
     fun `weighted confidence combines factors with default weights`() {
-        // base 1.0*0.5 + pattern 0.75*0.25 + stability 0.8*0.15 + env 1.0*0.1 = 0.9075
+        // base 1.0*0.5 + pattern 0.95*0.25 + stability 0.8*0.15 + env 1.0*0.1 = 0.9575
         val result = confidenceFor(1.0f, controllerDsn, ComponentType.CONTROLLER)
 
-        assertEquals(0.9075f, result.confidence, delta)
-        // 0.9075 >= CONTROLLER manual-verification threshold (0.9) -> no manual check.
+        assertEquals(0.9575f, result.confidence, delta)
+        // 0.9575 >= CONTROLLER manual-verification threshold (0.9) -> no manual check.
         assertFalse(result.requiresManualVerification)
     }
 
@@ -233,9 +246,9 @@ class OcrConfidenceManagerTest {
         manager.updateEnvironmentalFactor(5.0f)
 
         // Env factor feeds environmentalScore (weight 0.1). A clamped 1.0 keeps
-        // the perfect-input confidence at the expected 0.9075.
+        // the perfect-input confidence at the expected 0.9575.
         val result = confidenceFor(1.0f, controllerDsn, ComponentType.CONTROLLER)
 
-        assertEquals(0.9075f, result.confidence, delta)
+        assertEquals(0.9575f, result.confidence, delta)
     }
 }
