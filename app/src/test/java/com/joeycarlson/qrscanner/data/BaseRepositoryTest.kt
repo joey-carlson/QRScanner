@@ -184,11 +184,62 @@ class BaseRepositoryTest {
     fun sanitizeInput_trimsWhitespace() {
         // Arrange
         testRepository = TestRepository(mockContext)
-        
+
         // Act
         val result = testRepository.testSanitizeInput("  test value  ")
-        
+
         // Assert
         assertEquals("test value", result)
+    }
+
+    @Test
+    fun sanitizeInput_removesRemainingDangerousChars() {
+        // Arrange - the DANGEROUS_CHARS_REGEX also covers ; : , \ and angle brackets.
+        testRepository = TestRepository(mockContext)
+
+        // Act
+        val result = testRepository.testSanitizeInput("a;b:c,d\\e<f>g")
+
+        // Assert - every char in the dangerous set is stripped, payload letters remain.
+        assertEquals("abcdefg", result)
+    }
+
+    @Test
+    fun sanitizeInput_preservesDsnStyleCharacters() {
+        // Arrange - hyphens, dots, slashes, underscores and alphanumerics are NOT
+        // in the dangerous set; a real kit code / DSN must survive intact.
+        testRepository = TestRepository(mockContext)
+
+        // Act
+        val result = testRepository.testSanitizeInput("K-123/G0G46K.01_A")
+
+        // Assert
+        assertEquals("K-123/G0G46K.01_A", result)
+    }
+
+    @Test
+    fun sanitizeInput_emptyInput_returnsEmpty() {
+        // Arrange
+        testRepository = TestRepository(mockContext)
+
+        // Act
+        val result = testRepository.testSanitizeInput("")
+
+        // Assert
+        assertEquals("", result)
+    }
+
+    @Test
+    fun getFileNameForDate_withoutLocationId_omitsLocation() {
+        // Arrange - the else branch of getFileNameForDate (no location) was untested.
+        `when`(mockPrefs.getString("location_id", "unknown")).thenReturn("unknown")
+        testRepository = TestRepository(mockContext)
+        val testDate = LocalDate.of(2024, 12, 25)
+
+        // Act
+        val fileName = testRepository.testGetFileNameForDate(testDate)
+
+        // Assert
+        assertEquals("test_data_12-25-24.json", fileName)
     }
 }

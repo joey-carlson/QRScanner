@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.14] - 2026-08-17
+
+### Added
+- **`BaseRepository` sanitize/filename test hardening** (`BaseRepositoryTest`)
+  - 5 tests added to the existing suite (which already covered the common `sanitizeInput` and filename cases): completeness of the dangerous-char strip (`; : , \` and angle brackets, not just quotes/brackets), preservation of DSN-style characters (`-` `.` `/` `_` and alphanumerics must survive so kit codes aren't mangled), empty-input handling, and the previously-untested no-location branch of `getFileNameForDate`
+  - No defects found — `sanitizeInput` strips the full dangerous set and leaves scan-relevant characters intact. Coverage steady at 35.6% (this hardens already-covered logic; `BaseRepository`'s remaining lines are MediaStore file I/O that needs instrumentation, not unit tests)
+
 ## [2.9.13] - 2026-08-17
 
 ### Added
