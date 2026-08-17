@@ -1,12 +1,28 @@
 QR Scanner Build Information
 ==========================
 
-Version: 2.9.1
-Build: 39
-Date: July 6, 2026
+Version: 2.9.15
+Build: 53
+Date: August 17, 2026
 
 Recent Changes
 -------------
+
+### v2.9.2–2.9.15 - Unit Test Coverage Initiative & CI (August 2026)
+Quality initiative driving unit-test coverage on high-risk logic, one target per
+patch release. Overall line coverage rose 13.9% → 35.8%. See CHANGELOG.md for the
+per-version detail. Highlights:
+- Bugs found and fixed via new tests: DsnValidator regex crash (2.9.2), unclamped
+  OCR confidence on null-component path (2.9.3), MEDIUM-strictness pattern-scoring
+  dead-branch (2.9.8).
+- Test coverage added for DsnValidator, OcrConfidenceManager, Kit Bundle domain
+  logic + KitBundleViewModel, all five export data sources, ImagePreprocessor,
+  ScanHistoryManager/ScanHistoryItem, BaseRepository sanitize/filename, and the
+  inventory record/component-type mappings.
+- CI: JaCoCo coverage gate wired into `check`/`build`, enforcing a 33% line-
+  coverage floor on every push/PR (2.9.9, raised from 25% in 2.9.15).
+- Fixed 13 pre-existing Android Lint errors that were failing CI's `gradlew build`
+  (guarded MediaStore NewApi false-positives; android:tint → app:tint) (2.9.12).
 
 ### v2.9.1 - Refactoring & Documentation (July 6, 2026)
 - New AppConstants system centralizing all magic strings/numbers into logical groups
@@ -111,8 +127,14 @@ Recent Changes
 
 ### Known Issues
 - Scan history UI integration pending final design review
+- MEDIUM-strictness confidence tuning: deliberate behavioral tuning of manual-
+  verification rates deferred (the dead-branch bug itself was fixed in 2.9.8)
 
 ### Testing Notes
+- Unit test suite: 281+ tests across 19 files; JVM + Robolectric. Run with
+  `./gradlew test`; coverage via `./gradlew jacocoTestReport`. CI enforces a 33%
+  line-coverage floor. Remaining coverage gaps are Android-coupled code
+  (Activities, dialogs, camera, file I/O) that needs instrumented tests.
 - Material Design 3 theming tested in both light and dark modes
 - OCR performance optimizations tested with various lighting conditions
 - Image preprocessing significantly improves character recognition
