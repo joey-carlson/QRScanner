@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.11] - 2026-08-17
+
+### Added
+- **`KitBundleViewModel` unit tests** (`KitBundleViewModelTest`)
+  - 13 tests covering the scan-to-save workflow: confidence-based routing (HIGH auto-assigns, MEDIUM/LOW open a dialog), duplicate-DSN detection and slot reassignment/ignore, review-mode entry and the `confirmReview` state rebuild from edited values, and invalid-barcode handling
+  - Exercises the three parallel slot-mapping `when`-blocks (`getSuggestedSlot`, `getComponentTypeForSlot`, `getSlotDisplayName`) end-to-end by capturing the `KitBundle` handed to the repository — guards against the mapping tables drifting out of sync
+  - Plain JVM + `StandardTestDispatcher` (no Robolectric needed); real-world `G0G…` DSN fixtures drive the confidence branches
+  - Raises `KitBundleViewModel` from 0% to 86.9% line coverage and the `kitbundle` package from 17.9% to 70.5%; overall 27.8% → 34.2%
+  - No defects found — the slot-mapping blocks are in sync and the duplicate/review logic is correct
+
 ## [2.9.10] - 2026-08-17
 
 ### Added

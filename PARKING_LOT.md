@@ -32,7 +32,7 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 **Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. **Enforced in CI** (v2.9.9): `jacocoTestCoverageVerification` runs as part of `check`/`build` and fails the build if line coverage drops below the **25% floor**. Raise the floor as coverage climbs.
 
-**Latest (v2.9.10, debug unit tests)**: **27.8% line · 22.1% branch** overall.
+**Latest (v2.9.11, debug unit tests)**: **34.2% line** overall.
 > ⚠️ The initial v2.9.2 baseline (13.9%) was **understated** — JaCoCo was silently dropping all Robolectric-driven tests (`includeNoLocationClasses` was off). Fixed in v2.9.3; numbers below are the corrected picture.
 
 Per-package line:
@@ -42,15 +42,15 @@ Per-package line:
 | `config` | 0% | 0/6 |
 | `inventory` | 10.3% | 8/78 |
 | `export` | 14.9% | 134/899 |
-| `kitbundle` | 17.9% | 88/492 |
 | `util` | 19.3% | 123/638 |
 | `data` | 27.3% | 88/322 |
 | `ocr` | 30.6% | 274/895 |
 | `livescan/hid` | 51.5% | 104/202 |
 | `export/datasource` | 52.2% | 131/251 |
 | `ui` | 66.1% | 181/274 |
+| `kitbundle` | 70.5% | 347/492 |
 
-> `kitbundle` package sits at 17.9% because most of its lines are the Android-coupled ViewModel/Activity/dialogs; the pure domain logic (`KitBundleState` 100%, `RequirementStatus` 91%) is now fully covered.
+> `kitbundle` reached 70.5%: the domain models (`KitBundleState`/`RequirementStatus`) and `KitBundleViewModel` (86.9%, v2.9.11) are covered; the remaining gap is the Android-coupled Activity/dialog classes.
 
 **KPI targets**:
 - **Short-term (next 1–2 versions)**: overall floor **25% (no regression)**; all originally-planned high-risk targets are covered (`DsnValidator`, `OcrConfidenceManager`, `ImagePreprocessor`, all five export data sources, Kit Bundle domain models). Next pure-logic targets from the testability survey (2026-08-17): `data/KitBundle` string-split helpers, `kitbundle/KitBundleViewModel` slot-mapping logic, `data/ScanHistoryManager` trim/ordering, `data/BaseRepository.sanitizeInput`.
@@ -61,7 +61,7 @@ Per-package line:
 
 **Next tranche (testability survey, 2026-08-17 — ranked by bug-hiding ROI)**:
 1. ~~`data/KitBundle` — `generateKitId`/`extractCreationDate`/`extractBaseKitCode` string-split edge cases~~ ✅ (v2.9.10) — 0% → 90%; clean (already uses last-dash splits defensively).
-2. `kitbundle/KitBundleViewModel` — confidence routing, duplicate-DSN reassignment, and three parallel slot-mapping `when`-blocks that must stay in sync (drift-bug risk). Robolectric; largest untested logic surface.
+2. ~~`kitbundle/KitBundleViewModel` — confidence routing, duplicate-DSN reassignment, and three parallel slot-mapping `when`-blocks~~ ✅ (v2.9.11) — 0% → 86.9%; clean (mapping blocks in sync, no Robolectric needed).
 3. `data/ScanHistoryManager` — 50-item trim, add-at-front ordering, update/delete-by-id, per-activity key routing. Robolectric.
 4. `data/BaseRepository.sanitizeInput` (+ location-aware filename composition) — security-relevant input sanitization. Robolectric via a small test subclass.
 5. `inventory/InventoryRecord.create` + `ComponentType.fromString` — scan-mode/type mapping; cheap pure-logic wins.
