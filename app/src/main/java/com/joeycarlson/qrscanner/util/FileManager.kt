@@ -1,5 +1,6 @@
 package com.joeycarlson.qrscanner.util
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -66,6 +67,10 @@ class FileManager(private val context: Context) {
         }
     }
     
+    // Only called from saveToDownloads via getFileStrategy() -> MEDIA_STORE,
+    // which is gated on Build.VERSION.SDK_INT >= Q; lint can't trace the guard
+    // across the method boundary (false-positive NewApi).
+    @SuppressLint("NewApi")
     private fun saveToDownloadsMediaStore(
         filename: String,
         content: String,
@@ -153,6 +158,8 @@ class FileManager(private val context: Context) {
         }
     }
     
+    // Gated by getFileStrategy() -> MEDIA_STORE (SDK_INT >= Q); see note above.
+    @SuppressLint("NewApi")
     private fun loadFromDownloadsMediaStore(filename: String): FileResult<String> {
         return try {
             val projection = arrayOf(
@@ -220,6 +227,8 @@ class FileManager(private val context: Context) {
         }
     }
     
+    // Gated by getFileStrategy() -> MEDIA_STORE (SDK_INT >= Q); see note above.
+    @SuppressLint("NewApi")
     private fun fileExistsInDownloadsMediaStore(filename: String): Boolean {
         return try {
             val projection = arrayOf(MediaStore.MediaColumns._ID)

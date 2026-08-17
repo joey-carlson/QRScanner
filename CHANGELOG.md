@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.12] - 2026-08-17
+
+### Fixed
+- **CI `./gradlew build` no longer red-builds on 13 pre-existing lint errors** (`lintDebug`)
+  - `./gradlew test` was clean, but the CI workflow runs the full `build` task which also runs Android Lint — that had been failing on every push for a while, generating "workflow failed" emails, unrelated to the coverage work
+  - **9 × `NewApi` (false positives)**: `MediaStore.Downloads.EXTERNAL_CONTENT_URI` (API 29) is called from private MediaStore-only methods in `BaseRepository` and `FileManager` that are already correctly gated by `Build.VERSION.SDK_INT >= Q` in the calling function. Lint can't trace the guard across a method boundary, so it flags the usages anyway. Added `@SuppressLint("NewApi")` at method scope on the 5 gated methods with an explanatory comment; no runtime behavior change.
+  - **4 × `UseAppTint`**: `android:tint` → `app:tint` on 4 `ImageView`s across `activity_unified_export.xml`, `activity_user_checkin.xml`, `item_scan_history.xml` (AppCompat requires the `app:` namespace for `ImageView` tinting).
+  - Verified: `./gradlew build` (the exact CI command) now succeeds locally, 0 lint errors.
+
 ## [2.9.11] - 2026-08-17
 
 ### Added

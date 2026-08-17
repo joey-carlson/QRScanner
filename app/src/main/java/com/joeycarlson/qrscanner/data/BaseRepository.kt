@@ -1,5 +1,6 @@
 package com.joeycarlson.qrscanner.data
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
@@ -119,6 +120,9 @@ abstract class BaseRepository<T>(protected val context: Context) {
     /**
      * Saves content to MediaStore (Android 10+).
      */
+    // Only called from saveJsonContent behind a Build.VERSION.SDK_INT >= Q guard;
+    // lint can't trace the guard across the method boundary (false-positive NewApi).
+    @SuppressLint("NewApi")
     private fun saveToMediaStore(content: String, fileName: String): Boolean {
         return try {
             val resolver = context.contentResolver
@@ -206,6 +210,9 @@ abstract class BaseRepository<T>(protected val context: Context) {
     /**
      * Loads records from MediaStore (Android 10+).
      */
+    // Only called from loadRecords behind a Build.VERSION.SDK_INT >= Q guard;
+    // lint can't trace the guard across the method boundary (false-positive NewApi).
+    @SuppressLint("NewApi")
     private fun loadFromMediaStore(fileName: String): MutableList<T> {
         return try {
             val projection = arrayOf(
