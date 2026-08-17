@@ -27,12 +27,12 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 #### Unit Test Coverage KPIs
 **Type**: Quality Initiative (tooling + ongoing)
-**Status**: IN PROGRESS — JaCoCo wired (v2.9.2), CI coverage gate live at 25% floor (v2.9.9), continuing against the next tranche of targets
+**Status**: IN PROGRESS — JaCoCo wired (v2.9.2), CI coverage gate live (v2.9.9, floor raised to 33% in v2.9.15); next-tranche unit targets complete, remaining gaps need instrumented tests
 **Description**: Drive unit-test coverage up to measurable, risk-tiered targets. Coverage is a proxy — the rule is *test behavior, not lines*; framework-bound code (Activities, ViewBinding, factories) is excluded from the report so the % stays honest.
 
-**Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. **Enforced in CI** (v2.9.9): `jacocoTestCoverageVerification` runs as part of `check`/`build` and fails the build if line coverage drops below the **25% floor**. Raise the floor as coverage climbs.
+**Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. **Enforced in CI** (v2.9.9): `jacocoTestCoverageVerification` runs as part of `check`/`build` and fails the build if line coverage drops below the **33% floor** (raised from 25% in v2.9.15). Raise the floor again as coverage climbs.
 
-**Latest (v2.9.14, debug unit tests)**: **35.6% line** overall.
+**Latest (v2.9.15, debug unit tests)**: **35.8% line** overall.
 > ⚠️ The initial v2.9.2 baseline (13.9%) was **understated** — JaCoCo was silently dropping all Robolectric-driven tests (`includeNoLocationClasses` was off). Fixed in v2.9.3; numbers below are the corrected picture.
 
 Per-package line:
@@ -40,7 +40,7 @@ Per-package line:
 |---|---|---|
 | `(root)` | 0% | 0/8 |
 | `config` | 0% | 0/6 |
-| `inventory` | 10.3% | 8/78 |
+| `inventory` | 17.9% | 14/78 |
 | `export` | 14.9% | 134/899 |
 | `util` | 19.3% | 123/638 |
 | `ocr` | 30.6% | 274/895 |
@@ -53,7 +53,7 @@ Per-package line:
 > `kitbundle` reached 70.5%: the domain models (`KitBundleState`/`RequirementStatus`) and `KitBundleViewModel` (86.9%, v2.9.11) are covered; the remaining gap is the Android-coupled Activity/dialog classes.
 
 **KPI targets**:
-- **Short-term (next 1–2 versions)**: overall floor **25% (no regression)**; all originally-planned high-risk targets are covered (`DsnValidator`, `OcrConfidenceManager`, `ImagePreprocessor`, all five export data sources, Kit Bundle domain models). Next pure-logic targets from the testability survey (2026-08-17): `data/KitBundle` string-split helpers, `kitbundle/KitBundleViewModel` slot-mapping logic, `data/ScanHistoryManager` trim/ordering, `data/BaseRepository.sanitizeInput`.
+- **Short-term**: overall floor **33% (no regression)**, currently at 35.8%. Both the originally-planned high-risk targets *and* the 2026-08-17 next-tranche pure-logic targets are complete.
 - **Long-term (3–6 months)**: core business-logic packages (`ocr`, `kitbundle`, `export`, `data`) **85% line / 75% branch**; overall **75% line**; CI gate at the floor.
 - **New code**: 80% on changed files (stops the gap from growing).
 
@@ -64,7 +64,9 @@ Per-package line:
 2. ~~`kitbundle/KitBundleViewModel` — confidence routing, duplicate-DSN reassignment, and three parallel slot-mapping `when`-blocks~~ ✅ (v2.9.11) — 0% → 86.9%; clean (mapping blocks in sync, no Robolectric needed).
 3. ~~`data/ScanHistoryManager` — 50-item trim, add-at-front ordering, update/delete-by-id, per-activity key routing~~ ✅ (v2.9.13) — 0% → 95.8%; clean. Also covered `ScanHistoryItem.getShortValue` (0% → 76.9%).
 4. ~~`data/BaseRepository.sanitizeInput` (+ location-aware filename composition) — security-relevant input sanitization~~ ✅ (v2.9.14) — was already largely covered by the existing suite; hardened with dangerous-char completeness, DSN-char preservation, and the untested no-location filename branch. `BaseRepository` stays at 17.4% because the remainder is MediaStore file I/O (needs instrumentation, not unit tests).
-5. `inventory/InventoryRecord.create` + `ComponentType.fromString` — scan-mode/type mapping; cheap pure-logic wins.
+5. ~~`inventory/InventoryRecord.create` + `ComponentType.fromString` — scan-mode/type mapping~~ ✅ (v2.9.15) — both 0% → 100%; clean.
+
+**Tranche complete.** Remaining uncovered code is predominantly Android-coupled (Activities, DialogFragments, ViewModels with heavy framework/camera/file-I/O ties) that needs *instrumented* tests, not unit tests — a different effort class. Reassess whether further unit-coverage work is worthwhile vs. picking up a feature.
 
 **Skip (survey-confirmed low/no value)**: `config/*` (constant holders — 0% is cosmetic), both ViewModelFactories, all DialogFragments, Activities, `CameraManager`, `WindowInsetsHelper`.
 **Notes**:

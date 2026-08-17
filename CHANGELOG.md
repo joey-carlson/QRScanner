@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.15] - 2026-08-17
+
+### Added
+- **`InventoryRecord` and `ComponentType` unit tests** (`InventoryRecordTest`, `ComponentTypeTest`)
+  - 7 plain-JVM tests: `InventoryRecord.create` scan-mode/type mapping (guarding that it stores the enum `name`, not the `displayName`) and `ComponentType.fromString` round-tripping, case-sensitivity, unknown-value null, and display names
+  - Both classes 0% → 100%; `inventory` package 10.3% → 17.9%; overall 35.6% → 35.8%. No defects found.
+
+### Changed
+- **CI coverage gate floor raised 25% → 33%** (`jacocoTestCoverageVerification`)
+  - Locks in the coverage gains from the v2.9.10–2.9.14 test tranche (current ~35.8%); kept ~2.8% below current so a legitimate refactor won't red-build
+
 ## [2.9.14] - 2026-08-17
 
 ### Added

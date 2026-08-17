@@ -13,8 +13,8 @@ android {
         applicationId "com.joeycarlson.qrscanner"
         minSdk 28
         targetSdk 35
-        versionCode 52
-        versionName "2.9.14"
+        versionCode 53
+        versionName "2.9.15"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
@@ -138,9 +138,11 @@ task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
 // class exclusions as jacocoTestReport so the two always agree. Wired into
 // `check` below, so CI's `./gradlew build` enforces it on every push/PR.
 //
-// Floor is 25% (line) — deliberately below the current ~27.5% so a legitimate
-// refactor that temporarily shifts the ratio does not red-build. Raise the
-// minimum as coverage climbs; long-term target is 75% (see PARKING_LOT.md).
+// Floor is 33% (line) — deliberately below the current ~35.8% so a legitimate
+// refactor that temporarily shifts the ratio does not red-build. Raised from
+// 25% in v2.9.15 to lock in the coverage gains from the v2.9.10–2.9.14 test
+// tranche. Raise again as coverage climbs; long-term target is 75% (see
+// PARKING_LOT.md).
 task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: 'testDebugUnitTest') {
     group = "Verification"
     description = "Fails the build if unit-test line coverage drops below the KPI floor."
@@ -164,7 +166,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.25
+                minimum = 0.33
             }
         }
     }
