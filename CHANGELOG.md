@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.9] - 2026-08-17
+
+### Added
+- **CI coverage gate** (`jacocoTestCoverageVerification`)
+  - New Gradle verification task fails the build if unit-test **line coverage drops below 25%** (the documented short-term KPI floor; current coverage is ~27.5%, leaving headroom so a legitimate refactor does not red-build)
+  - Wired into `check`, so the existing GitHub Actions `./gradlew build` now enforces the floor on every push and PR to `main` — coverage was previously report-only and could regress silently
+  - Uses the same class exclusions as `jacocoTestReport` (Activities, ViewBinding, factories, generated classes) so the gate and the report always agree
+  - Verified fail-closed: temporarily raising the floor above the measured ratio correctly fails the build
+
+### Changed
+- **`PARKING_LOT.md` reconciled** with current state: refreshed the per-package coverage table (now includes branch %), marked the OCR/Kit Bundle and export-data-source testing items resolved, bumped the short-term floor to 25%, and recorded the testability-survey "next tranche" of coverage targets ranked by bug-hiding ROI
+
 ## [2.9.8] - 2026-08-14
 
 ### Fixed

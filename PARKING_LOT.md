@@ -27,36 +27,46 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 #### Unit Test Coverage KPIs
 **Type**: Quality Initiative (tooling + ongoing)
-**Status**: IN PROGRESS — JaCoCo wired (v2.9.2), baseline captured, executing against high-risk packages
+**Status**: IN PROGRESS — JaCoCo wired (v2.9.2), CI coverage gate live at 25% floor (v2.9.9), continuing against the next tranche of targets
 **Description**: Drive unit-test coverage up to measurable, risk-tiered targets. Coverage is a proxy — the rule is *test behavior, not lines*; framework-bound code (Activities, ViewBinding, factories) is excluded from the report so the % stays honest.
 
-**Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. Enforcement is **report-only** (no CI gate yet — add once comfortably above the floor).
+**Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. **Enforced in CI** (v2.9.9): `jacocoTestCoverageVerification` runs as part of `check`/`build` and fails the build if line coverage drops below the **25% floor**. Raise the floor as coverage climbs.
 
-**Latest (v2.9.8, debug unit tests)**: **27.5% line** overall.
+**Latest (v2.9.8, debug unit tests)**: **27.5% line · 22.1% branch** overall.
 > ⚠️ The initial v2.9.2 baseline (13.9%) was **understated** — JaCoCo was silently dropping all Robolectric-driven tests (`includeNoLocationClasses` was off). Fixed in v2.9.3; numbers below are the corrected picture.
 
 Per-package line:
 | Package | Line % | Lines |
 |---|---|---|
-| `inventory` | 0% | 0/78 |
+| `(root)` | 0% | 0/8 |
 | `config` | 0% | 0/6 |
+| `inventory` | 10.3% | 8/78 |
 | `export` | 14.9% | 134/899 |
-| `data` | 13.7% | 44/322 |
 | `kitbundle` | 17.9% | 88/492 |
 | `util` | 19.3% | 123/638 |
-| `ocr` | 30.7% | 275/897 |
-| `export/datasource` | 52.2% | 131/251 |
+| `data` | 23.0% | 74/322 |
+| `ocr` | 30.6% | 274/895 |
 | `livescan/hid` | 51.5% | 104/202 |
+| `export/datasource` | 52.2% | 131/251 |
 | `ui` | 66.1% | 181/274 |
 
 > `kitbundle` package sits at 17.9% because most of its lines are the Android-coupled ViewModel/Activity/dialogs; the pure domain logic (`KitBundleState` 100%, `RequirementStatus` 91%) is now fully covered.
 
 **KPI targets**:
-- **Short-term (next 1–2 versions)**: overall floor **22% (no regression)**; core pure-logic now covered (`DsnValidator`, `OcrConfidenceManager`, `KitBundleState`/`RequirementStatus`). Next pure-logic targets: `export/datasource` implementations (record→row mapping) and remaining `ocr`/`util` helpers.
-- **Long-term (3–6 months)**: core business-logic packages (`ocr`, `kitbundle`, `export`, `data`) **85% line / 75% branch**; overall **75% line**; add CI gate at the floor.
+- **Short-term (next 1–2 versions)**: overall floor **25% (no regression)**; all originally-planned high-risk targets are covered (`DsnValidator`, `OcrConfidenceManager`, `ImagePreprocessor`, all five export data sources, Kit Bundle domain models). Next pure-logic targets from the testability survey (2026-08-17): `data/KitBundle` string-split helpers, `kitbundle/KitBundleViewModel` slot-mapping logic, `data/ScanHistoryManager` trim/ordering, `data/BaseRepository.sanitizeInput`.
+- **Long-term (3–6 months)**: core business-logic packages (`ocr`, `kitbundle`, `export`, `data`) **85% line / 75% branch**; overall **75% line**; CI gate at the floor.
 - **New code**: 80% on changed files (stops the gap from growing).
 
-**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → ~~`ExportDataSource` implementations~~ ✅ (v2.9.5) → ~~`ImagePreprocessor`~~ ✅ (v2.9.6) → ~~`LogsDataSource`~~ ✅ (v2.9.7). **All planned high-risk targets now covered** — pick the next tranche from the per-package table below (lowest-coverage core-logic packages first).
+**Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → ~~`ExportDataSource` implementations~~ ✅ (v2.9.5) → ~~`ImagePreprocessor`~~ ✅ (v2.9.6) → ~~`LogsDataSource`~~ ✅ (v2.9.7). **All originally-planned high-risk targets covered.**
+
+**Next tranche (testability survey, 2026-08-17 — ranked by bug-hiding ROI)**:
+1. `data/KitBundle` — `generateKitId`/`extractCreationDate`/`extractBaseKitCode` string-split edge cases (kit codes containing `-`, empty defaults). Pure logic; highest bug-per-effort.
+2. `kitbundle/KitBundleViewModel` — confidence routing, duplicate-DSN reassignment, and three parallel slot-mapping `when`-blocks that must stay in sync (drift-bug risk). Robolectric; largest untested logic surface.
+3. `data/ScanHistoryManager` — 50-item trim, add-at-front ordering, update/delete-by-id, per-activity key routing. Robolectric.
+4. `data/BaseRepository.sanitizeInput` (+ location-aware filename composition) — security-relevant input sanitization. Robolectric via a small test subclass.
+5. `inventory/InventoryRecord.create` + `ComponentType.fromString` — scan-mode/type mapping; cheap pure-logic wins.
+
+**Skip (survey-confirmed low/no value)**: `config/*` (constant holders — 0% is cosmetic), both ViewModelFactories, all DialogFragments, Activities, `CameraManager`, `WindowInsetsHelper`.
 **Notes**:
 - `DsnValidator` coverage (v2.9.2) surfaced a latent regex crash; `OcrConfidenceManager` (v2.9.3) surfaced an out-of-range confidence bug plus a pinned dead-branch known issue (now fixed in v2.9.8, see below). Kit Bundle logic (v2.9.4), the export data sources (v2.9.5), `ImagePreprocessor` (v2.9.6), and `LogsDataSource` (v2.9.7) were clean — no defects. Bugs cluster in the parsing/scoring code, not the model/mapping/math logic.
 - `ImagePreprocessor` (v2.9.6) only reached 23.4% line coverage: its bitmap-transforming methods use `Canvas`/`ColorMatrixColorFilter` (no-op under Robolectric) and its YUV→Bitmap + private pixel passes need a real camera frame. Only the two pure-ish public methods (`analyzeImageQuality`, `getAdaptiveParameters`) are unit-testable — that is the ceiling here, not a coverage gap to close.
@@ -115,9 +125,9 @@ Per-package line:
 ### Code Quality
 | Item | Type | Notes |
 |------|------|-------|
-| ~~9 failing unit tests (per v2.7.5 notes)~~ | Testing | RESOLVED — full suite green (338 tests, 0 failures) as of Aug 2026 |
-| No tests for OCR pipeline or Kit Bundle logic | Testing | Core business logic — `DsnValidator` (v2.9.2), `OcrConfidenceManager` (v2.9.3), Kit Bundle logic (v2.9.4), and `ImagePreprocessor` (v2.9.6, unit-testable surface) now covered |
-| No tests for export data sources | Testing | `ExportDataSource` implementations untested |
+| ~~9 failing unit tests (per v2.7.5 notes)~~ | Testing | RESOLVED — full suite green as of Aug 2026 |
+| ~~No tests for OCR pipeline or Kit Bundle logic~~ | Testing | RESOLVED — `DsnValidator` (v2.9.2), `OcrConfidenceManager` (v2.9.3), Kit Bundle domain models (v2.9.4), `ImagePreprocessor` (v2.9.6, unit-testable surface) covered. Remaining ViewModel-level logic tracked in the coverage "next tranche" above. |
+| ~~No tests for export data sources~~ | Testing | RESOLVED — all five `ExportDataSource` implementations covered (v2.9.5, v2.9.7) |
 | Verify AWS Cognito dependency usage | Deps | S3 uses Access Key auth — Cognito SDK may be unused dead weight (~3MB) |
 
 ### Feature Gaps
@@ -161,4 +171,4 @@ Per-package line:
 - User feedback should drive priority adjustments
 
 ---
-*Last Updated: August 3, 2026*
+*Last Updated: August 17, 2026*

@@ -13,8 +13,8 @@ android {
         applicationId "com.joeycarlson.qrscanner"
         minSdk 28
         targetSdk 35
-        versionCode 46
-        versionName "2.9.8"
+        versionCode 47
+        versionName "2.9.9"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
@@ -128,6 +128,48 @@ task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
 
     sourceDirectories.setFrom(files(['src/main/java']))
     executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec']))
+}
+
+// Coverage gate (no-regression floor). Fails the build if line coverage of the
+// testable business logic drops below the short-term KPI floor. Uses the same
+// class exclusions as jacocoTestReport so the two always agree. Wired into
+// `check` below, so CI's `./gradlew build` enforces it on every push/PR.
+//
+// Floor is 25% (line) — deliberately below the current ~27.5% so a legitimate
+// refactor that temporarily shifts the ratio does not red-build. Raise the
+// minimum as coverage climbs; long-term target is 75% (see PARKING_LOT.md).
+task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: 'testDebugUnitTest') {
+    group = "Verification"
+    description = "Fails the build if unit-test line coverage drops below the KPI floor."
+
+    def coverageExclusions = [
+        '**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*',
+        '**/*Test*.*', 'android/**/*.*',
+        '**/*_ViewBinding*.*', '**/databinding/**', '**/*Binding.*',
+        '**/*Activity.*',
+        '**/*Factory.*',
+        '**/*$*.*'
+    ]
+
+    def kotlinClasses = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: coverageExclusions)
+    classDirectories.setFrom(files([kotlinClasses]))
+    sourceDirectories.setFrom(files(['src/main/java']))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec']))
+
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.25
+            }
+        }
+    }
+}
+
+// Enforce the coverage gate as part of `check` (and therefore `build`).
+tasks.named('check').configure {
+    dependsOn 'jacocoTestCoverageVerification'
 }
 
 // Task to copy APK folders and documentation to WorkDocs shared location
