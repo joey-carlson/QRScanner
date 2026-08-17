@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.13] - 2026-08-17
+
+### Added
+- **`ScanHistoryManager` unit tests** (`ScanHistoryManagerTest`)
+  - 11 Robolectric tests covering the SharedPreferences-backed history store: most-recent-first ordering (sorted by timestamp regardless of insertion order), the 50-item cap keeping the newest items, per-activity-type key isolation, update/delete-by-id (including unknown-id false returns), and the export-values mapping
+  - Raises `ScanHistoryManager` from 0% to 95.8% line coverage
+- **`ScanHistoryItem` unit tests** (`ScanHistoryItemTest`)
+  - 3 plain-JVM tests pinning the `getShortValue` truncation boundary (length == maxLength is not truncated; length > maxLength gets an ellipsis) and custom max length
+  - Raises `ScanHistoryItem` from 0% to 76.9% line coverage
+- Together: `data` package 27.3% → 45.0%; overall 34.2% → 35.6%. No defects found.
+
 ## [2.9.12] - 2026-08-17
 
 ### Fixed
