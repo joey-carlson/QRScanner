@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.10] - 2026-08-17
+
+### Added
+- **`KitBundle` model unit tests** (`KitBundleTest`)
+  - 11 tests covering `getFilledComponentCount`/`isValid` (including the `listOfNotNull` blank-string edge case), the ordered `getComponentList`, and the companion kit-ID helpers `generateKitId`/`extractCreationDate`/`extractBaseKitCode`
+  - Pins the correct last-dash split behavior: a base kit code that itself contains a dash (e.g. `K-123-08/30`) round-trips correctly rather than truncating at the first dash
+  - Raises `data/KitBundle` from 0% to 90% line coverage; overall 27.5% → 27.8%
+  - No defects found — the model's split logic already uses `substringBeforeLast`/`substringAfterLast` defensively
+
+### Fixed
+- **JaCoCo tasks no longer trip Gradle's implicit-dependency validation** when the report and coverage-verification run together
+  - Both `jacocoTestReport` and `jacocoTestCoverageVerification` scanned the entire build dir for `.exec` files, which overlapped with the report's own output and made Gradle fail `./gradlew jacocoTestReport jacocoTestCoverageVerification` with a task-ordering error (CI's `build` path was unaffected, as it runs only the verification)
+  - Both tasks now point `executionData` at the exact `jacoco/testDebugUnitTest.exec` file
+
 ## [2.9.9] - 2026-08-17
 
 ### Added

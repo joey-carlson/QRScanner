@@ -13,8 +13,8 @@ android {
         applicationId "com.joeycarlson.qrscanner"
         minSdk 28
         targetSdk 35
-        versionCode 47
-        versionName "2.9.9"
+        versionCode 48
+        versionName "2.9.10"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
@@ -127,7 +127,10 @@ task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
     classDirectories.setFrom(files([kotlinClasses]))
 
     sourceDirectories.setFrom(files(['src/main/java']))
-    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec']))
+    // Point at the exact exec file rather than scanning all of buildDir, which
+    // would overlap with this task's own report output and make Gradle flag a
+    // spurious implicit-dependency error when report + verification run together.
+    executionData.setFrom(files("${buildDir}/jacoco/testDebugUnitTest.exec"))
 }
 
 // Coverage gate (no-regression floor). Fails the build if line coverage of the
@@ -154,7 +157,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
     def kotlinClasses = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: coverageExclusions)
     classDirectories.setFrom(files([kotlinClasses]))
     sourceDirectories.setFrom(files(['src/main/java']))
-    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec']))
+    executionData.setFrom(files("${buildDir}/jacoco/testDebugUnitTest.exec"))
 
     violationRules {
         rule {

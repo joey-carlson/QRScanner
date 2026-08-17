@@ -32,7 +32,7 @@ This document tracks future feature ideas, enhancements, and the housekeeping ba
 
 **Tooling**: `./gradlew jacocoTestReport` → HTML at `app/build/reports/jacoco/jacocoTestReport/html/index.html`. **Enforced in CI** (v2.9.9): `jacocoTestCoverageVerification` runs as part of `check`/`build` and fails the build if line coverage drops below the **25% floor**. Raise the floor as coverage climbs.
 
-**Latest (v2.9.8, debug unit tests)**: **27.5% line · 22.1% branch** overall.
+**Latest (v2.9.10, debug unit tests)**: **27.8% line · 22.1% branch** overall.
 > ⚠️ The initial v2.9.2 baseline (13.9%) was **understated** — JaCoCo was silently dropping all Robolectric-driven tests (`includeNoLocationClasses` was off). Fixed in v2.9.3; numbers below are the corrected picture.
 
 Per-package line:
@@ -44,7 +44,7 @@ Per-package line:
 | `export` | 14.9% | 134/899 |
 | `kitbundle` | 17.9% | 88/492 |
 | `util` | 19.3% | 123/638 |
-| `data` | 23.0% | 74/322 |
+| `data` | 27.3% | 88/322 |
 | `ocr` | 30.6% | 274/895 |
 | `livescan/hid` | 51.5% | 104/202 |
 | `export/datasource` | 52.2% | 131/251 |
@@ -60,7 +60,7 @@ Per-package line:
 **Execution order (highest-risk first)**: ~~`DsnValidator`~~ ✅ (v2.9.2) → ~~`OcrConfidenceManager`~~ ✅ (v2.9.3) → ~~Kit Bundle logic~~ ✅ (v2.9.4) → ~~`ExportDataSource` implementations~~ ✅ (v2.9.5) → ~~`ImagePreprocessor`~~ ✅ (v2.9.6) → ~~`LogsDataSource`~~ ✅ (v2.9.7). **All originally-planned high-risk targets covered.**
 
 **Next tranche (testability survey, 2026-08-17 — ranked by bug-hiding ROI)**:
-1. `data/KitBundle` — `generateKitId`/`extractCreationDate`/`extractBaseKitCode` string-split edge cases (kit codes containing `-`, empty defaults). Pure logic; highest bug-per-effort.
+1. ~~`data/KitBundle` — `generateKitId`/`extractCreationDate`/`extractBaseKitCode` string-split edge cases~~ ✅ (v2.9.10) — 0% → 90%; clean (already uses last-dash splits defensively).
 2. `kitbundle/KitBundleViewModel` — confidence routing, duplicate-DSN reassignment, and three parallel slot-mapping `when`-blocks that must stay in sync (drift-bug risk). Robolectric; largest untested logic surface.
 3. `data/ScanHistoryManager` — 50-item trim, add-at-front ordering, update/delete-by-id, per-activity key routing. Robolectric.
 4. `data/BaseRepository.sanitizeInput` (+ location-aware filename composition) — security-relevant input sanitization. Robolectric via a small test subclass.
